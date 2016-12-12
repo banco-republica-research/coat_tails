@@ -34,6 +34,7 @@ non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS
 
 alcaldes <- lapply(list_files, read_dta)
 
+
 alcaldes_merge <- alcaldes %>%
   lapply(., function(x){
     arrange(x, codmpio, ano) %>%
@@ -45,9 +46,6 @@ alcaldes_merge <- alcaldes %>%
     mutate(rank = dense_rank(desc(votos))) %>%
     filter(rank <= 2)
   })
-
-
-
 
 
 
