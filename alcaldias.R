@@ -25,7 +25,7 @@ list_files <- list.files() %>%
   lapply(list.files) %>% lapply(function(x){
     x[str_detect(x, "Alcal")]
   }) %>%
-  str_c("~/Dropbox/BANREP/Elecciones/Data/CEDE/Microdatos", c("1997", "2000", "2003", "2007", "2011", "2015"),
+  str_c("~/Dropbox/BANREP/Elecciones/Data/CEDE/Microdatos", c("", "1997", "2000", "2003", "2007", "2011", "2015"),
         ., sep = "/")
 
 
@@ -76,16 +76,25 @@ alcaldes_difference <- alcaldes_difference %>%
   dplyr::group_by(codmpio, ano) %>%
   dplyr::summarize(difference = sum(diff))
 
+# This process can generate NA's. This results from the fact that for some years and municipalities
+# elections were not held or that results were only reported for winner. Thus, the no result is 
+# reported as NA in the wide version of the df. 
+
 alcaldes_wide <- alcaldes_difference %>%
   spread(ano, difference, sep = "") 
 
-#Remove obs with at least one NA
-alcades_wide <- head(alcaldes_wide[complete.cases(alcaldes_wide), ])
+# To account for the no-election situation, the data.frame can be "cleaned" of NA's removing all the 
+# municipalities with at least one NA. This is desireable for the calculation of the trajectories. 
+# The other option is interpolation, but for this data the bias can be *huge*. 
+
+alcaldes_wide <- alcaldes_wide[complete.cases(alcaldes_wide), ]
+
+# Longitudinal (again).
 
 alcaldes_long <- alcaldes_wide %>%
   gather(ano, diff, ano1997:ano2015)
   
-#Density by year
+# Density by year (interactive!)
 p <- ggplot(alcaldes_long, aes(diff, colour = factor(ano))) + geom_density()
 ggplotly(p)
 
