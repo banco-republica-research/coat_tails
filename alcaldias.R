@@ -14,7 +14,7 @@ library(broom)
 library(ggplot2)
 
 ###########################################################################################################
-############################################### ARRANGE DATA ##############################################
+######################################### ARRANGE DATA I : VOTES ##########################################
 ###########################################################################################################
 
 # Get mayor's election data (only from electoral years since 1997). 
@@ -60,15 +60,13 @@ alcaldes_merge <- alcaldes_aggregate %>%
                   prop_votes_total, prop_votes_candidates, rank))
 
 ###########################################################################################################
-############################################### ARRANGE DATA ##############################################
+######################################### ARRANGE DATA II : GAPS ##########################################
 ###########################################################################################################
 
 alcaldes_difference <- alcaldes_merge %>%
   arrange(codmpio, ano, desc(rank)) %>%
   group_by(codmpio, ano) %>% #Calculate difference
   mutate(diff =  ave(prop_votes_total, factor(codmpio), factor(ano), FUN = function(x) c(0, diff(x)))) 
-  # %>%
-  # dplyr::mutate(diff = ifelse(posici_muni == 1 & pvotos_muni_can == 100 & diff == 0, 100, diff))
 
 #Collapse data.frame
 
