@@ -1,33 +1,30 @@
-library(foreign)
-library(plyr)
-library(dplyr)
-library(haven)
-library(stringr)
-library(plotly)
-library(ggplot2)
-library(tidyr)
-library(rgeos)
-library(rgdal)
-library(raster)
-library(kml)
-library(broom)
-library(ggplot2)
+
+rm(list=ls())
+packageList<-c("foreign","plyr","dplyr","haven","stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom")
+lapply(packageList,require,character.only=TRUE)
+
+# Directory 
+# setwd("Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 ###########################################################################################################
-######################################### ARRANGE DATA I : VOTES ##########################################
+############################################### ARRANGE DATA ##############################################
 ###########################################################################################################
 
 # Get mayor's election data (only from electoral years since 1997). 
-setwd("~/Dropbox/BANREP/Elecciones/Data/CEDE/Microdatos/")
-list_files <- list.files() %>%
-  .[. %in% c("1997", "2000", "2003", "2007", "2011", "2015")] %>%
-  str_c("~/Dropbox/BANREP/Elecciones/Data/CEDE/Microdatos/", ., sep = "") %>%
-  lapply(list.files) %>% lapply(function(x){
-    x[str_detect(x, "Alcal")]
-  }) %>%
-  str_c("~/Dropbox/BANREP/Elecciones/Data/CEDE/Microdatos", c("", "1997", "2000", "2003", "2007", "2011", "2015"),
-        ., sep = "/")
 
+data <-"Data/CEDE/Microdatos/"
+
+list_files <- list.files(path=data) %>%
+  .[. %in% c("1997", "2000", "2003", "2007", "2011", "2015")]%>%
+  str_c(data, ., sep = "") %>%
+  lapply(list.files) %>% lapply(function(x){x[str_detect(x, "Alcal")]}) %>% 
+  str_c(data, c("1997", "2000", "2003", "2007", "2011", "2015"),"/", ., sep = "")
+
+non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
+                         "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
+                         "Votos no marcados")
 
 #Open dta files into a list
 alcaldes <- lapply(list_files, read_dta)
