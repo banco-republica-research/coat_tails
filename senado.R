@@ -58,3 +58,6 @@ senadores_cluster <- senadores_cluster %>%
 
 
 
+
+
+
