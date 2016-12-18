@@ -42,9 +42,12 @@ alcaldes_aggregate <- alcaldes %>%
     mutate(non_candidate = ifelse(primer_apellido %in% non_candidate_votes, 1, 0)) %>% 
     group_by(codmpio, ano) %>%
     mutate(prop_votes_total = votos / sum(votos)) %>%
-    filter(non_candidate == 0) %>%
+    filter(non_candidate == 0)  %>%
+    mutate(parties = n()) %>%
     mutate(prop_votes_candidates = votos / sum(votos)) %>%
-    mutate(rank = dense_rank(desc(votos))) %>%
+    mutate(rank = dense_rank(desc(votos))) %>% 
+    mutate(party_ef = ifelse(prop_votes_candidates > 0.1, 1,0)) %>%
+    mutate(parties_ef = sum(party_ef)) %>%
     filter(rank <= 2) %>%
     mutate(prop_votes_c2 = votos / sum(votos)) 
   #  %>%  filter(prop_votes_candidates < 1) #Eliminate elections with only one candidate
@@ -54,8 +57,8 @@ alcaldes_aggregate <- alcaldes %>%
 alcaldes_merge <- alcaldes_aggregate %>%
   ldply() %>%
   arrange(codmpio, ano, desc(rank)) %>%
-  dplyr::select(c(ano, codmpio, codep, municipio, departamento, primer_apellido, nombre, codpartido, votos, 
-                  prop_votes_total, prop_votes_candidates, prop_votes_c2, rank)) 
+  dplyr::select(c(ano, codmpio, codep, municipio, departamento, rank, primer_apellido, nombre, codpartido, votos, 
+                  prop_votes_total, prop_votes_candidates, prop_votes_c2, parties, parties_ef)) 
   
 
 ###########################################################################################################
@@ -73,7 +76,7 @@ alcaldes_difference <- alcaldes_merge %>%
 
 alcaldes_difference <- alcaldes_difference %>%
   dplyr::group_by(codmpio, ano) %>%
-  dplyr::summarize(difference = sum(diff)) 
+  dplyr::summarize(parties = mean(parties),parties_ef = mean(parties_ef), difference = sum(diff)) 
 alcaldes_difference$dif_q <- quantcut(alcaldes_difference$difference, labels=c(1,2,3,4))
 
 # Wide format: This process can generate NA's. This results from the fact that for some years and municipalities
@@ -82,17 +85,41 @@ alcaldes_difference$dif_q <- quantcut(alcaldes_difference$difference, labels=c(1
 alcaldes_wide <- alcaldes_difference[,c("codmpio","ano","difference")] %>%
   spread(ano, difference, sep = "") 
 
+alcaldes_wide_p <- alcaldes_difference[,c("codmpio","ano","parties")] %>%
+  spread(ano, parties, sep = "") 
+
+alcaldes_wide_pe <- alcaldes_difference[,c("codmpio","ano","parties_ef")] %>%
+  spread(ano, parties_ef, sep = "") 
+
 alcaldes_wide_q <- alcaldes_difference[,c("codmpio","ano","dif_q")] %>%
   spread(ano, dif_q, sep = "") 
 
-# Longitudinal (again): continuous differences
+# Longitudinal (again)
 
 alcaldes_long <- alcaldes_wide %>%
   gather(ano, diff, ano1997:ano2015)
-  
+
+alcaldes_long_p <- alcaldes_wide_p %>%
+  gather(ano, parties, ano1997:ano2015)
+
+alcaldes_long_pe <- alcaldes_wide_pe %>%
+  gather(ano, parties_ef, ano1997:ano2015)
+
 # Density by year (interactive!)
-p <- ggplot(alcaldes_long, aes(diff, colour = factor(ano))) + geom_density()
+d <- ggplot(alcaldes_long, aes(diff, colour = factor(ano))) + geom_density()
+ggplotly(d)
+
+p <- ggplot(alcaldes_long_p, aes(parties, colour = factor(ano))) + geom_density()
 ggplotly(p)
+
+p <- ggplot(alcaldes_long_pe, aes(parties_ef, colour = factor(ano))) + geom_density()
+ggplotly(p)
+
+# Number of parties and political competition 
+
+s <- ggplot(alcaldes_difference, aes(parties_ef, difference)) + geom_point(aes(colour = factor(ano)))
+ggplotly(s)
+
 
 ###########################################################################################################
 ######################## LONGITUDINAL CLUSTER ANALYSIS: CONTINUOUS ########################################
