@@ -57,8 +57,8 @@ alcaldes_aggregate <- alcaldes %>%
 alcaldes_merge <- alcaldes_aggregate %>%
   ldply() %>%
   arrange(codmpio, ano, desc(rank)) %>%
-  dplyr::select(c(ano, codmpio, codep, municipio, departamento, rank, primer_apellido, nombre, codpartido, votos, 
-                  prop_votes_total, prop_votes_candidates, prop_votes_c2, parties, parties_ef)) 
+  dplyr::select(c(ano, codmpio, codep, municipio, departamento, parties, parties_ef, rank, primer_apellido, nombre, codpartido, votos, 
+                  prop_votes_total, prop_votes_candidates, prop_votes_c2)) 
   
 
 ###########################################################################################################
@@ -76,7 +76,7 @@ alcaldes_difference <- alcaldes_merge %>%
 
 alcaldes_difference <- alcaldes_difference %>%
   dplyr::group_by(codmpio, ano) %>%
-  dplyr::summarize(parties = mean(parties),parties_ef = mean(parties_ef), difference = sum(diff)) 
+  dplyr::summarize(votes_tot = sum(votos), parties = mean(parties),parties_ef = mean(parties_ef), difference = sum(diff)) 
 alcaldes_difference$dif_q <- quantcut(alcaldes_difference$difference, labels=c(1,2,3,4))
 
 # Wide format: This process can generate NA's. This results from the fact that for some years and municipalities
@@ -117,7 +117,7 @@ ggplotly(p)
 
 # Number of parties and political competition 
 
-s <- ggplot(alcaldes_difference, aes(parties_ef, difference)) + geom_point(aes(colour = factor(ano)))
+s <- ggplot(alcaldes_difference, aes(parties_ef, difference)) + geom_point(aes(colour = factor(ano), size=votes_tot))
 ggplotly(s)
 
 
