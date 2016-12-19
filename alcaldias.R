@@ -4,8 +4,8 @@ packageList<-c("foreign","plyr","dplyr","haven","stringr","plotly","ggplot2","ti
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 ###########################################################################################################
@@ -207,7 +207,7 @@ seq_dist2 <- seqdist(seq, method = "OM", sm = ccost)
 clus_seq <- agnes(seq_dist2, diss = TRUE, method = "ward")
 # plot(clus_seq, which.plots = 2)
 
-clus <- cutree(clus_seq, k = 3)
+clus <- cutree(clus_seq, k = 4)
 clus <- factor(clus)
 table(clus)
 
