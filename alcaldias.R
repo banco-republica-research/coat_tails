@@ -8,13 +8,14 @@ lapply(packageList,require,character.only=TRUE)
 setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
+data <-"Data/CEDE/Microdatos/"
+res <-"Data/CEDE/Bases trabajo/"
+
 ###########################################################################################################
 ############################################### ARRANGE DATA ##############################################
 ###########################################################################################################
 
 # Get mayor's election data (only from electoral years since 1997). 
-
-data <-"Data/CEDE/Microdatos/"
 
 list_files <- list.files(path=data) %>%
   .[. %in% c("1997", "2000", "2003", "2007", "2011", "2015")]%>%
@@ -77,6 +78,8 @@ alcaldes_difference <- alcaldes_difference %>%
 
 alcaldes_difference$dif_q <- quantcut(alcaldes_difference$difference, labels=c(1,2,3,4))
 
+saveRDS(alcaldes_difference,paste0(res,"alcaldes_difference.rds"))
+
 # Wide format: This process can generate NA's. This results from the fact that for some years and municipalities
 # elections were not held or not reported. Thus, the no result is reported as NA in the wide version of the df. 
 
@@ -92,39 +95,35 @@ alcaldes_wide_pe <- alcaldes_difference[,c("codmpio","ano","parties_ef")] %>%
 alcaldes_wide_q <- alcaldes_difference[,c("codmpio","ano","dif_q")] %>%
   spread(ano, dif_q, sep = "") 
 
-# Longitudinal (again)
-
-alcaldes_long <- alcaldes_wide %>%
-  gather(ano, diff, ano1997:ano2015)
-
-alcaldes_long_p <- alcaldes_wide_p %>%
-  gather(ano, parties, ano1997:ano2015)
-
-alcaldes_long_pe <- alcaldes_wide_pe %>%
-  gather(ano, parties_ef, ano1997:ano2015)
-
-
 ###########################################################################################################
 ################################################ PLOTS ####################################################
 ###########################################################################################################
 
 
 # Density by year (interactive!)
-d <- ggplot(alcaldes_long, aes(diff, colour = factor(ano))) + geom_density()
+d <- ggplot(alcaldes_difference, aes(difference, colour = factor(ano))) + geom_density() + 
+  labs(color="Año", y= "Densidad", x = "Competencia") + theme_bw()
 ggplotly(d)
 
-p <- ggplot(alcaldes_long_p, aes(parties, colour = factor(ano))) + geom_density()
+p <- ggplot(alcaldes_difference, aes(parties, colour = factor(ano))) + geom_density() + 
+  labs(color="Año", y= "Densidad", x = "Partidos") + theme_bw()
 ggplotly(p)
 
-p <- ggplot(alcaldes_long_pe, aes(parties_ef, colour = factor(ano))) + geom_density()
-ggplotly(p)
+p_ef <- ggplot(alcaldes_difference, aes(parties_ef, colour = factor(ano))) + geom_density() + 
+  labs(color="Año", y= "Densidad", x = "Partidos efectivos") + theme_bw()
+ggplotly(p_ef)
 
 # Number of parties and political competition 
 
-s <- ggplot(alcaldes_difference, aes(parties, difference)) + geom_point(aes(colour = factor(ano), size=votes_tot)) 
+s <- ggplot(alcaldes_difference, aes(parties, difference)) + geom_point(aes(colour = factor(ano), size=votes_tot)) + 
+  labs(shape = "", color="Año", y= "Competencia", x = "Partidos") + theme_bw() 
+
 ggplotly(s)
 
-# + geom_smooth(method = "lm", se=FALSE, color="black", formula = y ~ x) 
+s_ef <- ggplot(alcaldes_difference, aes(parties_ef, difference)) + geom_point(aes(colour = factor(ano), size=votes_tot)) +
+  labs(shape = "", color="Año", y= "Competencia", x = "Partidos efectivos") + theme_bw() 
+
+ggplotly(s_ef)
 
 
 ###########################################################################################################
@@ -169,19 +168,20 @@ ggplotly(g)
 ######################## LONGITUDINAL CLUSTER ANALYSIS: DISCRETE   ########################################
 ###########################################################################################################
 
+
 colnames(alcaldes_wide_q) <- c("codmpio","1997","2000","2003","2007","2011","2015")
 
 # Balanced sample
-alcaldes_wide_qbal <- alcaldes_wide_q[complete.cases(alcaldes_wide_q), ]
+alcaldes_wide_bal <- alcaldes_wide_q[complete.cases(alcaldes_wide_q), ]
 
 # Suppose NA are equivalente to level 4 (low competition)
-alcaldes_wide_qna <- alcaldes_wide_q 
-alcaldes_wide_qna[, 2:7][is.na(alcaldes_wide_qna[, 2:7])] <- 4
+alcaldes_wide_na <- alcaldes_wide_q 
+alcaldes_wide_na[, 2:7][is.na(alcaldes_wide_na[, 2:7])] <- 4
 
 # Prepare sequences
 a <- c(1,2,3,4)
 b <- c("1","2","3","4")
-seq <- seqdef(alcaldes_wide_qbal, 2:7, states = b, labels = a, xtstep = 6)
+seq <- seqdef(alcaldes_wide_bal, 2:7, states = b, labels = a, xtstep = 6)
 head(seq)
 
 # plots 
@@ -213,4 +213,57 @@ table(clus)
 
 seqfplot(seq, group = clus, pbarw = T)
 seqmtplot(seq, group = clus)
+
+###########################################################################################################
+######################## LONGITUDINAL CLUSTER ANALYSIS: DISCRETE PARTIES ##################################
+###########################################################################################################
+
+alcaldes_wide_p_clus <- alcaldes_wide_p
+alcaldes_wide_p_clus[,2:7][ alcaldes_wide_p_clus[ , 2:7 ] >= 6 ] <- 6
+
+colnames(alcaldes_wide_p) <- c("codmpio","1997","2000","2003","2007","2011","2015")
+
+# Balanced sample
+alcaldes_wide_bal <- alcaldes_wide_p_clus[complete.cases(alcaldes_wide_p_clus), ]
+
+# Suppose NA are equivalente to 1 (low competition)
+alcaldes_wide_na <- alcaldes_wide_p_clus 
+alcaldes_wide_na[, 2:7][is.na(alcaldes_wide_na[, 2:7])] <- 1
+
+# Prepare sequences
+a <- c(1,2,3,4,5,6)
+b <- c("1","2","3","4","5","6")
+seq <- seqdef(alcaldes_wide_bal, 2:7, states = b, labels = a, xtstep = 6)
+head(seq)
+
+# plots 
+seqdplot(seq)
+seqfplot(seq, withlegend = F, border = NA, title = "Sequence frequency plot")
+seqdplot(seq, withlegend = F, border = NA, title = "State distribution plot")
+seqHtplot(seq, title = "Entropy index")
+seqtab(seq)
+seq_ient <- seqient(seq, norm = FALSE)
+hist(seq_ient, main = NULL, col = "cyan", xlab = "Entropy")
+
+seq_st <- seqST(seq)
+summary(seq_st)
+hist(seq_st, col = "cyan", main = "Sequence turbulence")
+
+# Distances 
+seq_dist <- seqdist(seq, method = "LCS", with.missing = TRUE)
+ccost <- seqsubm(seq, method = "CONSTANT", cval = 2)
+seq_dist2 <- seqdist(seq, method = "OM", sm = ccost)
+
+# Clustering
+
+clus_seq <- agnes(seq_dist, diss = TRUE, method = "ward")
+# plot(clus_seq, which.plots = 2)
+
+clus <- cutree(clus_seq, k = 2)
+clus <- factor(clus)
+table(clus)
+
+seqfplot(seq, group = clus, pbarw = T)
+seqmtplot(seq, group = clus)
+
 
