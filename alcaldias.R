@@ -1,11 +1,11 @@
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster")
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust")
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -23,10 +23,27 @@ list_files <- list.files(path=data) %>%
   lapply(list.files) %>% lapply(function(x){x[str_detect(x, "Alcal")]}) %>% 
   str_c(data, c("1997", "2000", "2003", "2007", "2011", "2015"),"/", ., sep = "")
 
-#Open dta files into a list
-alcaldes <- lapply(list_files, read_dta) 
-alcaldes[[5]]$nombre <- ""
+# Get party-code list
+party_code <- read_dta("Data/CEDE/codigos_partidos.dta") 
 
+#Open dta files into a list (and add party codes to 2011 and 2015 electoral data)
+alcaldes <- lapply(list_files, read_dta) 
+alcaldes[[5]] <- alcaldes[[5]] %>%
+  mutate(nombre = "") %>%
+  mutate(partido_1 = as.factor(partido_1)) %>%
+  mutate(partido_1 = fct_recode(partido_1,
+                              "PARTIDO ALIANZA SOCIAL INDEPENDIENTE 'ASI'" = "PARTIDO ALIANZA SOCIAL INDEPENDIENTE",
+                              "PARTIDO DE INTEGRACION NACIONAL PIN" = "PARTIDO DE INTEGRACION NACIONAL"
+  )) %>% mutate(partido_1 = as.character(partido_1)) %>%
+  stringdist_left_join(party_code, by = c(partido_1 = "name_party"), distance_col = "distance", max_dist = 2) %>%
+  rename(codpartido = party_code)
+
+alcaldes[[6]] <- alcaldes[[6]] %>%
+  rename(codpartido = codpartido_1)
+
+#Check for not-joined data
+not_joined <- alcaldes[[5]] %>%
+  filter(is.na(codpartido))
 
 #Aggregate totals for each year and clean non-candidate data
 
@@ -45,17 +62,32 @@ alcaldes_aggregate <- alcaldes %>%
     mutate(prop_votes_candidates = votos / sum(votos)) %>%
     mutate(rank = dense_rank(desc(votos))) %>% 
     mutate(party_ef = ifelse(prop_votes_candidates > 0.1, 1,0)) %>%
-    mutate(parties_ef = sum(party_ef)) %>%
-    filter(rank <= 2) %>%
-    mutate(prop_votes_c2 = votos / sum(votos)) 
-  #  %>%  filter(prop_votes_candidates < 1) #Eliminate elections with only one candidate
+    mutate(parties_ef = sum(party_ef)) 
+    
+    %>%
+    mutate(prop_votes_c2 = votos / sum())
+  })
+
+alcaldes_aggregate_r2 <- alcaldes_aggregate %>%
+  lapply(., function(x){
+    filter(x, rank <= 2) %>%
+      mutate(prop_votes_c2 = votos / sum(votos)) 
+#  %>%  filter(prop_votes_candidates < 1) #Eliminate elections with only one candidate
   })
 
 #Arrange data in a long format
+
 alcaldes_merge <- alcaldes_aggregate %>%
   ldply() %>%
   arrange(codmpio, ano, desc(rank)) %>%
-  dplyr::select(c(ano, codmpio, codep, municipio, departamento, parties, parties_ef, rank, primer_apellido, nombre, codpartido, votos, 
+  dplyr::select(c(ano, codmpio, codep, municipio, parties, parties_ef, rank, primer_apellido, nombre, codpartido, votos, 
+                  prop_votes_total, prop_votes_candidates)) 
+
+
+alcaldes_merge_r2 <- alcaldes_aggregate_r2 %>%
+  ldply() %>%
+  arrange(codmpio, ano, desc(rank)) %>%
+  dplyr::select(c(ano, codmpio, codep, municipio, parties, parties_ef, rank, primer_apellido, nombre, codpartido, votos, 
                   prop_votes_total, prop_votes_candidates, prop_votes_c2)) 
 
 
@@ -64,7 +96,7 @@ alcaldes_merge <- alcaldes_aggregate %>%
 ###########################################################################################################
 
 # Calculate difference
-alcaldes_difference <- alcaldes_merge %>%
+alcaldes_difference <- alcaldes_merge_r2 %>%
   arrange(codmpio, ano, desc(rank)) %>%
   group_by(codmpio, ano) %>% #Calculate difference
   mutate(diff =  ave(prop_votes_c2, factor(codmpio), factor(ano), FUN = function(x) c(0, diff(x)))) %>%
@@ -265,5 +297,66 @@ table(clus)
 
 seqfplot(seq, group = clus, pbarw = T)
 seqmtplot(seq, group = clus)
+
+
+###########################################################################################################
+############################### RD: IMCUMBENCY EFFECT - NAÏVE PARTY APPROACH ##############################
+###########################################################################################################
+alcaldes_merge_collapse <- alcaldes_merge %>%
+  group_by(codmpio, ano, codpartido, parties, parties_ef) %>%
+  summarize(prop_votes_candidates = sum(prop_votes_candidates),
+            prop_votes_total = sum(prop_votes_total),
+            rank = max(rank))
+# table(duplicated(alcaldes_merge_collapse[,c("codmpio", "ano", "codpartido")]))
+
+alcaldes_rd <- alcaldes_merge_r2 %>%
+  mutate(ano_lead = as.factor(ano)) %>%
+  mutate(ano_lead = fct_recode(ano_lead,
+                               "2000" = "1997",
+                               "2003" = "2000",
+                               "2007" = "2003",
+                               "2011" = "2007",
+                               "2015" = "2011")) %>%
+  mutate(ano_lead = as.character(ano_lead)) %>%
+  filter(ano != 2015) %>%
+  filter(codpartido == 198) %>%
+  group_by(ano, codmpio, codpartido) %>%
+  mutate(rank_party = dense_rank(desc(votos))) %>% filter(rank_party == 1) %>%
+  merge(alcaldes_merge_collapse,  by.x = c("ano_lead", "codmpio","codpartido"), by.y = c("ano", "codmpio", "codpartido"), 
+        suffixes = c("_t", "_t1"), all.x = T) %>%
+  dplyr::select(codmpio, ano, ano_lead, codpartido, rank_t,
+                rank_t1 ,parties_t,parties_ef_t,parties_t1,parties_ef_t1, starts_with("prop")) %>%
+  arrange(codmpio, ano) %>%
+  mutate(reelection = ifelse(rank_t == 1 & rank_t1 == 1, 1, 0))
+
+dim(alcaldes_rd)
+hist(alcaldes_rd$prop_votes_c2)
+# View(alcaldes_rd)
+
+alcaldes_rd_fin <- alcaldes_rd
+# alcaldes_rd_fin <- subset(alcaldes_rd, ano == 2000)
+
+a <- rdrobust(y = alcaldes_rd_fin$prop_votes_total_t1,
+              x = alcaldes_rd_fin$prop_votes_c2,
+              # covs = cbind(as.factor(alcaldes_rd$ano), alcaldes_rd$parties_t),
+              c = 0.5,
+              all = T
+              )
+a
+
+
+b <- lm(formula = prop_votes_total_t ~ prop_votes_candidates_t1*incumbent, data = alcaldes_rd) 
+
+
+
+
+
+  
+
+
+
+
+
+
 
 
