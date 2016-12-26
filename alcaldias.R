@@ -4,12 +4,12 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
-res <-"Data/CEDE/Bases trabajo/"
+res <-"Data/CEDE/Bases/"
 
 ###########################################################################################################
 ############################################### ARRANGE DATA ##############################################
@@ -24,7 +24,7 @@ list_files <- list.files(path=data) %>%
   str_c(data, c("1997", "2000", "2003", "2007", "2011", "2015"),"/", ., sep = "")
 
 # Get party-code list
-party_code <- read_dta("Data/CEDE/codigos_partidos.dta") 
+party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 
 #Open dta files into a list (and add party codes to 2011 and 2015 electoral data)
 alcaldes <- lapply(list_files, read_dta) 
@@ -49,30 +49,25 @@ not_joined <- alcaldes[[5]] %>%
 
 non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
                          "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
-                         "Votos no marcados","RETIRADO (A)", "TARJETAS NO MARCADOS")
+                         "Votos no marcados","COMITE PROMOTOR VOTO EN BLANCO","RETIRADO (A)", "TARJETAS NO MARCADOS")
 
 alcaldes_aggregate <- alcaldes %>%
   lapply(., function(x){
     arrange(x, codmpio, ano) %>%
-    mutate(non_candidate = ifelse(.$primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
+    filter(is.na(votos)==0) %>% 
+    mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
+    mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
     group_by(codmpio, ano) %>%
+    mutate(rank = row_number(desc(votos))) %>% 
     mutate(prop_votes_total = votos / sum(votos)) %>%
-    filter(non_candidate == 0)  %>%
-    mutate(parties = n()) %>%
-    mutate(prop_votes_candidates = votos / sum(votos)) %>%
-    mutate(rank = dense_rank(desc(votos))) %>% 
-    mutate(party_ef = ifelse(prop_votes_candidates > 0.1, 1,0)) %>%
-    mutate(parties_ef = sum(party_ef)) 
-    
-    %>%
-    mutate(prop_votes_c2 = votos / sum())
-  })
-
-alcaldes_aggregate_r2 <- alcaldes_aggregate %>%
-  lapply(., function(x){
-    filter(x, rank <= 2) %>%
-      mutate(prop_votes_c2 = votos / sum(votos)) 
-#  %>%  filter(prop_votes_candidates < 1) #Eliminate elections with only one candidate
+    mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>%
+    mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
+    mutate(votos_r2 = ifelse(rank <= 2, votos,0)) %>% 
+    mutate(prop_votes_c2 = votos / sum(votos_r2)) %>% 
+    mutate(parties = sum(cand)) %>%
+    mutate(party_ef = ifelse(prop_votes_cand > 0.1, 1,0)) %>%
+    mutate(parties_ef = sum(party_ef)) %>% 
+    filter(is.na(prop_votes_total)==0) 
   })
 
 #Arrange data in a long format
@@ -80,22 +75,27 @@ alcaldes_aggregate_r2 <- alcaldes_aggregate %>%
 alcaldes_merge <- alcaldes_aggregate %>%
   ldply() %>%
   arrange(codmpio, ano, desc(rank)) %>%
-  dplyr::select(c(ano, codmpio, codep, municipio, parties, parties_ef, rank, primer_apellido, nombre, codpartido, votos, 
-                  prop_votes_total, prop_votes_candidates)) 
+  dplyr::select(c(ano, codmpio, codep, municipio, parties, parties_ef, rank, primer_apellido, nombre, codpartido, cand, votos, votos_cand, votos_r2,
+  prop_votes_total, prop_votes_cand, prop_votes_c2)) 
 
+# Only rank <= 2 and drop if total votes == 0 
+alcaldes_merge_r2 <- alcaldes_merge %>% filter(rank <= 2)
+    #  %>%  filter(prop_votes_candidates < 1) #Eliminate elections with only one candidate
 
-alcaldes_merge_r2 <- alcaldes_aggregate_r2 %>%
-  ldply() %>%
-  arrange(codmpio, ano, desc(rank)) %>%
-  dplyr::select(c(ano, codmpio, codep, municipio, parties, parties_ef, rank, primer_apellido, nombre, codpartido, votos, 
-                  prop_votes_total, prop_votes_candidates, prop_votes_c2)) 
+# Diagnistics
+
+hist(alcaldes_merge_r2$prop_votes_c2)
+alcaldes_merge_r2 %>% filter(is.na(prop_votes_c2)==0) %>%
+  group_by(rank) %>% summarize(mean=mean(prop_votes_c2),sd=sd(prop_votes_c2),median=median(prop_votes_c2),min=min(prop_votes_c2),max=max(prop_votes_c2))
+
+# alcaldes_winner <- alcaldes_merge %>% filter(rank == 1)
 
 
 ###########################################################################################################
 ######################################### ARRANGE DATA II : GAPS ##########################################
 ###########################################################################################################
 
-# Calculate difference
+# Calculate difference between first and second
 alcaldes_difference <- alcaldes_merge_r2 %>%
   arrange(codmpio, ano, desc(rank)) %>%
   group_by(codmpio, ano) %>% #Calculate difference
@@ -103,14 +103,16 @@ alcaldes_difference <- alcaldes_merge_r2 %>%
   mutate(diff = ifelse(diff==0 & rank==1 & prop_votes_c2 == 1, 1, diff))
 
 #Collapse by codmpio and year, and create categorical variables
-
 alcaldes_difference <- alcaldes_difference %>%
   dplyr::group_by(codmpio, ano) %>%
   dplyr::summarize(votes_tot = sum(votos), parties = mean(parties),parties_ef = mean(parties_ef), difference = sum(diff)) 
 
 alcaldes_difference$dif_q <- quantcut(alcaldes_difference$difference, labels=c(1,2,3,4))
-
 saveRDS(alcaldes_difference,paste0(res,"alcaldes_difference.rds"))
+
+alcaldes_difference %>% 
+  group_by(dif_q) %>% summarize(mean=mean(difference),sd=sd(difference),min=min(difference),max=max(difference))
+
 
 # Wide format: This process can generate NA's. This results from the fact that for some years and municipalities
 # elections were not held or not reported. Thus, the no result is reported as NA in the wide version of the df. 
@@ -291,7 +293,7 @@ seq_dist2 <- seqdist(seq, method = "OM", sm = ccost)
 clus_seq <- agnes(seq_dist, diss = TRUE, method = "ward")
 # plot(clus_seq, which.plots = 2)
 
-clus <- cutree(clus_seq, k = 2)
+clus <- cutree(clus_seq, k = 4)
 clus <- factor(clus)
 table(clus)
 
@@ -302,50 +304,66 @@ seqmtplot(seq, group = clus)
 ###########################################################################################################
 ############################### RD: IMCUMBENCY EFFECT - NAÏVE PARTY APPROACH ##############################
 ###########################################################################################################
+
+# Create lagged year and collapse by party (or group of parties) for t+1 outcome  
 alcaldes_merge_collapse <- alcaldes_merge %>%
-  group_by(codmpio, ano, codpartido, parties, parties_ef) %>%
-  summarize(prop_votes_candidates = sum(prop_votes_candidates),
+  filter(ano != 1997) %>%
+  filter(cand == 1) %>%
+  mutate(ano_lag = as.factor(ano)) %>%
+  mutate(ano_lag = fct_recode(ano_lag,
+                               "1997" = "2000",
+                               "2000" = "2003",
+                               "2003" = "2007",
+                               "2007" = "2011",
+                               "2011" = "2015")) %>%
+  mutate(ano_lag = as.character(ano_lag)) %>%
+  rename(ano_t1 = ano) %>% 
+  group_by(codmpio, ano_lag, ano_t1, codpartido, parties, parties_ef) %>%
+  summarize(prop_votes_cand = sum(prop_votes_cand),
             prop_votes_total = sum(prop_votes_total),
             rank = max(rank))
-# table(duplicated(alcaldes_merge_collapse[,c("codmpio", "ano", "codpartido")]))
+
+# Test duplicates
+table(duplicated(alcaldes_merge_collapse[,c("codmpio", "ano_lag", "codpartido")]))
+
+# For a specific party (or group of parties), merge RD in t to outcomes in t+1
+# Drop elections where party is both 1 and 2 in t
+
+sort(table(alcaldes_merge_r2$codpartido),decreasing=TRUE)[1:20]
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
-  mutate(ano_lead = as.factor(ano)) %>%
-  mutate(ano_lead = fct_recode(ano_lead,
-                               "2000" = "1997",
-                               "2003" = "2000",
-                               "2007" = "2003",
-                               "2011" = "2007",
-                               "2015" = "2011")) %>%
-  mutate(ano_lead = as.character(ano_lead)) %>%
-  filter(ano != 2015) %>%
   filter(codpartido == 198) %>%
-  group_by(ano, codmpio, codpartido) %>%
-  mutate(rank_party = dense_rank(desc(votos))) %>% filter(rank_party == 1) %>%
-  merge(alcaldes_merge_collapse,  by.x = c("ano_lead", "codmpio","codpartido"), by.y = c("ano", "codmpio", "codpartido"), 
+  filter(ano != 2015) %>%
+  group_by(ano, codmpio) %>%
+  mutate(party_2 = n()) %>%
+  filter(party_2 == 1) %>% 
+  mutate(win_t = ifelse(rank==1,1,0)) %>% 
+  merge(alcaldes_merge_collapse,  by.x = c("ano", "codmpio","codpartido"), by.y = c("ano_lag", "codmpio", "codpartido"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  dplyr::select(codmpio, ano, ano_lead, codpartido, rank_t,
+  dplyr::select(codmpio, ano, ano_t1, codpartido, win_t, rank_t,
                 rank_t1 ,parties_t,parties_ef_t,parties_t1,parties_ef_t1, starts_with("prop")) %>%
   arrange(codmpio, ano) %>%
   mutate(reelection = ifelse(rank_t == 1 & rank_t1 == 1, 1, 0))
 
-dim(alcaldes_rd)
-hist(alcaldes_rd$prop_votes_c2)
-# View(alcaldes_rd)
-
+# RD 
 alcaldes_rd_fin <- alcaldes_rd
-# alcaldes_rd_fin <- subset(alcaldes_rd, ano == 2000)
+# alcaldes_rd_fin <- subset(alcaldes_rd, ano == 2007)
+dim(alcaldes_rd_fin)
+hist(alcaldes_rd_fin$prop_votes_c2)
 
-a <- rdrobust(y = alcaldes_rd_fin$prop_votes_total_t1,
+rdrobust(y = alcaldes_rd_fin$prop_votes_total_t1,
               x = alcaldes_rd_fin$prop_votes_c2,
-              # covs = cbind(as.factor(alcaldes_rd$ano), alcaldes_rd$parties_t),
+              covs = cbind(as.factor(alcaldes_rd$ano), alcaldes_rd$parties_t),
               c = 0.5,
               all = T
               )
-a
 
+alcaldes_rd_fin_b <- alcaldes_rd_fin %>% filter(prop_votes_c2 >= (0.5 - 0.0851) & prop_votes_c2 <= (0.5 + 0.0851))
+dim(alcaldes_rd_fin_b)
+hist(alcaldes_rd_fin_b$prop_votes_c2)
 
-b <- lm(formula = prop_votes_total_t ~ prop_votes_candidates_t1*incumbent, data = alcaldes_rd) 
+summary(lm(formula = prop_votes_total_t1 ~ prop_votes_c2 + win_t, data = alcaldes_rd_fin_b))
+
 
 
 
