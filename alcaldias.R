@@ -15,7 +15,8 @@ res <-"Data/CEDE/Bases/"
 ############################################### ARRANGE DATA ##############################################
 ###########################################################################################################
 
-# Get mayor's election data (only from electoral years since 1997). 
+##########################
+# Get mayor's election data (Winners and loosers since 1997). 
 
 list_files <- list.files(path=data) %>%
   .[. %in% c("1997", "2000", "2003", "2007", "2011", "2015")]%>%
@@ -71,7 +72,6 @@ alcaldes_aggregate <- alcaldes %>%
   })
 
 #Arrange data in a long format
-
 alcaldes_merge <- alcaldes_aggregate %>%
   ldply() %>%
   arrange(codmpio, ano, desc(rank)) %>%
@@ -83,12 +83,54 @@ alcaldes_merge_r2 <- alcaldes_merge %>% filter(rank <= 2)
     #  %>%  filter(prop_votes_candidates < 1) #Eliminate elections with only one candidate
 
 # Diagnistics
-
 hist(alcaldes_merge_r2$prop_votes_c2)
 alcaldes_merge_r2 %>% filter(is.na(prop_votes_c2)==0) %>%
   group_by(rank) %>% summarize(mean=mean(prop_votes_c2),sd=sd(prop_votes_c2),median=median(prop_votes_c2),min=min(prop_votes_c2),max=max(prop_votes_c2))
 
-# alcaldes_winner <- alcaldes_merge %>% filter(rank == 1)
+# test <- alcaldes_merge %>% filter(rank == 1)
+
+
+##########################
+# Only winners 1988-1994 
+
+list_files_old <- list.files(path=data) %>%
+  .[. %in% c("1988", "1990", "1992", "1994")]%>%
+  str_c(data, ., sep = "") %>%
+  lapply(list.files) %>% lapply(function(x){x[str_detect(x, "Alcal")]}) %>% 
+  str_c(data, c("1988", "1990", "1992", "1994"),"/", ., sep = "")
+
+alcaldes_old <- lapply(list_files_old, read_dta) 
+View(alcaldes_old[[4]])
+
+non_candidate_votes <- c("RESTO DE VOTACION","VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
+                         "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
+                         "Votos no marcados","COMITE PROMOTOR VOTO EN BLANCO","RETIRADO (A)", "TARJETAS NO MARCADOS")
+
+alcaldes_aggregate_old <- alcaldes_old %>%
+  lapply(., function(x){
+    arrange(x, codmpio, ano) %>%
+      filter(is.na(votos)==0) %>% 
+      mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
+      mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
+      group_by(codmpio, ano) %>%
+      mutate(prop_votes_total = votos / sum(votos)) %>%
+      mutate(n = n())     %>%
+      mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>% 
+      mutate(rank = row_number(desc(votos_cand))) %>% 
+      filter(rank==1 & no_cand==0)   %>%
+      filter(is.na(prop_votes_total)==0) 
+    
+  })
+
+View(alcaldes_aggregate_old[[4]])
+
+alcaldes_merge_old <- alcaldes_aggregate_old %>%
+  ldply() %>%
+  arrange(codmpio, ano, desc(rank)) %>%
+  dplyr::select(c(ano, codmpio, codep, municipio, primer_apellido, nombre, codpartido, votos, prop_votes_total)) 
+
+hist(alcaldes_merge_old$prop_votes_total)
+
 
 
 ###########################################################################################################
