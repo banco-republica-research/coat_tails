@@ -12,7 +12,7 @@ data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 
 ###########################################################################################################
-############################################### ARRANGE DATA ##############################################
+################################### LOAD AND ARRANGE DATA I  ##############################################
 ###########################################################################################################
 
 ##########################
@@ -87,7 +87,7 @@ hist(alcaldes_merge_r2$prop_votes_c2)
 alcaldes_merge_r2 %>% filter(is.na(prop_votes_c2)==0) %>%
   group_by(rank) %>% summarize(mean=mean(prop_votes_c2),sd=sd(prop_votes_c2),median=median(prop_votes_c2),min=min(prop_votes_c2),max=max(prop_votes_c2))
 
-# test <- alcaldes_merge %>% filter(rank == 1)
+saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
 
 
 ##########################
@@ -100,7 +100,6 @@ list_files_old <- list.files(path=data) %>%
   str_c(data, c("1988", "1990", "1992", "1994"),"/", ., sep = "")
 
 alcaldes_old <- lapply(list_files_old, read_dta) 
-View(alcaldes_old[[4]])
 
 non_candidate_votes <- c("RESTO DE VOTACION","VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
                          "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
@@ -119,17 +118,15 @@ alcaldes_aggregate_old <- alcaldes_old %>%
       mutate(rank = row_number(desc(votos_cand))) %>% 
       filter(rank==1 & no_cand==0)   %>%
       filter(is.na(prop_votes_total)==0) 
-    
   })
-
-View(alcaldes_aggregate_old[[4]])
 
 alcaldes_merge_old <- alcaldes_aggregate_old %>%
   ldply() %>%
   arrange(codmpio, ano, desc(rank)) %>%
-  dplyr::select(c(ano, codmpio, codep, municipio, primer_apellido, nombre, codpartido, votos, prop_votes_total)) 
+  dplyr::select(c(ano, codmpio, municipio, primer_apellido, nombre, codpartido, votos, prop_votes_total)) 
 
 hist(alcaldes_merge_old$prop_votes_total)
+saveRDS(alcaldes_merge_old,paste0(res,"alcaldes_merge_old.rds"))
 
 
 
@@ -171,8 +168,59 @@ alcaldes_wide_pe <- alcaldes_difference[,c("codmpio","ano","parties_ef")] %>%
 alcaldes_wide_q <- alcaldes_difference[,c("codmpio","ano","dif_q")] %>%
   spread(ano, dif_q, sep = "") 
 
+
 ###########################################################################################################
-################################################ PLOTS ####################################################
+###################################### WINNING PARTIES ####################################################
+###########################################################################################################
+
+# Winning parties 1997-2015
+alcaldes_merge_new <- alcaldes_merge %>% filter(rank == 1) %>% 
+  dplyr::select(ano, codmpio, municipio, primer_apellido, nombre,codpartido, votos, prop_votes_total) 
+
+# Append old and new 
+alcaldes_win <- rbind(alcaldes_merge_old, alcaldes_merge_new) %>% arrange(codmpio, ano)
+
+# Density vote share by year (interactive!)
+d <- ggplot(alcaldes_win, aes(prop_votes_total, colour = factor(ano))) + geom_density() + 
+  labs(color="Año", y= "Densidad", x = "votes winner") + theme_bw()
+ggplotly(d)
+
+# Party win by year
+parties_win <- alcaldes_win %>% group_by(ano, codpartido) %>% summarize(win = n()) %>% 
+  merge(party_code,  by.x = c("codpartido"), by.y = c("party_code"), all.x = T) %>% 
+  arrange(ano, desc(win)) 
+
+# Big parties: >x win in at least one year
+big_parties <- parties_win %>% filter(win >= 20) %>% filter(codpartido!= 98 & codpartido!= 99) %>% 
+  group_by(codpartido, name_party) %>% summarize(win = sum(win))%>% 
+  arrange(desc(win)) 
+
+# Keep only big parties and collapse others
+parties_win_big <- parties_win %>% 
+  mutate(party_big = ifelse(codpartido %in% big_parties$codpartido, codpartido, 9999)) %>% 
+  mutate(party = ifelse(codpartido %in% big_parties$codpartido, name_party, "Otros")) %>% 
+  group_by(ano, party_big, party) %>% summarize(win = sum(win)) %>% 
+  group_by(ano) %>% 
+  mutate(win_share = win/sum(win)) %>% 
+  arrange(ano, party_big) 
+  
+# Keep liberal/conservador 
+parties_win_lc <- parties_win %>% 
+  mutate(party_lc = ifelse(codpartido %in% c(1,2), codpartido, 9999)) %>% 
+  mutate(party = ifelse(codpartido %in% c(1,2), name_party, "Otros")) %>% 
+  group_by(ano, party_lc, party) %>% summarize(win = sum(win)) %>% 
+  group_by(ano) %>% 
+  mutate(win_share = win/sum(win)) %>% 
+  arrange(ano, party_lc) 
+
+
+ggplot(parties_win_lc, aes(x = ano, y = win_share, fill = party)) + geom_bar(stat = "identity") + 
+  labs(x = "Año") + scale_x_continuous(breaks = round(seq(min(parties_win_big$ano), max(parties_win_big$ano), by = 1),1)) + 
+  theme_bw() + scale_fill_manual(values=c("grey","blue","red"), name = "", labels = c("Otros","Conservador","Liberal")) 
+
+
+###########################################################################################################
+##################################### DIAGNOSTIC PLOTS ####################################################
 ###########################################################################################################
 
 
@@ -203,7 +251,7 @@ ggplotly(s_ef)
 
 
 ###########################################################################################################
-######################## LONGITUDINAL CLUSTER ANALYSIS: CONTINUOUS ########################################
+######################## LONGITUDINAL CLUSTER: CONTINUOUS COMPETITION #####################################
 ###########################################################################################################
 
 # To account for the no-election situation, the data.frame can be "cleaned" of NA's removing all the 
@@ -241,7 +289,7 @@ ggplotly(g)
 
 
 ###########################################################################################################
-######################## LONGITUDINAL CLUSTER ANALYSIS: DISCRETE   ########################################
+######################## LONGITUDINAL CLUSTER: DISCRETE COMPETITION #######################################
 ###########################################################################################################
 
 
@@ -279,7 +327,6 @@ ccost <- seqsubm(seq, method = "CONSTANT", cval = 2)
 seq_dist2 <- seqdist(seq, method = "OM", sm = ccost)
 
 # Clustering
-
 clus_seq <- agnes(seq_dist2, diss = TRUE, method = "ward")
 # plot(clus_seq, which.plots = 2)
 
@@ -291,7 +338,7 @@ seqfplot(seq, group = clus, pbarw = T)
 seqmtplot(seq, group = clus)
 
 ###########################################################################################################
-######################## LONGITUDINAL CLUSTER ANALYSIS: DISCRETE PARTIES ##################################
+############################## LONGITUDINAL CLUSTER: DISCRETE PARTIES #####################################
 ###########################################################################################################
 
 alcaldes_wide_p_clus <- alcaldes_wide_p
