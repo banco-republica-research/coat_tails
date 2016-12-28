@@ -15,6 +15,12 @@ res <-"Data/CEDE/Bases/"
 ############################### WINNING PARTIES 1997-2015 #################################################
 ###########################################################################################################
 
+# Load data
+alcaldes_difference <- readRDS(paste0(res,"alcaldes_difference.rds"))
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
+alcaldes_merge_old <- readRDS(paste0(res,"alcaldes_merge_old.rds"))
+party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
+
 # Winning parties 1997-2015
 alcaldes_merge_new <- alcaldes_merge %>% filter(rank == 1) %>% 
   dplyr::select(ano, codmpio, municipio, primer_apellido, nombre,codpartido, votos, prop_votes_total) 
@@ -33,6 +39,20 @@ parties_win <- alcaldes_win %>% group_by(ano, codpartido) %>% summarize(win = n(
   merge(party_code,  by.x = c("codpartido"), by.y = c("party_code"), all.x = T) %>% 
   arrange(ano, desc(win)) 
 
+# Big parties: >x win in at least one year
+big_parties <- parties_win  %>% filter(codpartido!= 98 & codpartido!= 99) %>% filter(win >= 20) %>% 
+  group_by(codpartido, name_party) %>% summarize(win = sum(win))%>% 
+  arrange(desc(win)) 
+
+# Keep only big parties and collapse others
+parties_win_big <- parties_win %>% 
+  mutate(party_big = ifelse(codpartido %in% big_parties$codpartido, codpartido, 9999)) %>% 
+  mutate(party = ifelse(codpartido %in% big_parties$codpartido, name_party, "Otros")) %>% 
+  group_by(ano, party_big, party) %>% summarize(win = sum(win)) %>% 
+  group_by(ano) %>% 
+  mutate(win_share = win/sum(win)) %>% 
+  arrange(ano, party_big) 
+
 # Keep liberal/conservador 
 parties_win_lc <- parties_win %>% 
   mutate(party_lc = ifelse(codpartido %in% c(1,2), codpartido, 9999)) %>% 
@@ -47,19 +67,6 @@ ggplot(parties_win_lc, aes(x = ano, y = win_share, fill = party)) + geom_bar(sta
   theme_bw() + scale_fill_manual(values=c("grey","blue","red"), name = "", labels = c("Otros","Conservador","Liberal")) 
 
 
-# Big parties: >x win in at least one year
-big_parties <- parties_win  %>% filter(codpartido!= 98 & codpartido!= 99) %>% filter(win >= 20) %>% 
-  group_by(codpartido, name_party) %>% summarize(win = sum(win))%>% 
-  arrange(desc(win)) 
-
-# Keep only big parties and collapse others
-parties_win_big <- parties_win %>% 
-  mutate(party_big = ifelse(codpartido %in% big_parties$codpartido, codpartido, 9999)) %>% 
-  mutate(party = ifelse(codpartido %in% big_parties$codpartido, name_party, "Otros")) %>% 
-  group_by(ano, party_big, party) %>% summarize(win = sum(win)) %>% 
-  group_by(ano) %>% 
-  mutate(win_share = win/sum(win)) %>% 
-  arrange(ano, party_big) 
 
 ###########################################################################################################
 ################################ COMPETITION AND NO PARTIES ###############################################
