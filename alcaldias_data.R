@@ -12,7 +12,7 @@ data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 
 ###########################################################################################################
-################################### LOAD AND ARRANGE DATA I  ##############################################
+############################ Winners and loosers since 1997  ##############################################
 ###########################################################################################################
 
 ##########################
@@ -29,22 +29,37 @@ party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 
 #Open dta files into a list (and add party codes to 2011 and 2015 electoral data)
 alcaldes <- lapply(list_files, read_dta) 
+
+# Party codes in 2003: # correct POLO that changed name
+alcaldes[[3]] <- alcaldes[[3]] %>%
+  mutate(codpartido = as.factor(codpartido)) %>%
+  mutate(codpartido = fct_recode(codpartido, "194" = "164")) %>% 
+  mutate(codpartido = as.character(codpartido)) 
+# table(alcaldes[[3]]$codpartido)
+
+# Party codes in 2011: merged from party name
+# correct parties that changed name
 alcaldes[[5]] <- alcaldes[[5]] %>%
   mutate(nombre = "") %>%
   mutate(partido_1 = as.factor(partido_1)) %>%
   mutate(partido_1 = fct_recode(partido_1,
-                              "PARTIDO ALIANZA SOCIAL INDEPENDIENTE 'ASI'" = "PARTIDO ALIANZA SOCIAL INDEPENDIENTE",
-                              "PARTIDO DE INTEGRACION NACIONAL PIN" = "PARTIDO DE INTEGRACION NACIONAL"
-  )) %>% mutate(partido_1 = as.character(partido_1)) %>%
+                              "MOVIMIENTO ALIANZA SOC INDIGENA ASI" = "PARTIDO ALIANZA SOCIAL INDEPENDIENTE",
+                              "PARTIDO DE INTEGRACION NACIONAL PIN" = "PARTIDO DE INTEGRACION NACIONAL" )) %>% 
+  mutate(partido_1 = as.character(partido_1)) %>%
   stringdist_left_join(party_code, by = c(partido_1 = "name_party"), distance_col = "distance", max_dist = 2) %>%
   rename(codpartido = party_code)
 
+# Party codes in 2015: codpartido_1 
+# correct ASI that changed name
 alcaldes[[6]] <- alcaldes[[6]] %>%
-  rename(codpartido = codpartido_1)
+  mutate(codpartido = as.factor(codpartido_1)) %>%
+  mutate(codpartido = fct_recode(codpartido, "15" = "654")) %>% 
+  mutate(codpartido = as.character(codpartido)) 
+# table(alcaldes[[6]]$codpartido)
+
 
 #Check for not-joined data
-not_joined <- alcaldes[[5]] %>%
-  filter(is.na(codpartido))
+# not_joined <- alcaldes[[5]] %>% filter(is.na(codpartido))
 
 #Aggregate totals for each year and clean non-candidate data
 
@@ -80,18 +95,17 @@ alcaldes_merge <- alcaldes_aggregate %>%
 
 saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
 
+##########################
+# Differences between winner and best runner up 
+
 # Only rank <= 2 and drop if total votes == 0 
 alcaldes_merge_r2 <- alcaldes_merge %>% filter(rank <= 2)
-    #  %>%  filter(prop_votes_candidates < 1) #Eliminate elections with only one candidate
+#  %>%  filter(prop_votes_candidates < 1) #drop elections with only one candidate
 
 # Diagnistics
 hist(alcaldes_merge_r2$prop_votes_c2)
 alcaldes_merge_r2 %>% filter(is.na(prop_votes_c2)==0) %>%
   group_by(rank) %>% summarize(mean=mean(prop_votes_c2),sd=sd(prop_votes_c2),median=median(prop_votes_c2),min=min(prop_votes_c2),max=max(prop_votes_c2))
-
-
-##########################
-# Differences between winner and best runner up 
 
 # Calculate difference between first and second
 alcaldes_difference <- alcaldes_merge_r2 %>%
@@ -108,12 +122,13 @@ alcaldes_difference <- alcaldes_difference %>%
 alcaldes_difference$dif_q <- quantcut(alcaldes_difference$difference, labels=c(1,2,3,4))
 saveRDS(alcaldes_difference,paste0(res,"alcaldes_difference.rds"))
 
-alcaldes_difference %>% 
-  group_by(dif_q) %>% summarize(mean=mean(difference),sd=sd(difference),min=min(difference),max=max(difference))
+# check quantcut
+# alcaldes_difference %>% group_by(dif_q) %>% summarize(mean=mean(difference),sd=sd(difference),min=min(difference),max=max(difference))
 
 
-##########################
-# Only winners 1988-1994 
+###########################################################################################################
+#################################### Only winners 1988-1994  ##############################################
+###########################################################################################################
 
 list_files_old <- list.files(path=data) %>%
   .[. %in% c("1988", "1990", "1992", "1994")]%>%
@@ -149,89 +164,5 @@ alcaldes_merge_old <- alcaldes_aggregate_old %>%
 
 hist(alcaldes_merge_old$prop_votes_total)
 saveRDS(alcaldes_merge_old,paste0(res,"alcaldes_merge_old.rds"))
-
-
-
-
-###########################################################################################################
-###################################### WINNING PARTIES ####################################################
-###########################################################################################################
-
-# Winning parties 1997-2015
-alcaldes_merge_new <- alcaldes_merge %>% filter(rank == 1) %>% 
-  dplyr::select(ano, codmpio, municipio, primer_apellido, nombre,codpartido, votos, prop_votes_total) 
-
-# Append old and new 
-alcaldes_win <- rbind(alcaldes_merge_old, alcaldes_merge_new) %>% arrange(codmpio, ano)
-
-# Density vote share by year (interactive!)
-d <- ggplot(alcaldes_win, aes(prop_votes_total, colour = factor(ano))) + geom_density() + 
-  labs(color="Año", y= "Densidad", x = "votes winner") + theme_bw()
-ggplotly(d)
-
-# Party win by year
-parties_win <- alcaldes_win %>% group_by(ano, codpartido) %>% summarize(win = n()) %>% 
-  merge(party_code,  by.x = c("codpartido"), by.y = c("party_code"), all.x = T) %>% 
-  arrange(ano, desc(win)) 
-
-# Big parties: >x win in at least one year
-big_parties <- parties_win %>% filter(win >= 20) %>% filter(codpartido!= 98 & codpartido!= 99) %>% 
-  group_by(codpartido, name_party) %>% summarize(win = sum(win))%>% 
-  arrange(desc(win)) 
-
-# Keep only big parties and collapse others
-parties_win_big <- parties_win %>% 
-  mutate(party_big = ifelse(codpartido %in% big_parties$codpartido, codpartido, 9999)) %>% 
-  mutate(party = ifelse(codpartido %in% big_parties$codpartido, name_party, "Otros")) %>% 
-  group_by(ano, party_big, party) %>% summarize(win = sum(win)) %>% 
-  group_by(ano) %>% 
-  mutate(win_share = win/sum(win)) %>% 
-  arrange(ano, party_big) 
-  
-# Keep liberal/conservador 
-parties_win_lc <- parties_win %>% 
-  mutate(party_lc = ifelse(codpartido %in% c(1,2), codpartido, 9999)) %>% 
-  mutate(party = ifelse(codpartido %in% c(1,2), name_party, "Otros")) %>% 
-  group_by(ano, party_lc, party) %>% summarize(win = sum(win)) %>% 
-  group_by(ano) %>% 
-  mutate(win_share = win/sum(win)) %>% 
-  arrange(ano, party_lc) 
-
-
-ggplot(parties_win_lc, aes(x = ano, y = win_share, fill = party)) + geom_bar(stat = "identity") + 
-  labs(x = "Año") + scale_x_continuous(breaks = round(seq(min(parties_win_big$ano), max(parties_win_big$ano), by = 1),1)) + 
-  theme_bw() + scale_fill_manual(values=c("grey","blue","red"), name = "", labels = c("Otros","Conservador","Liberal")) 
-
-
-###########################################################################################################
-################################ COMPETITION AND NO PARTIES ###############################################
-###########################################################################################################
-
-
-# Density by year (interactive!)
-d <- ggplot(alcaldes_difference, aes(difference, colour = factor(ano))) + geom_density() + 
-  labs(color="Año", y= "Densidad", x = "Competencia") + theme_bw()
-ggplotly(d)
-
-p <- ggplot(alcaldes_difference, aes(parties, colour = factor(ano))) + geom_density() + 
-  labs(color="Año", y= "Densidad", x = "Partidos") + theme_bw()
-ggplotly(p)
-
-p_ef <- ggplot(alcaldes_difference, aes(parties_ef, colour = factor(ano))) + geom_density() + 
-  labs(color="Año", y= "Densidad", x = "Partidos efectivos") + theme_bw()
-ggplotly(p_ef)
-
-# Number of parties and political competition 
-
-s <- ggplot(alcaldes_difference, aes(parties, difference)) + geom_point(aes(colour = factor(ano), size=votes_tot)) + 
-  labs(shape = "", color="Año", y= "Competencia", x = "Partidos") + theme_bw() 
-
-ggplotly(s)
-
-s_ef <- ggplot(alcaldes_difference, aes(parties_ef, difference)) + geom_point(aes(colour = factor(ano), size=votes_tot)) +
-  labs(shape = "", color="Año", y= "Competencia", x = "Partidos efectivos") + theme_bw() 
-
-ggplotly(s_ef)
-
 
 
