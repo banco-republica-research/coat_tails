@@ -98,14 +98,14 @@ parties <- alcaldes_merge %>% filter(rank == 1) %>% filter(codpartido!= 98 & cod
   arrange(desc(win)) 
 
 # list of N big parties (by total number of wins) 
-big_parties <- parties[1:50,]$codpartido
+big_parties <- parties[1:20,]$codpartido
 
-# Function: Create RD dataset by party: Restrict to big parties and difference to bdw < 0.15
+# Function: Create RD dataset by party (Restrict to big parties and difference to bdw < 0.15)
 RD_data <- function(x){
 alcaldes_rd <- alcaldes_merge_r2 %>%
   filter(codpartido == x) %>%
   filter(ano != 2015) %>%
-  filter(prop_votes_c2 >= 0.35 & prop_votes_c2 <= 0.65) %>%
+#  filter(prop_votes_c2 >= 0.35 & prop_votes_c2 <= 0.65) %>%
   group_by(ano, codmpio) %>%
   mutate(party_2 = n()) %>%
   filter(party_2 == 1) %>% 
@@ -137,7 +137,7 @@ a <- rdrobust(y = alcaldes_rd_n$prop_votes_total_t1,
 alcaldes_rd_nb <- alcaldes_rd_n %>% filter(prop_votes_c2 >= (0.5 - a$bws[1,1]) & prop_votes_c2 <= (0.5 + a$bws[1,1]))
 dim(alcaldes_rd_nb)
 hist(alcaldes_rd_nb$prop_votes_c2)
-b <- lm(formula = prop_votes_total_t1 ~ prop_votes_c2 + win_t + factor(ano)+ factor(codpartido), data = alcaldes_rd_nb)
+b <- lm(formula = prop_votes_total_t1 ~ prop_votes_c2 + win_t + factor(ano)+ factor(codpartido) + factor(codmpio), data = alcaldes_rd_nb)
 
 a 
 summary(b)
