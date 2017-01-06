@@ -25,12 +25,12 @@ party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 # Load presidential for t+1
 president <- readRDS(paste0(res, "presidentes_merge.rds")) %>%
   filter(rank <= 2) %>%
-  mutate(coalition = ifelse(rank == 1 , 1, 0))
+  mutate(coalition = ifelse(rank == 1 , 1, 0)) 
 
 
 
 ###########################################################################################################
-############################### RD: IMCUMBENCY EFFECT - ONE PARTY APPROACH ################################
+##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
 ###########################################################################################################
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
@@ -41,7 +41,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   filter(ano != 2015) %>%
   #  filter(prop_votes_c2 >= 0.35 & prop_votes_c2 <= 0.65) %>%
   group_by(ano, codmpio) %>%
-  mutate(party_2 = n()) %>%
+  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
   filter(party_2 == 1) %>% 
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(president,  by.x = c("year", "codmpio","coalition"), by.y = c("ano", "codmpio", "coalition"), 

@@ -143,10 +143,95 @@ representantes_collapse <- representantes_aggregate %>%
 
 representantes_merge <- representantes_collapse %>%
   ldply() %>%
-  arrange(codmpio, ano, rank)
+  arrange(codmpio, ano, rank) %>% mutate(ano = as.factor(ano)) %>%
+  mutate(year_lag_presidencial = fct_recode(ano,
+                                            "1997" = "1998",
+                                            "2000" = "2002",
+                                            "2003" = "2006",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
+  mutate_at(vars(matches("cod")), as.character)
+
+
 
 saveRDS(representantes_merge,paste0(res,"representantes_merge.rds"))
 
+###########################################################################################################
+##############################################  SENATE  ###################################################
+###########################################################################################################
+
+
+# Get presidents election data (Winners and loosers since 1997). 
+
+list_files <- list.files(path = data) %>%
+  .[. %in% c("1998", "2002", "2006", "2010", "2014")] %>%
+  str_c(data, ., sep = "") %>%
+  lapply(list.files) %>% lapply(function(x){x[str_detect(x, "Sen")]}) %>% 
+  str_c(data, c("1998", "2002", "2006", "2010", "2014"),"/", ., sep = "")
+
+
+#Open dta files into a list (and add party codes to 2011 and 2015 electoral data)
+senado <- lapply(list_files, read_dta)
+senado[[5]]$partido <- NULL
+
+#Aggregate totals for each year and clean non-candidate data
+
+non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
+                         "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
+                         "Votos no marcados","COMITE PROMOTOR VOTO EN BLANCO","RETIRADO (A)", "TARJETAS NO MARCADOS")
+
+invalid_places <- c(NaN, 96, 97, 99)
+# (Nan: Consulate, 96, 87 and 99 are totals) #
+
+senado_aggregate <- senado %>%
+  lapply(., function(x){
+    arrange(x, codmpio, ano) %>%
+      filter(is.na(votos) == 0) %>% 
+      filter(!codmpio %in% invalid_places) %>% #Remove totals
+      mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
+      mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
+      group_by(codmpio, ano) %>%
+      mutate(rank = row_number(desc(votos))) %>% 
+      mutate(prop_votes_total = votos / sum(votos)) %>%
+      mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>%
+      mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
+      # mutate(votos_r2 = ifelse(rank <= 2, votos,0)) %>% 
+      # mutate(prop_votes_c2 = votos / sum(votos_r2)) %>% 
+      mutate(parties = sum(cand)) %>%
+      mutate(party_ef = ifelse(prop_votes_cand > 0.1, 1,0)) %>%
+      mutate(parties_ef = sum(party_ef)) %>% 
+      filter(is.na(prop_votes_total)==0) 
+  })
+
+#Collapse candidates by party (remember that the number of delegates depends on the district magnitude)
+
+senado_collapse <- senado_aggregate %>%
+  lapply(., function(x){
+    filter(x, cand == 1) %>%
+      group_by(ano, codep, codmpio, codpartido) %>%
+      summarise_at(vars(matches("vot")), sum) %>%
+      group_by(ano, codep, codmpio) %>%
+      mutate(rank = row_number(desc(votos)))
+  })
+
+senado_merge <- senado_collapse %>%
+  ldply() %>%
+  arrange(codmpio, ano, rank) %>% mutate(ano = as.factor(ano)) %>%
+  mutate(year_lag_presidencial = fct_recode(ano,
+                                            "1997" = "1998",
+                                            "2000" = "2002",
+                                            "2003" = "2006",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
+  mutate_at(vars(matches("cod")), as.character)
+
+
+
+saveRDS(senado_merge,paste0(res,"senado_merge.rds"))
 
 
 
