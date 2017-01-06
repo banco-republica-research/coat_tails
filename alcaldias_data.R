@@ -4,18 +4,40 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+ setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 
 ###########################################################################################################
+######################################## COALITIONS  ######################################################
+###########################################################################################################
+
+coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";") %>%
+  mutate(X2006 = as.character(X2006)) %>%
+  gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
+  mutate(year = fct_recode(year, 
+                           "1998" = "X1998",
+                           "2002" = "X2002",
+                           "2006" = "X2006",
+                           "2010" = "X2010", 
+                           "2014" = "X2014")) %>%
+  mutate(year_lag_presidencial = fct_recode(year,
+                                          "1997" = "1998",
+                                          "2000" = "2002",
+                                          "2003" = "2006",
+                                          "2007" = "2010",
+                                          "2011" = "2014"
+                                          )) %>%
+  mutate_all(funs(as.character(.)))
+
+
+###########################################################################################################
 ############################ Winners and loosers since 1997  ##############################################
 ###########################################################################################################
 
-##########################
 # Get mayor's election data (Winners and loosers since 1997). 
 
 list_files <- list.files(path=data) %>%
@@ -91,11 +113,17 @@ alcaldes_merge <- alcaldes_aggregate %>%
   ldply() %>%
   arrange(codmpio, ano, desc(rank)) %>%
   dplyr::select(c(ano, codmpio, codep, municipio, parties, parties_ef, rank, primer_apellido, nombre, codpartido, cand, votos, votos_cand, votos_r2,
-  prop_votes_total, prop_votes_cand, prop_votes_c2)) 
+  prop_votes_total, prop_votes_cand, prop_votes_c2)) %>%
+  merge(., coalitions, by.x = c("codpartido","ano") , by.y = c("party_code", "year_lag_presidencial"), all = T) %>%
+  mutate(ano = as.integer(ano))
 
 saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
 
-##########################
+
+###########################################################################################################
+################################### DIFFERENCES BETWEEN 1 AND 2 ###########################################
+###########################################################################################################
+
 # Differences between winner and best runner up 
 
 # Only rank <= 2 and drop if total votes == 0 
