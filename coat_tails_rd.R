@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
- setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -26,8 +26,6 @@ party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 president <- readRDS(paste0(res, "presidentes_merge.rds")) %>%
   filter(rank <= 2) %>%
   mutate(coalition = ifelse(rank == 1 , 1, 0)) 
-
-
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
@@ -47,7 +45,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   merge(president,  by.x = c("year", "codmpio","coalition"), by.y = c("ano", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   dplyr::select(codmpio, ano, year, codpartido_t, win_t, rank_t,
-                rank_t1 ,parties_t,parties_ef_t, starts_with("prop")) %>%
+                rank_t1 ,parties_t,parties_ef_t, votos_t, votos_t1, starts_with("prop")) %>%
   arrange(codmpio, ano)
 
 dim(alcaldes_rd)
@@ -58,17 +56,38 @@ hist(alcaldes_rd$prop_votes_c2_t)
 
 a <- rdrobust(y = alcaldes_rd$prop_votes_c2_t1,
               x = alcaldes_rd$prop_votes_c2_t,
-              covs = cbind(as.factor(alcaldes_rd$ano), as.factor(alcaldes_rd$codmpio)),
+#              covs = cbind(as.factor(alcaldes_rd$ano), as.factor(alcaldes_rd$codmpio)),
+              covs = cbind(alcaldes_rd$votos_t, alcaldes_rd$parties_t, as.factor(alcaldes_rd$ano)),
               c = 0.5,
               all = T, 
               vce = "hc1")
 a
 
-alcaldes_rd_b <- alcaldes_rd %>% filter(prop_votes_c2_t >= (0.5 - a$bws[1,1]) & prop_votes_c2_t <= (0.5 + a$bws[1,1]))
+alcaldes_rd_b <- alcaldes_rd %>% filter(prop_votes_c2_t >= (0.5 - a$bws[1,1]) & prop_votes_c2_t <= (0.5 + a$bws[1,1])) %>% 
+  mutate(prop_votes_c2_t_w = win_t*prop_votes_c2_t) 
 dim(alcaldes_rd_b)
 hist(alcaldes_rd_b$prop_votes_c2_t)
 
-b <- lm(formula = prop_votes_total_t1 ~ win_t*prop_votes_c2_t + factor(ano), data = alcaldes_rd_b)
+
+b <- lm(formula = prop_votes_total_t1 ~ win_t + prop_votes_c2_t + prop_votes_c2_t_w + votos_t + parties_t + factor(ano), data = alcaldes_rd_b)
 summary(b)
 
+
+# RD and OLS regressions by year (restricted sample)
+
+years <- names(table(alcaldes_rd$ano))
+alcaldes_rd_y <- lapply(years, function(x){
+  alcaldes_rd %>% filter(ano == x)
+}) 
+
+a <-  lapply(alcaldes_rd_y, function(x){
+  rdrobust(y = x$prop_votes_c2_t1,
+           x = x$prop_votes_c2_t,
+           covs = cbind(x$votos_t, x$parties_t),
+           c = 0.5,
+           all = T)
+})
+
+a
+years
 

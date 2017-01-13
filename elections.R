@@ -1,23 +1,23 @@
 ###########################################################################################################
-################################ SECOND ROUND PRESIDENTIAL ELECTIONS  #####################################
+#################################### DATA ELECTIONS  ######################################################
 ###########################################################################################################
-
 
 rm(list=ls())
 packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust")
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 
 ###########################################################################################################
-############################ Winners and loosers since 1997  ##############################################
+################################ SECOND ROUND PRESIDENTIAL ELECTIONS  #####################################
 ###########################################################################################################
+
 
 # Get presidents election data (Winners and loosers since 1997). 
 
