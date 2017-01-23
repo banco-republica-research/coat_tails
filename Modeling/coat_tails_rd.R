@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
- setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -21,11 +21,14 @@ res <-"Data/CEDE/Bases/"
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 alcaldes_merge_r2 <- alcaldes_merge %>% filter(rank <= 2)
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
+controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
 
 # Load presidential for t+1
-president <- readRDS(paste0(res, "presidentes_merge.rds")) %>%
-  filter(rank <= 2) %>%
-  mutate(coalition = ifelse(rank == 1 , 1, 0)) 
+win_apellido <- c("PASTRANA", "URIBE", "SANTOS")
+win_nom <- c("ANDRES", "ALVARO", "JUAN MANUEL")
+
+president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
+  mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0))
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
@@ -42,36 +45,61 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
   filter(party_2 == 1) %>% 
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(president,  by.x = c("year", "codmpio","coalition"), by.y = c("ano", "codmpio", "coalition"), 
+  merge(., president,  by.x = c("year", "codmpio", "coalition"), by.y = c("ano", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  dplyr::select(codmpio, ano, year, codpartido_t, win_t, rank_t,
-                rank_t1 ,parties_t,parties_ef_t, votos_t, votos_t1, starts_with("prop")) %>%
+  dplyr::select(codmpio, ano, year, codpartido_t, win_t, 
+                votos_t, votos_t1, starts_with("prop")) %>%
   arrange(codmpio, ano)
 
 dim(alcaldes_rd)
-hist(alcaldes_rd$prop_votes_c2_t)
+hist(alcaldes_rd$prop_votes_c2)
+
+
+# Scatter and RD Graphs 
+
+#Drop outliers
+
+l <- alcaldes_rd %>%
+  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) %>%
+  filter(prop_votes_c2 <= 0.5 + sd(prop_votes_c2) * 1.645 & prop_votes_c2 >= 0.5 - sd(prop_votes_c2) * 1.645) %>%
+  mutate(bin = cut(prop_votes_c2, breaks = seq(0.3, 0.7, 0.001), include.lowest = T)) %>%
+  group_by(bin) %>%
+  summarize(mean_bin = mean(prop_votes_total_t1), sd_bin = sd(prop_votes_total_t1), n = length(codmpio)) %>%
+  .[complete.cases(.),] %>%
+  as.data.frame() %>%
+  mutate(treatment = ifelse(as.numeric(row.names(.)) >= 172, 1, 0), bins = row.names(.)) %>%
+  mutate(bins = mapvalues(.$bins, from = c(1:347), to = seq(0.329, 0.675, 0.001)))
+
+p <- ggplot(l, aes(y = mean_bin, x = as.numeric(bins), colour = as.factor(treatment)))
+p <- p + geom_point(colour = "black", size = 1)
+p <- p + stat_smooth(data = alcaldes_rd, aes(x = prop_votes_c2, y = prop_votes_total_t1, 
+                         colour = as.factor(win_t)), method = "loess") 
+p <- p + scale_x_continuous(limits = c(0.44, 0.56))
+# p <- p + coord_cartesian(xlim = c(0.4, 0.6))
+p
+
+
+
+
+p <- ggplot(l, aes(x = prop_votes_c2, y = prop_votes_total_t1, colour = as.factor(ano)))
+p <- p + geom_point(aes(name = codmpio , size = pobl_tot))
+p <- p + geom_smooth(method = "lm", se = FALSE) 
+p <- p + labs(x = "Proporción alcalde ganador/per", y = "Proporción presidente coalición (t+1)")
+p
+ggplotly(p)
+
 
 # RD and OLS regressions on restricted sample
 # alcaldes_rd <- subset(alcaldes_rd, ano == 2007)
 
-a <- rdrobust(y = alcaldes_rd$prop_votes_c2_t1,
-              x = alcaldes_rd$prop_votes_c2_t,
-#              covs = cbind(as.factor(alcaldes_rd$ano), as.factor(alcaldes_rd$codmpio)),
-              covs = cbind(alcaldes_rd$votos_t, alcaldes_rd$parties_t, as.factor(alcaldes_rd$ano)),
+a <- rdrobust(y = l$prop_votes_total_t1,
+              x = l$prop_votes_c2,
+              covs = cbind(as.factor(l$ano), l$pobl_tot),
               c = 0.5,
-              all = T, 
-              vce = "hc1")
+              all = T,
+              vce = "hc1"
+)
 a
-
-alcaldes_rd_b <- alcaldes_rd %>% filter(prop_votes_c2_t >= (0.5 - a$bws[1,1]) & prop_votes_c2_t <= (0.5 + a$bws[1,1])) %>% 
-  mutate(prop_votes_c2_t_w = win_t*prop_votes_c2_t) 
-dim(alcaldes_rd_b)
-hist(alcaldes_rd_b$prop_votes_c2_t)
-
-
-b <- lm(formula = prop_votes_total_t1 ~ win_t + prop_votes_c2_t + prop_votes_c2_t_w + votos_t + parties_t + factor(ano), data = alcaldes_rd_b)
-summary(b)
-
 
 # RD and OLS regressions by year (restricted sample)
 
@@ -81,11 +109,12 @@ alcaldes_rd_y <- lapply(years, function(x){
 }) 
 
 a <-  lapply(alcaldes_rd_y, function(x){
-  rdrobust(y = x$prop_votes_c2_t1,
-           x = x$prop_votes_c2_t,
-           covs = cbind(x$votos_t, x$parties_t),
+  rdrobust(y = x$prop_votes_total_t1,
+           x = x$prop_votes_c2,
+           # covs = cbind(x$parties_t),
            c = 0.5,
-           all = T)
+           all = T,
+           vce = "hc1")
 })
 
 a
