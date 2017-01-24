@@ -96,31 +96,25 @@ names(presidentes_primera[[3]]) <- names(presidentes_primera[[2]])
 #Aggregate totals for each year and clean non-candidate data
 
 presidentes_aggregate_primera <- presidentes_primera %>%
-  lapply(., function(x){
-    arrange(x, codmpio, ano) %>%
-      filter(is.na(votos)==0) %>% 
-      filter(!codmpio %in% invalid_places) %>% #Remove votes from consulates, embassies and totals 
-      mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
-      mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
-      group_by(codmpio, ano) %>%
-      mutate(rank = row_number(desc(votos))) %>% 
-      mutate(prop_votes_total = votos / sum(votos)) %>%
-      mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>%
-      mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
-      mutate(votos_r2 = ifelse(rank <= 2, votos, 0)) %>% 
-      mutate(prop_votes_c2 = votos / sum(votos_r2)) %>% 
-      mutate(parties = sum(cand)) %>%
-      mutate(party_ef = ifelse(prop_votes_cand > 0.1, 1,0)) %>%
-      mutate(parties_ef = sum(party_ef)) %>% 
-      filter(is.na(prop_votes_total)==0) 
-  })
+      lapply(., function(x){
+        arrange(x, codmpio, ano) %>%
+          filter(is.na(votos)==0) %>% 
+          filter(!codmpio %in% invalid_places) %>% #Remove votes from consulates, embassies and totals 
+          mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
+          mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
+          group_by(codmpio, ano) %>%
+          mutate(prop_votes_total = votos / sum(votos)) %>%
+          mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>%
+          mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
+          filter(is.na(prop_votes_total)==0)
+      })
 
 #Arrange data in a long format
 presidentes_merge_primera <- presidentes_aggregate_primera %>%
   ldply() %>%
-  arrange(codmpio, ano, desc(rank)) %>%
-  dplyr::select(c(ano, codmpio, codep, municipio, parties, parties_ef, rank, primer_apellido, nombre, codpartido, cand, votos, votos_cand, votos_r2,
-                  prop_votes_total, prop_votes_cand, prop_votes_c2)) 
+  arrange(codmpio, ano) %>%
+  dplyr::select(c(ano, codmpio, codep, municipio, primer_apellido, nombre, codpartido, cand, votos, votos_cand,
+                  prop_votes_total, prop_votes_cand)) 
 
 saveRDS(presidentes_merge_primera,paste0(res,"presidentes_primera_merge.rds"))
 

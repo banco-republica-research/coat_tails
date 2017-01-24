@@ -32,6 +32,7 @@ president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
+######################################### PRESIDENT SECOND ROUND ##########################################
 ###########################################################################################################
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
@@ -55,42 +56,11 @@ dim(alcaldes_rd)
 hist(alcaldes_rd$prop_votes_c2)
 
 
-# Scatter and RD Graphs 
-
-#Drop outliers
-
+# RD and OLS regressions on restricted sample
 l <- alcaldes_rd %>%
   merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) %>%
-  filter(prop_votes_c2 <= 0.5 + sd(prop_votes_c2) * 1.645 & prop_votes_c2 >= 0.5 - sd(prop_votes_c2) * 1.645) %>%
-  mutate(bin = cut(prop_votes_c2, breaks = seq(0.3, 0.7, 0.001), include.lowest = T)) %>%
-  group_by(bin) %>%
-  summarize(mean_bin = mean(prop_votes_total_t1), sd_bin = sd(prop_votes_total_t1), n = length(codmpio)) %>%
-  .[complete.cases(.),] %>%
-  as.data.frame() %>%
-  mutate(treatment = ifelse(as.numeric(row.names(.)) >= 172, 1, 0), bins = row.names(.)) %>%
-  mutate(bins = mapvalues(.$bins, from = c(1:347), to = seq(0.329, 0.675, 0.001)))
+  filter(prop_votes_c2 <= 0.5 + sd(prop_votes_c2) * 1.645 & prop_votes_c2 >= 0.5 - sd(prop_votes_c2) * 1.645)
 
-p <- ggplot(l, aes(y = mean_bin, x = as.numeric(bins), colour = as.factor(treatment)))
-p <- p + geom_point(colour = "black", size = 1)
-p <- p + stat_smooth(data = alcaldes_rd, aes(x = prop_votes_c2, y = prop_votes_total_t1, 
-                         colour = as.factor(win_t)), method = "loess") 
-p <- p + scale_x_continuous(limits = c(0.44, 0.56))
-# p <- p + coord_cartesian(xlim = c(0.4, 0.6))
-p
-
-
-
-
-p <- ggplot(l, aes(x = prop_votes_c2, y = prop_votes_total_t1, colour = as.factor(ano)))
-p <- p + geom_point(aes(name = codmpio , size = pobl_tot))
-p <- p + geom_smooth(method = "lm", se = FALSE) 
-p <- p + labs(x = "Proporción alcalde ganador/per", y = "Proporción presidente coalición (t+1)")
-p
-ggplotly(p)
-
-
-# RD and OLS regressions on restricted sample
-# alcaldes_rd <- subset(alcaldes_rd, ano == 2007)
 
 a <- rdrobust(y = l$prop_votes_total_t1,
               x = l$prop_votes_c2,
@@ -119,4 +89,62 @@ a <-  lapply(alcaldes_rd_y, function(x){
 
 a
 years
+
+
+# Scatter and RD Graphs 
+
+# Arrange data by bins and eliminate outliers
+l <- l %>%
+  mutate(bin = cut(prop_votes_c2, breaks = seq(0.3, 0.7, 0.001), include.lowest = T)) %>%
+  group_by(bin) %>%
+  summarize(mean_bin = mean(prop_votes_total_t1), sd_bin = sd(prop_votes_total_t1), n = length(codmpio)) %>%
+  .[complete.cases(.),] %>%
+  as.data.frame() %>%
+  mutate(treatment = ifelse(as.numeric(row.names(.)) >= 172, 1, 0), bins = row.names(.)) %>%
+  mutate(bins = mapvalues(.$bins, from = c(1:347), to = seq(0.329, 0.675, 0.001)))
+
+#RD Graph 
+p <- ggplot(l, aes(y = mean_bin, x = as.numeric(bins), colour = as.factor(treatment)))
+p <- p + geom_point(colour = "black", size = 1)
+p <- p + stat_smooth(data = alcaldes_rd, aes(x = prop_votes_c2, y = prop_votes_total_t1, 
+                                             colour = as.factor(win_t)), method = "loess") 
+p <- p + scale_x_continuous(limits = c(0.44, 0.56))
+# p <- p + coord_cartesian(xlim = c(0.4, 0.6))
+p
+
+
+
+###########################################################################################################
+##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
+######################################### PRESIDENT FIRST ROUND ###########################################
+###########################################################################################################
+
+# Load presidential for t+1
+president <- readRDS(paste0(res, "presidentes_primera_merge.rds"))
+
+#Aggregate and merge with president electoral data
+alcaldes_rd <- alcaldes_merge_r2 %>%
+  filter(coalition == 1) %>%
+  filter(ano != 2015) %>%
+  group_by(ano, codmpio) %>%
+  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
+  filter(party_2 == 1) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  merge(., president,  by.x = c("year", "codmpio"), by.y = c("ano", "codmpio"), 
+        suffixes = c("_t", "_t1"), all = T) %>%
+  mutate(coalicion_1 = ifelse(codpartido_t == codpartido_t1, 1, 0)) %>% 
+  mutate(coalicion_2 = ifelse(coalition == 1, 1, 0)) %>%
+  filter(coalicion_1 == 1 & coalicion_2 == 1) %>%
+  arrange(codmpio, ano) 
+
+
+a <- rdrobust(y = alcaldes_rd$prop_votes_total_t1,
+              x = alcaldes_rd$prop_votes_c2,
+              # covs = cbind(as.factor(alcaldes_rd$ano), alcaldes_rd$pobl_tot),
+              c = 0.5,
+              all = T,
+              vce = "hc1"
+)
+a
+
 
