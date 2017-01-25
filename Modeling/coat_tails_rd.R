@@ -128,8 +128,10 @@ years
 
 
 #From elections.R
-president <- readRDS(paste0(res, "presidentes_primera_merge.rds"))
-candidatos <- readRDS(paste0(res, "candidates_primera_vuelta.rds"))
+president1 <- readRDS(paste0(res, "presidentes_primera_merge.rds"))
+candidatos1 <- readRDS(paste0(res, "candidates_primera_vuelta.rds"))
+
+# President aggregate results to merge by coallition_party
 
 
 
@@ -137,12 +139,13 @@ candidatos <- readRDS(paste0(res, "candidates_primera_vuelta.rds"))
 # round of elections. 
 
 alcaldes_rd_1 <- alcaldes_merge_r2 %>%
-  merge(., candidatos, by.x = c("codpartido", "year"), by.y = c("codpartido", "ano"),  all.x = T,
-        suffixes = c("", "_p")) %>% 
+  merge(., candidatos1, by.x = c("codpartido", "year"), by.y = c("codpartido", "ano"),  all.x = T, suffixes = c("", "_p")) %>% 
   mutate(coalition_party = ifelse(!is.na(primer_apellido_p), codpartido,
                            ifelse(coalition == 1 & is.na(primer_apellido_p), 989,
                            ifelse(coalition == 0, 0, 0))
   ))
+
+table(alcaldes_rd_1$coalition_party, alcaldes_rd_1$coalition)
 
 
 # Repeat modeling as incumbency effect RD: per party in coalition
