@@ -31,7 +31,6 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   filter(nn==2) %>% 
   dplyr::select(-c(n,nn)) 
 
-
 dim(alcaldes_merge_r2)
 
 # Load party codes and municipal covariates
@@ -79,7 +78,7 @@ a <- rdrobust(y = l$prop_votes_total_t1,
               c = 0.5,
               all = T,
               vce = "nn", p=2
-              )
+)
 a
 
 
@@ -127,32 +126,68 @@ years
 ######################################### PRESIDENT FIRST ROUND ###########################################
 ###########################################################################################################
 
+president <- readRDS(paste0(res, "presidentes_segunda_merge.rds"))
+
+
 # Load presidential for t+1
-president <- readRDS(paste0(res, "presidentes_primera_merge.rds"))
+candidatos <- readRDS(paste0(res, "candidates_primera_vuelta.rds"))
 
-#Aggregate and merge with president electoral data
-alcaldes_rd <- alcaldes_merge_r2 %>%
-  filter(coalition == 1) %>%
-  filter(ano != 2015) %>%
-  group_by(ano, codmpio) %>%
-  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
-  filter(party_2 == 1) %>% 
-  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., president,  by.x = c("year", "codmpio"), by.y = c("ano", "codmpio"), 
-        suffixes = c("_t", "_t1"), all = T) %>%
-  mutate(coalicion_1 = ifelse(codpartido_t == codpartido_t1, 1, 0)) %>% 
-  mutate(coalicion_2 = ifelse(coalition == 1, 1, 0)) %>%
-  filter(coalicion_1 == 1 & coalicion_2 == 1) %>%
-  arrange(codmpio, ano) 
+alcaldes_rd_1 <- alcaldes_merge_r2 %>%
+  merge(., candidatos, by.x = c("codpartido", "year"), by.y = c("codpartido", "ano"),  all.x = T,
+        suffixes = c("", "_p")) %>% 
+  mutate(coalition_party = ifelse(!is.na(primer_apellido_p), codpartido,
+                           ifelse(coalition == 1 & is.na(primer_apellido_p), 989,
+                           ifelse(coalition == 0, 0, 0))
+  ))
 
+  
+# list of parties by total number of wins
+parties <- alcaldes_rd_1 %>% filter(rank == 1) %>% filter(codpartido!= 98 & codpartido!= 99) %>% 
+  group_by(codpartido) %>% summarize(win = n()) %>% 
+  merge(party_code,  by.x = c("codpartido"), by.y = c("party_code"), all.x = T) %>% 
+  dplyr::select(codpartido, name_party, win) %>% 
+  arrange(desc(win)) 
 
-a <- rdrobust(y = alcaldes_rd$prop_votes_total_t1,
-              x = alcaldes_rd$prop_votes_c2,
-              # covs = cbind(as.factor(alcaldes_rd$ano), alcaldes_rd$pobl_tot),
+# list of N big parties (by total number of wins) 
+big_parties <- parties[1:20,]$codpartido
+
+# Function: Create RD dataset by party (Restrict to big parties and difference to bdw < 0.15)
+RD_data <- function(x){
+  alcaldes_rd <- alcaldes_merge_r2 %>%
+    filter(codpartido == x) %>%
+    group_by(ano, codmpio) %>%
+    mutate(party_2 = n()) %>%
+    filter(party_2 == 1) %>% 
+    mutate(win_t = ifelse(rank==1,1,0)) %>% 
+    merge(president, by.x = c("year", "codmpio","codpartido"), by.y = c("ano", "codmpio", "codpartido"), 
+          suffixes = c("_t", "_t1"), all.x = T) %>%
+    # dplyr::select(codmpio, ano, ano_t1, codpartido, win_t, rank_t,
+                  # rank_t1 ,parties_t,parties_ef_t,parties_t1,parties_ef_t1, votos_t, votos_t1, starts_with("prop")) %>%
+    arrange(codmpio, ano)
+}
+
+# Foreach all parties create RD dataset and then append 
+alcaldes_rd_a <- lapply(big_parties, RD_data) 
+alcaldes_rd_n <- alcaldes_rd_a %>% ldply() %>% arrange(codpartido, codmpio, ano)
+
+# RD and OLS regressions on restricted sample
+l <- alcaldes_rd_n %>%
+  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+# %>% filter(prop_votes_c2 <= 0.5 + sd(prop_votes_c2) * 1.96 & prop_votes_c2 >= 0.5 - sd(prop_votes_c2) * 1.96)
+
+dim(l)
+hist(l$prop_votes_c2)
+table(l$codpartido,l$ano)
+
+# RD and OLS regressions on restricted sample
+a <- rdrobust(y = l$prop_votes_total_t1,
+              x = l$prop_votes_c2,
+              covs = cbind(as.factor(l$ano),l$pobl_tot, as.factor(l$coddepto),as.factor(alcaldes_rd_n$codpartido)),
               c = 0.5,
               all = T,
-              vce = "hc1"
-)
-a
+              vce = "hc1")
+a 
+
+
 
 

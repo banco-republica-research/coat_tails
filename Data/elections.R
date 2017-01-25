@@ -16,7 +16,7 @@ res <-"Data/CEDE/Bases/"
 
 
 ###########################################################################################################
-##################################  PRESIDENTIAL ELECTIONS: WINNERS  ######################################
+###############################  PRESIDENTIAL ELECTIONS: CANDIDATES  ######################################
 ###########################################################################################################
 # Get presidents election data (Winners and loosers since 1997). 
 
@@ -26,7 +26,7 @@ list_files <- list.files(path = data) %>%
   lapply(list.files) %>% lapply(function(x){x[str_detect(x, "Pres")]}) %>% 
   lapply(function(x){ 
     if(length(x) > 1){
-      x[str_detect(x, "Segunda")]
+      x[str_detect(x, "Primera")]
     } else {
       x
     }
@@ -34,12 +34,21 @@ list_files <- list.files(path = data) %>%
   str_c(data, c("1998", "2002", "2006", "2010", "2014"),"/", ., sep = "")
 
 #Open dta files into a list (and add party codes to 2011 and 2015 electoral data)
-presidentes_segunda <- lapply(list_files, read_dta) 
+presidentes_primera <- lapply(list_files, read_dta) 
 
 #Make all names the same (the 1998 data has english name variables)
-names(presidentes_segunda[[1]]) <- names(presidentes_segunda[[2]])
+names(presidentes_primera[[1]]) <- names(presidentes_primera[[2]])
 
+candidates <- presidentes_primera %>% ldply() %>%
+  group_by(ano, primer_apellido, segundo_apellido, nombre, codpartido) %>%
+  summarize(votos_totales = sum(votos)) %>%
+  filter(!codpartido == "NaN")
 
+saveRDS(candidates ,paste0(res, "candidates_primera_vuelta.rds"))
+
+###########################################################################################################
+################################ FIRST ROUND PRESIDENTIAL ELECTIONS  ######################################
+###########################################################################################################
 #Aggregate totals for each year and clean non-candidate data
 non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
                          "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
@@ -49,23 +58,6 @@ invalid_places <- c(NaN, 96, 97, 99)
 # (Nan: Consulate, 96, 87 and 99 are totals) #
 
 
-winners <- presidentes_segunda %>% 
-  lapply(., function(x){
-    filter(x, !codmpio %in% invalid_places) %>% #Remove votes from consulates, embassies and totals 
-      # mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
-      # mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>%
-      group_by(ano, nombre, primer_apellido, segundo_apellido, codpartido) %>%
-      summarize(total_votos = sum(votos)) %>%
-      mutate(rank = dense_rank(total_votos)) 
-    # %>% 
-    #   filter(rank == 1) %>%
-    #   ldply()
-})
-
-
-###########################################################################################################
-################################ FIRST ROUND PRESIDENTIAL ELECTIONS  ######################################
-###########################################################################################################
 
 # Get presidents election data (Winners and loosers since 1997). 
 
