@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -18,8 +18,23 @@ res <-"Data/CEDE/Bases/"
 ############################################# LOAD DATA ###################################################
 ###########################################################################################################
 
+# Load maire top2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
-alcaldes_merge_r2 <- alcaldes_merge %>% filter(rank <= 2)
+alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(ano != 2015) %>%
+  filter(rank <= 2) %>% 
+  arrange(codmpio, ano, codpartido) %>%
+  filter(coalition != 98 & coalition != 99) %>% 
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>% 
+  filter(nn==2) %>% 
+  dplyr::select(-c(n,nn)) 
+
+
+dim(alcaldes_merge_r2)
+
+# Load party codes and municipal covariates
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
 
@@ -40,8 +55,6 @@ president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
   filter(coalition == 1) %>%
-  filter(ano != 2015) %>%
-  #  filter(prop_votes_c2 >= 0.35 & prop_votes_c2 <= 0.65) %>%
   group_by(ano, codmpio) %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
   filter(party_2 == 1) %>% 
@@ -52,24 +65,43 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
                 votos_t, votos_t1, starts_with("prop")) %>%
   arrange(codmpio, ano)
 
-dim(alcaldes_rd)
-hist(alcaldes_rd$prop_votes_c2)
-
-
 # RD and OLS regressions on restricted sample
 l <- alcaldes_rd %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) %>%
-  filter(prop_votes_c2 <= 0.5 + sd(prop_votes_c2) * 1.645 & prop_votes_c2 >= 0.5 - sd(prop_votes_c2) * 1.645)
+  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T)
+# %>% filter(prop_votes_c2 <= 0.5 + sd(prop_votes_c2) * 1.96 & prop_votes_c2 >= 0.5 - sd(prop_votes_c2) * 1.96)
 
+dim(l)
+hist(l$prop_votes_c2)
 
 a <- rdrobust(y = l$prop_votes_total_t1,
               x = l$prop_votes_c2,
-              covs = cbind(as.factor(l$ano), l$pobl_tot),
+              covs = cbind(as.factor(l$ano), l$pobl_tot, as.factor(l$coddepto)),
               c = 0.5,
               all = T,
-              vce = "hc1"
-)
+              vce = "nn", p=2
+              )
 a
+
+
+# Arrange data by bins and eliminate outliers
+l <- l %>%
+  mutate(bin = cut(prop_votes_c2, breaks = seq(0.3, 0.7, 0.001), include.lowest = T)) %>%
+  group_by(bin) %>%
+  summarize(mean_bin = mean(prop_votes_total_t1), sd_bin = sd(prop_votes_total_t1), n = length(codmpio)) %>%
+  .[complete.cases(.),] %>%
+  as.data.frame() %>%
+  mutate(treatment = ifelse(as.numeric(row.names(.)) >= 172, 1, 0), bins = row.names(.)) %>%
+  mutate(bins = mapvalues(.$bins, from = c(1:347), to = seq(0.329, 0.675, 0.001)))
+
+#RD Graph 
+p <- ggplot(l, aes(y = mean_bin, x = as.numeric(bins), colour = as.factor(treatment)))
+p <- p + geom_point(colour = "black", size = 1)
+p <- p + stat_smooth(data = alcaldes_rd, aes(x = prop_votes_c2, y = prop_votes_total_t1, 
+                                             colour = as.factor(win_t)), method = "loess", level = 0.9) 
+p <- p + scale_x_continuous(limits = c(0.45, 0.55))
+# p <- p + coord_cartesian(xlim = c(0.45, 0.55))
+p
+
 
 # RD and OLS regressions by year (restricted sample)
 
@@ -89,30 +121,6 @@ a <-  lapply(alcaldes_rd_y, function(x){
 
 a
 years
-
-
-# Scatter and RD Graphs 
-
-# Arrange data by bins and eliminate outliers
-l <- l %>%
-  mutate(bin = cut(prop_votes_c2, breaks = seq(0.3, 0.7, 0.001), include.lowest = T)) %>%
-  group_by(bin) %>%
-  summarize(mean_bin = mean(prop_votes_total_t1), sd_bin = sd(prop_votes_total_t1), n = length(codmpio)) %>%
-  .[complete.cases(.),] %>%
-  as.data.frame() %>%
-  mutate(treatment = ifelse(as.numeric(row.names(.)) >= 172, 1, 0), bins = row.names(.)) %>%
-  mutate(bins = mapvalues(.$bins, from = c(1:347), to = seq(0.329, 0.675, 0.001)))
-
-#RD Graph 
-p <- ggplot(l, aes(y = mean_bin, x = as.numeric(bins), colour = as.factor(treatment)))
-p <- p + geom_point(colour = "black", size = 1)
-p <- p + stat_smooth(data = alcaldes_rd, aes(x = prop_votes_c2, y = prop_votes_total_t1, 
-                                             colour = as.factor(win_t)), method = "loess") 
-p <- p + scale_x_continuous(limits = c(0.44, 0.56))
-# p <- p + coord_cartesian(xlim = c(0.4, 0.6))
-p
-
-
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
