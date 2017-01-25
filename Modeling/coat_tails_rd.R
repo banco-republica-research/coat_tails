@@ -126,11 +126,14 @@ years
 ######################################### PRESIDENT FIRST ROUND ###########################################
 ###########################################################################################################
 
-president <- readRDS(paste0(res, "presidentes_segunda_merge.rds"))
-
-
-# Load presidential for t+1
+#From elections.R
+president <- readRDS(paste0(res, "presidentes_primera_merge.rds"))
 candidatos <- readRDS(paste0(res, "candidates_primera_vuelta.rds"))
+
+
+
+# Create a coalition new variable which identify mayors with party-presidential candidates in the first 
+# round of elections. 
 
 alcaldes_rd_1 <- alcaldes_merge_r2 %>%
   merge(., candidatos, by.x = c("codpartido", "year"), by.y = c("codpartido", "ano"),  all.x = T,
@@ -140,23 +143,24 @@ alcaldes_rd_1 <- alcaldes_merge_r2 %>%
                            ifelse(coalition == 0, 0, 0))
   ))
 
-  
+
+# Repeat modeling as incumbency effect RD: per party in coalition
 # list of parties by total number of wins
-parties <- alcaldes_rd_1 %>% filter(rank == 1) %>% filter(codpartido!= 98 & codpartido!= 99) %>% 
-  group_by(codpartido) %>% summarize(win = n()) %>% 
-  merge(party_code,  by.x = c("codpartido"), by.y = c("party_code"), all.x = T) %>% 
-  dplyr::select(codpartido, name_party, win) %>% 
-  arrange(desc(win)) 
+# parties <- alcaldes_rd_1 %>% filter(rank == 1) %>% filter(codpartido!= 98 & codpartido!= 99) %>%
+#   group_by(codpartido) %>% summarize(win = n()) %>%
+#   merge(party_code, by.x = c("codpartido"), by.y = c("party_code"), all.x = T) %>%
+#   dplyr::select(codpartido, name_party, win) %>%
+#   arrange(desc(win))
+# 
+# # list of N big parties (by total number of wins)
+# big_parties <- parties[1:20,]$codpartido
 
-# list of N big parties (by total number of wins) 
-big_parties <- parties[1:20,]$codpartido
-
-# Function: Create RD dataset by party (Restrict to big parties and difference to bdw < 0.15)
+# Function: Create RD dataset by party 
 RD_data <- function(x){
-  alcaldes_rd <- alcaldes_merge_r2 %>%
-    filter(codpartido == x) %>%
+  alcaldes_rd <- alcaldes_rd_1 %>%
+    filter(coalition_party == x) %>%
     group_by(ano, codmpio) %>%
-    mutate(party_2 = n()) %>%
+    mutate(party_2 = n()) %>% 
     filter(party_2 == 1) %>% 
     mutate(win_t = ifelse(rank==1,1,0)) %>% 
     merge(president, by.x = c("year", "codmpio","codpartido"), by.y = c("ano", "codmpio", "codpartido"), 
@@ -167,7 +171,7 @@ RD_data <- function(x){
 }
 
 # Foreach all parties create RD dataset and then append 
-alcaldes_rd_a <- lapply(big_parties, RD_data) 
+alcaldes_rd_a <- lapply(unique(alcaldes_rd_1$coalition_party), RD_data) 
 alcaldes_rd_n <- alcaldes_rd_a %>% ldply() %>% arrange(codpartido, codmpio, ano)
 
 # RD and OLS regressions on restricted sample

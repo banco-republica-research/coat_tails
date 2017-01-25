@@ -42,7 +42,13 @@ names(presidentes_primera[[1]]) <- names(presidentes_primera[[2]])
 candidates <- presidentes_primera %>% ldply() %>%
   group_by(ano, primer_apellido, segundo_apellido, nombre, codpartido) %>%
   summarize(votos_totales = sum(votos)) %>%
-  filter(!codpartido == "NaN")
+  filter(!codpartido == "NaN") %>%
+  mutate(codpartido = ifelse(primer_apellido == "GAVIRIA", 194, codpartido)) %>%
+  mutate(codpartido = as.factor(codpartido)) %>%
+  mutate(codpartido = fct_recode(codpartido,
+                                  "194" = "47",
+                                  "165" = "164"
+                                  ))
 
 saveRDS(candidates ,paste0(res, "candidates_primera_vuelta.rds"))
 
