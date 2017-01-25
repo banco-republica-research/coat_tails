@@ -126,6 +126,7 @@ years
 ######################################### PRESIDENT FIRST ROUND ###########################################
 ###########################################################################################################
 
+
 #From elections.R
 president <- readRDS(paste0(res, "presidentes_primera_merge.rds"))
 candidatos <- readRDS(paste0(res, "candidates_primera_vuelta.rds"))
@@ -160,7 +161,7 @@ RD_data <- function(x){
   alcaldes_rd <- alcaldes_rd_1 %>%
     filter(coalition_party == x) %>%
     group_by(ano, codmpio) %>%
-    mutate(party_2 = n()) %>% 
+    mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
     filter(party_2 == 1) %>% 
     mutate(win_t = ifelse(rank==1,1,0)) %>% 
     merge(president, by.x = c("year", "codmpio","codpartido"), by.y = c("ano", "codmpio", "codpartido"), 
