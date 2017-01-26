@@ -45,7 +45,10 @@ saveRDS(coalitions,paste0(res,"coalitions.rds"))
 # de donde viene el .dta. En bases de datos, correcto para todos los años excepto 2011 en que se toman    #
 # codigos de xls. Para corregir esto se toma nombre de partido en 2011, y se hace merge para recuperar    #
 # partidos.                                                                                               #
+# Big parties with different codes: Cambio Radical (41, but is 165), PIN (19, buy 302), AICO (13, but 159)#
 ###########################################################################################################
+
+
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 
 # party_code_2 <- read.csv(paste0(data,"partidos.csv"))
