@@ -131,8 +131,6 @@ years
 president1 <- readRDS(paste0(res, "presidentes_primera_merge.rds"))
 candidatos1 <- readRDS(paste0(res, "candidates_primera_vuelta.rds"))
 
-# President aggregate results to merge by coallition_party
-
 
 
 # Create a coalition new variable which identify mayors with party-presidential candidates in the first 
@@ -141,9 +139,21 @@ candidatos1 <- readRDS(paste0(res, "candidates_primera_vuelta.rds"))
 alcaldes_rd_1 <- alcaldes_merge_r2 %>%
   merge(., candidatos1, by.x = c("codpartido", "year"), by.y = c("codpartido", "ano"),  all.x = T, suffixes = c("", "_p")) %>% 
   mutate(coalition_party = ifelse(!is.na(primer_apellido_p), codpartido,
-                           ifelse(coalition == 1 & is.na(primer_apellido_p), 989,
+                           ifelse(coalition == 1 & is.na(primer_apellido_p), 1111,
                            ifelse(coalition == 0, 0, 0))
-  ))
+  )) %>%
+  dplyr::select(., -ends_with("_p"), votos_totales)
+
+
+# President aggregate results to merge by coallition_party
+president1 <- president1 %>%
+  merge(., alcaldes_rd_1, by.x = c("codmpio", "ano"), by.y = c("codmpio", "year"), all = T) %>%
+  group_by(coalition_party) %>%
+  summarize(prop_votes_total_coal = sum(prop_votos_totales))
+
+
+
+
 
 table(alcaldes_rd_1$coalition_party, alcaldes_rd_1$coalition)
 

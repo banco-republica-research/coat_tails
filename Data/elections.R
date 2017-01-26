@@ -112,7 +112,16 @@ presidentes_merge_primera <- presidentes_aggregate_primera %>%
   ldply() %>%
   arrange(codmpio, ano) %>%
   dplyr::select(c(ano, codmpio, codep, municipio, primer_apellido, nombre, codpartido, cand, votos, votos_cand,
-                  prop_votes_total, prop_votes_cand)) 
+                  prop_votes_total, prop_votes_cand)) %>%
+  mutate(codpartido = ifelse(primer_apellido == "GAVIRIA", 194, codpartido)) %>%
+  mutate(codpartido = as.factor(codpartido)) %>%
+  mutate(codpartido = fct_recode(codpartido,
+                                 "194" = "47",
+                                 "165" = "164"
+  ))
+
+View(presidentes_merge_primera)
+
 
 saveRDS(presidentes_merge_primera,paste0(res,"presidentes_primera_merge.rds"))
 
