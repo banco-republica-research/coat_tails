@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -62,7 +62,6 @@ non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS
 
 invalid_places <- c(NaN, 96, 97, 99) 
 # (Nan: Consulate, 96, 87 and 99 are totals) #
-
 
 
 # Get presidents election data (Winners and loosers since 1997). 
@@ -203,6 +202,7 @@ representantes <- lapply(list_files, read_dta) %>%
 non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
                          "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
                          "Votos no marcados","COMITE PROMOTOR VOTO EN BLANCO","RETIRADO (A)", "TARJETAS NO MARCADOS")
+non_candidate_votes_p <- c(996,997,998)
 
 invalid_places <- c(NaN, 96, 97, 99)
 # (Nan: Consulate, 96, 87 and 99 are totals) #
@@ -212,15 +212,14 @@ representantes_aggregate <- representantes %>%
     arrange(x, codmpio, ano) %>%
       filter(is.na(votos) == 0) %>% 
       filter(!codmpio %in% invalid_places) %>% #Remove totals
-      mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
+      mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes | codpartido %in% non_candidate_votes_p, 1, 0 )) %>% 
+      mutate(codpartido = ifelse(no_cand == 0, codpartido, NA)) %>%      
       mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
       group_by(codmpio, ano) %>%
       mutate(rank = row_number(desc(votos))) %>% 
       mutate(prop_votes_total = votos / sum(votos)) %>%
       mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>%
       mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
-      # mutate(votos_r2 = ifelse(rank <= 2, votos,0)) %>% 
-      # mutate(prop_votes_c2 = votos / sum(votos_r2)) %>% 
       mutate(parties = sum(cand)) %>%
       mutate(party_ef = ifelse(prop_votes_cand > 0.1, 1,0)) %>%
       mutate(parties_ef = sum(party_ef)) %>% 
@@ -239,7 +238,7 @@ representantes_collapse <- representantes_aggregate %>%
   })
 
 representantes_merge <- representantes_collapse %>%
-  ldply() %>%
+  ldply() %>% filter(is.na(codpartido)==0) %>%
   arrange(codmpio, ano, rank) %>% mutate(ano = as.factor(ano)) %>%
   mutate(year_lag_presidencial = fct_recode(ano,
                                             "1997" = "1998",
@@ -278,6 +277,7 @@ senado[[5]]$partido <- NULL
 non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
                          "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
                          "Votos no marcados","COMITE PROMOTOR VOTO EN BLANCO","RETIRADO (A)", "TARJETAS NO MARCADOS")
+non_candidate_votes_p <- c(996,997,998)
 
 invalid_places <- c(NaN, 96, 97, 99)
 # (Nan: Consulate, 96, 87 and 99 are totals) #
@@ -287,15 +287,14 @@ senado_aggregate <- senado %>%
     arrange(x, codmpio, ano) %>%
       filter(is.na(votos) == 0) %>% 
       filter(!codmpio %in% invalid_places) %>% #Remove totals
-      mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
+      mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes | codpartido %in% non_candidate_votes_p, 1, 0)) %>% 
+      mutate(codpartido = ifelse(no_cand == 0, codpartido, NA)) %>%      
       mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
       group_by(codmpio, ano) %>%
       mutate(rank = row_number(desc(votos))) %>% 
       mutate(prop_votes_total = votos / sum(votos)) %>%
       mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>%
       mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
-      # mutate(votos_r2 = ifelse(rank <= 2, votos,0)) %>% 
-      # mutate(prop_votes_c2 = votos / sum(votos_r2)) %>% 
       mutate(parties = sum(cand)) %>%
       mutate(party_ef = ifelse(prop_votes_cand > 0.1, 1,0)) %>%
       mutate(parties_ef = sum(party_ef)) %>% 
@@ -314,7 +313,7 @@ senado_collapse <- senado_aggregate %>%
   })
 
 senado_merge <- senado_collapse %>%
-  ldply() %>%
+  ldply() %>% filter(is.na(codpartido)==0) %>%
   arrange(codmpio, ano, rank) %>% mutate(ano = as.factor(ano)) %>%
   mutate(year_lag_presidencial = fct_recode(ano,
                                             "1997" = "1998",
