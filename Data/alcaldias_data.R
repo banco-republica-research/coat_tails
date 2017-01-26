@@ -15,7 +15,7 @@ res <-"Data/CEDE/Bases/"
 ######################################## COALITIONS  ######################################################
 ###########################################################################################################
 
-coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";") %>%
+coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";")%>%
   mutate(X2006 = as.character(X2006)) %>%
   gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
   mutate(year = fct_recode(year, 
@@ -33,10 +33,19 @@ coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";") %>%
                                           )) %>%
   mutate_all(funs(as.character(.)))
 
+saveRDS(coalitions,paste0(res,"coalitions.rds"))
 
 ###########################################################################################################
 ############################ Winners and loosers since 1997  ##############################################
 ###########################################################################################################
+
+# Get party-code list: 
+# Nota: Error en codigos de CEDE excel que está corrido de 1 a partir de 434 con respecto a PDF (diccionario) de donde viene el .dta
+# En bases de datos, correcto para todos los años excepto 2011 en que se toman codigos de xls. 
+# Para corregir esto se toma nombre de partido en 2011, y se hace merge para recuperar partidos.
+party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
+# party_code_2 <- read.csv(paste0(data,"partidos.csv"))
+# party_code_v <- merge(party_code, party_code_2, by = "party_code",, all = T)
 
 # Get mayor's election data (Winners and loosers since 1997). 
 
@@ -45,9 +54,6 @@ list_files <- list.files(path=data) %>%
   str_c(data, ., sep = "") %>%
   lapply(list.files) %>% lapply(function(x){x[str_detect(x, "Alcal")]}) %>% 
   str_c(data, c("1997", "2000", "2003", "2007", "2011", "2015"),"/", ., sep = "")
-
-# Get party-code list
-party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 
 #Open dta files into a list (and add party codes to 2011 and 2015 electoral data)
 alcaldes <- lapply(list_files, read_dta) 
