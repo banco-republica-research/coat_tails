@@ -77,8 +77,7 @@ a <- rdrobust(y = l$prop_votes_total_t1,
               covs = cbind(as.factor(l$ano), l$pobl_tot, as.factor(l$coddepto)),
               c = 0.5,
               all = T,
-              vce = "nn", p=2
-)
+              vce = "hc1")
 a
 
 
@@ -112,7 +111,7 @@ alcaldes_rd_y <- lapply(years, function(x){
 a <-  lapply(alcaldes_rd_y, function(x){
   rdrobust(y = x$prop_votes_total_t1,
            x = x$prop_votes_c2,
-           # covs = cbind(x$parties_t),
+           covs = cbind(x$pobl_tot),
            c = 0.5,
            all = T,
            vce = "hc1")

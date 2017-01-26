@@ -90,7 +90,8 @@ parties <- alcaldes_merge %>% filter(rank == 1) %>% filter(codpartido!= 98 & cod
   arrange(desc(win)) 
 
 # list of N big parties (by total number of wins) 
-big_parties <- parties[1:20,]$codpartido
+big_parties <- parties[1:50,]$codpartido
+# big_parties <- parties$codpartido
 
 # Function: Create RD dataset by party (Restrict to big parties and difference to bdw < 0.15)
 RD_data <- function(x){

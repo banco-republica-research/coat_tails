@@ -4,8 +4,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
- setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -48,11 +48,8 @@ saveRDS(coalitions,paste0(res,"coalitions.rds"))
 # Big parties with different codes: Cambio Radical (41, but is 165), PIN (19, buy 302), AICO (13, but 159)#
 ###########################################################################################################
 
-
+# Load party dictionary
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
-
-# party_code_2 <- read.csv(paste0(data,"partidos.csv"))
-# party_code_v <- merge(party_code, party_code_2, by = "party_code",, all = T)
 
 # Get mayor's election data (Winners and loosers since 1997). 
 
@@ -126,16 +123,17 @@ alcaldes_aggregate <- alcaldes %>%
     filter(is.na(prop_votes_total)==0) 
   })
 
-a <- alcaldes_aggregate[[5]] %>% 
-  filter(partido_1 == name_party & codigo_partido_1 != codpartido)
+# Test
+# a <- alcaldes_aggregate[[5]] %>% filter(partido_1 == name_party & codigo_partido_1 != codpartido)
 
 #Arrange data in a long format
 alcaldes_merge <- alcaldes_aggregate %>%
-  ldply() %>%
-  arrange(codmpio, ano, desc(rank)) %>%
+  ldply() %>% filter(is.na(codpartido)== 0 & codpartido != "NaN") %>% 
   dplyr::select(c(ano, codmpio, codep, municipio, parties, parties_ef, rank, primer_apellido, nombre, codpartido, cand, votos, votos_cand, votos_r2,
   prop_votes_total, prop_votes_cand, prop_votes_c2)) %>%
-  merge(., coalitions, by.x = c("codpartido","ano") , by.y = c("party_code", "year_lag_presidencial"), all = T) %>%
+  merge(., coalitions, by.x = c("codpartido","ano") , by.y = c("party_code", "year_lag_presidencial"), all.x = T) %>%
+  filter(is.na(coalition) == 0) %>% 
+  arrange(codmpio, ano, rank) %>%
   mutate(ano = as.integer(ano))
 
 saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
