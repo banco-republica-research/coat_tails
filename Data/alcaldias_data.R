@@ -40,10 +40,14 @@ saveRDS(coalitions,paste0(res,"coalitions.rds"))
 ###########################################################################################################
 
 # Get party-code list: 
-# Nota: Error en codigos de CEDE excel que está corrido de 1 a partir de 434 con respecto a PDF (diccionario) de donde viene el .dta
-# En bases de datos, correcto para todos los años excepto 2011 en que se toman codigos de xls. 
-# Para corregir esto se toma nombre de partido en 2011, y se hace merge para recuperar partidos.
+##################################### ERROR: CÓDIGOS DE PARTIDO  ##########################################
+# Error en codigos de CEDE excel que está corrido de 1 a partir de 434 con respecto a PDF (diccionario)   #
+# de donde viene el .dta. En bases de datos, correcto para todos los años excepto 2011 en que se toman    #
+# codigos de xls. Para corregir esto se toma nombre de partido en 2011, y se hace merge para recuperar    #
+# partidos.                                                                                               #
+###########################################################################################################
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
+
 # party_code_2 <- read.csv(paste0(data,"partidos.csv"))
 # party_code_v <- merge(party_code, party_code_2, by = "party_code",, all = T)
 
@@ -74,8 +78,13 @@ alcaldes[[5]] <- alcaldes[[5]] %>%
                               "MOVIMIENTO ALIANZA SOC INDIGENA ASI" = "PARTIDO ALIANZA SOCIAL INDEPENDIENTE",
                               "PARTIDO DE INTEGRACION NACIONAL PIN" = "PARTIDO DE INTEGRACION NACIONAL" )) %>% 
   mutate(partido_1 = as.character(partido_1)) %>%
-  stringdist_left_join(party_code, by = c(partido_1 = "name_party"), distance_col = "distance", max_dist = 2) %>%
-  rename(codpartido = party_code)
+  stringdist_left_join(party_code, by = c(partido_1 = "name_party"), distance_col = "distance", max_dist = 2) %>% #Correct party_codes using the dictionary
+  plyr::rename(., c("party_code" = "codpartido"))
+
+# #Identify mismatch (run before running the fct_recode line above)
+# c(setdiff(unique(alcaldes_aggregate[[5]]$codigo_partido_1), unique(alcaldes_aggregate[[5]]$party_code)))
+ a <- alcaldes_aggregate[[5]] %>% filter(partido_1 == name_party & codigo_partido_1 != party_code) %>%
+#   plyr::rename(., c("party_code" = "codpartido"))
 
 # Party codes in 2015: codpartido_1 
 # correct ASI that changed name
@@ -113,6 +122,9 @@ alcaldes_aggregate <- alcaldes %>%
     mutate(parties_ef = sum(party_ef)) %>% 
     filter(is.na(prop_votes_total)==0) 
   })
+
+a <- alcaldes_aggregate[[5]] %>% 
+  filter(partido_1 == name_party & codigo_partido_1 != codpartido)
 
 #Arrange data in a long format
 alcaldes_merge <- alcaldes_aggregate %>%
