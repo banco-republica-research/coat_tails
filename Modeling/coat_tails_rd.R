@@ -14,8 +14,36 @@ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 
+
 ###########################################################################################################
-############################################# LOAD DATA ###################################################
+######################################## COALITIONS DATA ##################################################
+###########################################################################################################
+
+# Hand-made based on oficial data, campaign reports and press 
+
+coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";")%>%
+  mutate(X2006 = as.character(X2006)) %>%
+  gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
+  mutate(year = fct_recode(year, 
+                           "1998" = "X1998",
+                           "2002" = "X2002",
+                           "2006" = "X2006",
+                           "2010" = "X2010", 
+                           "2014" = "X2014")) %>%
+  mutate(year_lag_presidencial = fct_recode(year,
+                                            "1997" = "1998",
+                                            "2000" = "2002",
+                                            "2003" = "2006",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  mutate_all(funs(as.character(.)))
+
+saveRDS(coalitions,paste0(res,"coalitions.rds"))
+
+
+###########################################################################################################
+######################################## ELECTIONS DATA ###################################################
 ###########################################################################################################
 
 # Load maire top2 and drop municipality if at least one of the top2 is 98 or 99 
@@ -23,13 +51,14 @@ alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
   filter(rank <= 2) %>% 
+  merge(., coalitions, by.x = c("codpartido","ano") , by.y = c("party_code", "year_lag_presidencial"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
-  filter(coalition != 98 & coalition != 99) %>% 
+  filter(is.na(coalition) == 0 & coalition != 98 & coalition != 99) %>% 
   mutate(ano = as.character(ano)) %>%
   group_by(codmpio, ano) %>%
   mutate(n = 1, nn = sum(n)) %>% 
   filter(nn==2) %>% 
-  dplyr::select(-c(n,nn)) 
+  dplyr::select(-c(codep,n,nn)) 
 
 dim(alcaldes_merge_r2)
 
@@ -77,12 +106,12 @@ a <- rdrobust(y = l$prop_votes_total_t1,
               covs = cbind(as.factor(l$ano), l$pobl_tot, as.factor(l$coddepto)),
               c = 0.5,
               all = T,
-              vce = "hc1")
+              vce = "nn")
 a
 
 
 # Arrange data by bins and eliminate outliers
-l <- l %>%
+g <- l %>%
   mutate(bin = cut(prop_votes_c2, breaks = seq(0.3, 0.7, 0.001), include.lowest = T)) %>%
   group_by(bin) %>%
   summarize(mean_bin = mean(prop_votes_total_t1), sd_bin = sd(prop_votes_total_t1), n = length(codmpio)) %>%
@@ -92,7 +121,7 @@ l <- l %>%
   mutate(bins = mapvalues(.$bins, from = c(1:347), to = seq(0.329, 0.675, 0.001)))
 
 #RD Graph 
-p <- ggplot(l, aes(y = mean_bin, x = as.numeric(bins), colour = as.factor(treatment)))
+p <- ggplot(g, aes(y = mean_bin, x = as.numeric(bins), colour = as.factor(treatment)))
 p <- p + geom_point(colour = "black", size = 1)
 p <- p + stat_smooth(data = alcaldes_rd, aes(x = prop_votes_c2, y = prop_votes_total_t1, 
                                              colour = as.factor(win_t)), method = "loess", level = 0.9) 
@@ -130,28 +159,25 @@ years
 president1 <- readRDS(paste0(res, "presidentes_primera_merge.rds"))
 candidatos1 <- readRDS(paste0(res, "candidates_primera_vuelta.rds"))
 
-
-
 # Create a coalition new variable which identify mayors with party-presidential candidates in the first 
-# round of elections. 
+# To be done manually
 
-alcaldes_rd_1 <- alcaldes_merge_r2 %>%
-  merge(., candidatos1, by.x = c("codpartido", "year"), by.y = c("codpartido", "ano"),  all.x = T, suffixes = c("", "_p")) %>% 
-  mutate(coalition_party = ifelse(!is.na(primer_apellido_p), codpartido,
-                           ifelse(coalition == 1 & is.na(primer_apellido_p), 1111,
-                           ifelse(coalition == 0, 0, 0))
-  )) %>%
-  dplyr::select(., -ends_with("_p"), votos_totales)
-
-
-# President aggregate results to merge by coallition_party
-president1 <- president1 %>%
-  merge(., alcaldes_rd_1, by.x = c("codmpio", "ano"), by.y = c("codmpio", "year"), all = T) %>%
-  group_by(coalition_party) %>%
-  summarize(prop_votes_total_coal = sum(prop_votos_totales))
-
-
-
+# alcaldes_rd_1 <- alcaldes_merge_r2 %>%
+#   merge(., candidatos1, by.x = c("codpartido", "year"), by.y = c("codpartido", "ano"),  all.x = T, suffixes = c("", "_p")) %>% 
+#   mutate(coalition_party = ifelse(!is.na(primer_apellido_p), codpartido,
+#                            ifelse(coalition == 1 & is.na(primer_apellido_p), 1111,
+#                            ifelse(coalition == 0, 0, 0))
+#   )) %>%
+#   dplyr::select(., -ends_with("_p"), votos_totales)
+# 
+# coal_dic <- alcaldes_rd_1 %>% group_by(year, codpartido, coalition_party) %>% 
+#   summarize(sum = sum(votos)) %>% dplyr::select(-sum)
+# 
+# # President aggregate results to merge by coallition_party
+# president1 <- president1 %>% filter(ano >= 1998 & codpartido != "NaN") %>% dplyr::select(.,codmpio, codpartido, ano, prop_votes_total) %>%
+#   merge(.,coal_dic, by.x = c("codpartido", "ano"), by.y = c("codpartido", "year"), all.x = T) %>%
+#   group_by(coalition_party) %>%
+#   summarize(prop_votes_total_coal = sum(prop_votos_total))
 
 
 table(alcaldes_rd_1$coalition_party, alcaldes_rd_1$coalition)

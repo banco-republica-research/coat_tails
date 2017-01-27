@@ -12,30 +12,6 @@ data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 
 ###########################################################################################################
-######################################## COALITIONS  ######################################################
-###########################################################################################################
-
-coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";")%>%
-  mutate(X2006 = as.character(X2006)) %>%
-  gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
-  mutate(year = fct_recode(year, 
-                           "1998" = "X1998",
-                           "2002" = "X2002",
-                           "2006" = "X2006",
-                           "2010" = "X2010", 
-                           "2014" = "X2014")) %>%
-  mutate(year_lag_presidencial = fct_recode(year,
-                                          "1997" = "1998",
-                                          "2000" = "2002",
-                                          "2003" = "2006",
-                                          "2007" = "2010",
-                                          "2011" = "2014"
-                                          )) %>%
-  mutate_all(funs(as.character(.)))
-
-saveRDS(coalitions,paste0(res,"coalitions.rds"))
-
-###########################################################################################################
 ############################ Winners and loosers since 1997  ##############################################
 ###########################################################################################################
 
@@ -63,35 +39,35 @@ list_files <- list.files(path=data) %>%
 alcaldes <- lapply(list_files, read_dta) 
 
 # Party codes in 2003: # correct POLO that changed name
-alcaldes[[3]] <- alcaldes[[3]] %>%
-  mutate(codpartido = as.factor(codpartido)) %>%
-  mutate(codpartido = fct_recode(codpartido, "194" = "164")) %>% 
-  mutate(codpartido = as.character(codpartido)) 
+# alcaldes[[3]] <- alcaldes[[3]] %>%
+  # mutate(codpartido = as.factor(codpartido)) %>%
+  # mutate(codpartido = fct_recode(codpartido, "194" = "164")) %>% 
+  # mutate(codpartido = as.character(codpartido)) 
 # table(alcaldes[[3]]$codpartido)
 
 # Party codes in 2011: merged from party name
 # correct parties that changed name
 alcaldes[[5]] <- alcaldes[[5]] %>%
   mutate(nombre = "") %>%
-  mutate(partido_1 = as.factor(partido_1)) %>%
-  mutate(partido_1 = fct_recode(partido_1,
-                              "MOVIMIENTO ALIANZA SOC INDIGENA ASI" = "PARTIDO ALIANZA SOCIAL INDEPENDIENTE",
-                              "PARTIDO DE INTEGRACION NACIONAL PIN" = "PARTIDO DE INTEGRACION NACIONAL" )) %>% 
-  mutate(partido_1 = as.character(partido_1)) %>%
   stringdist_left_join(party_code, by = c(partido_1 = "name_party"), distance_col = "distance", max_dist = 2) %>% #Correct party_codes using the dictionary
   plyr::rename(., c("party_code" = "codpartido"))
+# mutate(partido_1 = as.factor(partido_1)) %>%
+# mutate(partido_1 = fct_recode(partido_1,
+#                             "MOVIMIENTO ALIANZA SOC INDIGENA ASI" = "PARTIDO ALIANZA SOCIAL INDEPENDIENTE",
+#                             "PARTIDO DE INTEGRACION NACIONAL PIN" = "PARTIDO DE INTEGRACION NACIONAL" )) %>% 
+# mutate(partido_1 = as.character(partido_1)) %>%
+
 
 # #Identify mismatch (run before running the fct_recode line above)
 # c(setdiff(unique(alcaldes_aggregate[[5]]$codigo_partido_1), unique(alcaldes_aggregate[[5]]$party_code)))
- a <- alcaldes_aggregate[[5]] %>% filter(partido_1 == name_party & codigo_partido_1 != party_code) %>%
+# a <- alcaldes_aggregate[[5]] %>% filter(partido_1 == name_party & codigo_partido_1 != party_code) %>%
 #   plyr::rename(., c("party_code" = "codpartido"))
 
-# Party codes in 2015: codpartido_1 
-# correct ASI that changed name
-alcaldes[[6]] <- alcaldes[[6]] %>%
-  mutate(codpartido = as.factor(codpartido_1)) %>%
-  mutate(codpartido = fct_recode(codpartido, "15" = "654")) %>% 
-  mutate(codpartido = as.character(codpartido)) 
+# Party codes in 2015: correct ASI that changed name
+# alcaldes[[6]] <- alcaldes[[6]] %>%
+  # mutate(codpartido = as.factor(codpartido_1)) %>%
+  # mutate(codpartido = fct_recode(codpartido, "15" = "654")) %>% 
+  # mutate(codpartido = as.character(codpartido)) 
 # table(alcaldes[[6]]$codpartido)
 
 
@@ -131,8 +107,6 @@ alcaldes_merge <- alcaldes_aggregate %>%
   ldply() %>% filter(is.na(codpartido)== 0 & codpartido != "NaN") %>% 
   dplyr::select(c(ano, codmpio, codep, municipio, parties, parties_ef, rank, primer_apellido, nombre, codpartido, cand, votos, votos_cand, votos_r2,
   prop_votes_total, prop_votes_cand, prop_votes_c2)) %>%
-  merge(., coalitions, by.x = c("codpartido","ano") , by.y = c("party_code", "year_lag_presidencial"), all.x = T) %>%
-  filter(is.na(coalition) == 0) %>% 
   arrange(codmpio, ano, rank) %>%
   mutate(ano = as.integer(ano))
 
