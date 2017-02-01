@@ -94,6 +94,13 @@ a <- rdrobust(y = l$prop_votes_total_t1,
 
 a 
 
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
+       binselect="es", nbins= 15, kernel="triangular", p=3, ci=95, 
+       y.lim=c(0.1,0.7))
+
+
 
 ###########################################################################################################
 ############################# RD: IMCUMBENCY EFFECT - N PARTIES APPROACH ##################################
@@ -149,21 +156,37 @@ a
 
 
 
+
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
+       binselect="es", nbins= 15, kernel="triangular", p=3, ci=95, 
+       y.lim=c(0.2,0.5))
+
+
+
+
+
+
+
+
+
+
 # RD and OLS regressions by year (restricted sample)
 
 years <- names(table(alcaldes_rd_n$ano))
-alcaldes_rd_y <- lapply(years, function(x){
-    alcaldes_rd_n %>% filter(ano == x)
+ly <- lapply(years, function(x){
+    l %>% filter(ano == x)
   }) 
 
-a <-  lapply(alcaldes_rd_y, function(x){
+a <-  lapply(ly, function(x){
   rdrobust(y = x$prop_votes_total_t1,
            x = x$prop_votes_c2,
-           covs = cbind(as.factor(l$ano),l$pobl_tot, as.factor(l$coddepto),as.factor(alcaldes_rd_n$codpartido)),
+           covs = cbind(as.factor(x$pobl_tot, as.factor(x$coddepto),as.factor(x$codpartido))),
            c = 0.5,
            all = T,
            vce = "hc1")
-})
+          })
 
 a
 years

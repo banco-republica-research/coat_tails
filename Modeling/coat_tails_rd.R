@@ -16,33 +16,6 @@ res <-"Data/CEDE/Bases/"
 
 
 ###########################################################################################################
-######################################## COALITIONS DATA ##################################################
-###########################################################################################################
-
-# Hand-made based on oficial data, campaign reports and press 
-
-coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";")%>%
-  mutate(X2006 = as.character(X2006)) %>%
-  gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
-  mutate(year = fct_recode(year, 
-                           "1998" = "X1998",
-                           "2002" = "X2002",
-                           "2006" = "X2006",
-                           "2010" = "X2010", 
-                           "2014" = "X2014")) %>%
-  mutate(year_lag_presidencial = fct_recode(year,
-                                            "1997" = "1998",
-                                            "2000" = "2002",
-                                            "2003" = "2006",
-                                            "2007" = "2010",
-                                            "2011" = "2014"
-  )) %>%
-  mutate_all(funs(as.character(.)))
-
-saveRDS(coalitions,paste0(res,"coalitions.rds"))
-
-
-###########################################################################################################
 ######################################## ELECTIONS DATA ###################################################
 ###########################################################################################################
 
@@ -90,7 +63,8 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   merge(., president,  by.x = c("year", "codmpio", "coalition"), by.y = c("ano", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   dplyr::select(codmpio, ano, year, codpartido_t, win_t, 
-                votos_t, votos_t1, starts_with("prop")) %>%
+                votos_t, votos_t1, starts_with("prop")) %>% 
+  filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>%
   arrange(codmpio, ano)
 
 # RD and OLS regressions on restricted sample
@@ -108,6 +82,12 @@ a <- rdrobust(y = l$prop_votes_total_t1,
               all = T,
               vce = "nn")
 a
+
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
+       binselect="es", nbins= 16, kernel="triangular", p=2, ci=95, 
+       y.lim=c(0.3,0.7))
 
 
 # Arrange data by bins and eliminate outliers

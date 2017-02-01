@@ -146,6 +146,32 @@ saveRDS(alcaldes_difference,paste0(res,"alcaldes_difference.rds"))
 # check quantcut
 # alcaldes_difference %>% group_by(dif_q) %>% summarize(mean=mean(difference),sd=sd(difference),min=min(difference),max=max(difference))
 
+###########################################################################################################
+######################################## COALITIONS DATA ##################################################
+###########################################################################################################
+
+# Hand-made based on oficial data, campaign reports and press 
+
+coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";")%>%
+  mutate(X2006 = as.character(X2006)) %>%
+  gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
+  mutate(year = fct_recode(year, 
+                           "1998" = "X1998",
+                           "2002" = "X2002",
+                           "2006" = "X2006",
+                           "2010" = "X2010", 
+                           "2014" = "X2014")) %>%
+  mutate(year_lag_presidencial = fct_recode(year,
+                                            "1997" = "1998",
+                                            "2000" = "2002",
+                                            "2003" = "2006",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  mutate_all(funs(as.character(.)))
+
+saveRDS(coalitions,paste0(res,"coalitions.rds"))
+
 
 ###########################################################################################################
 #################################### Only winners 1988-1994  ##############################################
