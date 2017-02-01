@@ -102,6 +102,11 @@ alcaldes_aggregate <- alcaldes %>%
 # Test
 # a <- alcaldes_aggregate[[5]] %>% filter(partido_1 == name_party & codigo_partido_1 != codpartido)
 
+
+# Arrange codes for specific parties: Polo, ASI, PIN
+
+
+
 #Arrange data in a long format
 alcaldes_merge <- alcaldes_aggregate %>%
   ldply() %>% filter(is.na(codpartido)== 0 & codpartido != "NaN") %>% 

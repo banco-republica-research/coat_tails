@@ -21,6 +21,9 @@ res <-"Data/CEDE/Bases/"
 
 # Load maire top2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
+coalitions <- readRDS(paste0(res,"coalitions.rds"))
+
+
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
   filter(rank <= 2) %>% 
