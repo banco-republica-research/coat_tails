@@ -19,11 +19,11 @@ res <-"Data/CEDE/Bases/"
 ######################################## ELECTIONS DATA ###################################################
 ###########################################################################################################
 
-# Load maire top2 and drop municipality if at least one of the top2 is 98 or 99 
+# Load maire and coalition data
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 coalitions <- readRDS(paste0(res,"coalitions.rds"))
 
-
+# top2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
   filter(rank <= 2) %>% 
@@ -34,7 +34,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   group_by(codmpio, ano) %>%
   mutate(n = 1, nn = sum(n)) %>% 
   filter(nn==2) %>% 
-  dplyr::select(-c(codep,n,nn)) 
+  dplyr::select(-c(codep,n,nn)) %>%  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
 
 dim(alcaldes_merge_r2)
 
@@ -65,35 +65,59 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., president,  by.x = c("year", "codmpio", "coalition"), by.y = c("ano", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  dplyr::select(codmpio, ano, year, codpartido_t, win_t, 
+  dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
                 votos_t, votos_t1, starts_with("prop")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>%
   arrange(codmpio, ano)
 
 # RD and OLS regressions on restricted sample
-l <- alcaldes_rd %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T)
+l <- alcaldes_rd 
 # %>% filter(prop_votes_c2 <= 0.5 + sd(prop_votes_c2) * 1.96 & prop_votes_c2 >= 0.5 - sd(prop_votes_c2) * 1.96)
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 dim(l)
-hist(l$prop_votes_c2)
+# hist(l$prop_votes_c2)
 
-a <- rdrobust(y = l$prop_votes_total_t1,
+rdrobust(y = l$prop_votes_total_t1,
               x = l$prop_votes_c2,
               covs = cbind(as.factor(l$ano), l$pobl_tot, as.factor(l$coddepto)),
               c = 0.5,
               all = T,
               vce = "nn")
-a
 
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
-       binselect="es", nbins= 16, kernel="triangular", p=2, ci=95, 
+       binselect="es", nbins= 12, kernel="triangular", p=2, ci=95, 
        y.lim=c(0.3,0.7))
 
 
-# Arrange data by bins and eliminate outliers
+# RD and OLS regressions by year (restricted sample)
+
+years <- names(table(l$ano))
+l_y <- lapply(years, function(x){
+  l %>% filter(ano == x)
+}) 
+
+lapply(l_y, function(a){
+  rdrobust(y = a$prop_votes_total_t1,
+           x = a$prop_votes_c2,
+           covs = cbind(a$pobl_tot),
+           c = 0.5,
+           all = T,
+           vce = "hc1")
+})
+
+
+l2 <- l_y[[1]] %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
+       binselect="es", nbins= 12, kernel="triangular", p=2, ci=95, 
+       )
+
+
+
+
+# ggplot RD 
 g <- l %>%
   mutate(bin = cut(prop_votes_c2, breaks = seq(0.3, 0.7, 0.001), include.lowest = T)) %>%
   group_by(bin) %>%
@@ -112,25 +136,6 @@ p <- p + scale_x_continuous(limits = c(0.45, 0.55))
 # p <- p + coord_cartesian(xlim = c(0.45, 0.55))
 p
 
-
-# RD and OLS regressions by year (restricted sample)
-
-years <- names(table(alcaldes_rd$ano))
-alcaldes_rd_y <- lapply(years, function(x){
-  alcaldes_rd %>% filter(ano == x)
-}) 
-
-a <-  lapply(alcaldes_rd_y, function(x){
-  rdrobust(y = x$prop_votes_total_t1,
-           x = x$prop_votes_c2,
-           covs = cbind(x$pobl_tot),
-           c = 0.5,
-           all = T,
-           vce = "hc1")
-})
-
-a
-years
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
@@ -206,13 +211,12 @@ hist(l$prop_votes_c2)
 table(l$codpartido,l$ano)
 
 # RD and OLS regressions on restricted sample
-a <- rdrobust(y = l$prop_votes_total_t1,
+rdrobust(y = l$prop_votes_total_t1,
               x = l$prop_votes_c2,
               covs = cbind(as.factor(l$ano),l$pobl_tot, as.factor(l$coddepto),as.factor(alcaldes_rd_n$codpartido)),
               c = 0.5,
               all = T,
               vce = "hc1")
-a 
 
 
 

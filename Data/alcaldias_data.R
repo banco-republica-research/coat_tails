@@ -64,10 +64,10 @@ alcaldes[[5]] <- alcaldes[[5]] %>%
 #   plyr::rename(., c("party_code" = "codpartido"))
 
 # Party codes in 2015: correct ASI that changed name
-# alcaldes[[6]] <- alcaldes[[6]] %>%
-  # mutate(codpartido = as.factor(codpartido_1)) %>%
+ alcaldes[[6]] <- alcaldes[[6]] %>%
+  mutate(codpartido = as.factor(codpartido_1))%>%
   # mutate(codpartido = fct_recode(codpartido, "15" = "654")) %>% 
-  # mutate(codpartido = as.character(codpartido)) 
+  mutate(codpartido = as.character(codpartido)) 
 # table(alcaldes[[6]]$codpartido)
 
 
@@ -103,19 +103,60 @@ alcaldes_aggregate <- alcaldes %>%
 # a <- alcaldes_aggregate[[5]] %>% filter(partido_1 == name_party & codigo_partido_1 != codpartido)
 
 
-# Arrange codes for specific parties: Polo, ASI, PIN
+#############################
+# TO DO: fix codes for specific parties: Polo, ASI, PIN
+# 
 
 
 
-#Arrange data in a long format
+
+# Reshape data in a long format
 alcaldes_merge <- alcaldes_aggregate %>%
-  ldply() %>% filter(is.na(codpartido)== 0 & codpartido != "NaN") %>% 
+  ldply() %>%  
   dplyr::select(c(ano, codmpio, codep, municipio, parties, parties_ef, rank, primer_apellido, nombre, codpartido, cand, votos, votos_cand, votos_r2,
   prop_votes_total, prop_votes_cand, prop_votes_c2)) %>%
   arrange(codmpio, ano, rank) %>%
   mutate(ano = as.integer(ano))
 
+# filter(is.na(codpartido)== 0 & codpartido != "NaN") %>%
+
 saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
+
+
+###########################################################################################################
+######################################## COALITIONS DATA ##################################################
+###########################################################################################################
+
+# Hand-made based on oficial data, campaign reports and press 
+
+coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";")%>%
+  mutate(X2006 = as.character(X2006)) %>%
+  gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
+  mutate(year = fct_recode(year, 
+                           "1998" = "X1998",
+                           "2002" = "X2002",
+                           "2006" = "X2006",
+                           "2010" = "X2010", 
+                           "2014" = "X2014")) %>%
+  mutate(year_lag_presidencial = fct_recode(year,
+                                            "1997" = "1998",
+                                            "2000" = "2002",
+                                            "2003" = "2006",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  mutate_all(funs(as.character(.)))
+
+
+#############################
+# TO DO: fix codes for specific parties: Polo, ASI, PIN
+# 
+
+
+
+
+
+saveRDS(coalitions,paste0(res,"coalitions.rds"))
 
 
 ###########################################################################################################
@@ -150,33 +191,6 @@ saveRDS(alcaldes_difference,paste0(res,"alcaldes_difference.rds"))
 
 # check quantcut
 # alcaldes_difference %>% group_by(dif_q) %>% summarize(mean=mean(difference),sd=sd(difference),min=min(difference),max=max(difference))
-
-###########################################################################################################
-######################################## COALITIONS DATA ##################################################
-###########################################################################################################
-
-# Hand-made based on oficial data, campaign reports and press 
-
-coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";")%>%
-  mutate(X2006 = as.character(X2006)) %>%
-  gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
-  mutate(year = fct_recode(year, 
-                           "1998" = "X1998",
-                           "2002" = "X2002",
-                           "2006" = "X2006",
-                           "2010" = "X2010", 
-                           "2014" = "X2014")) %>%
-  mutate(year_lag_presidencial = fct_recode(year,
-                                            "1997" = "1998",
-                                            "2000" = "2002",
-                                            "2003" = "2006",
-                                            "2007" = "2010",
-                                            "2011" = "2014"
-  )) %>%
-  mutate_all(funs(as.character(.)))
-
-saveRDS(coalitions,paste0(res,"coalitions.rds"))
-
 
 ###########################################################################################################
 #################################### Only winners 1988-1994  ##############################################
