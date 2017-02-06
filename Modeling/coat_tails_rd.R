@@ -13,6 +13,7 @@ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
+dnp <-"Data/DNP/Ejecuciones/"
 
 
 ###########################################################################################################
@@ -22,6 +23,10 @@ res <-"Data/CEDE/Bases/"
 # Load maire and coalition data
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 coalitions <- readRDS(paste0(res,"coalitions.rds"))
+
+# Load party codes and municipal covariates
+party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
+controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
 
 # top2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
@@ -34,13 +39,10 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   group_by(codmpio, ano) %>%
   mutate(n = 1, nn = sum(n)) %>% 
   filter(nn==2) %>% 
-  dplyr::select(-c(codep,n,nn)) %>%  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+  dplyr::select(-c(codep,n,nn)) %>% 
+  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
 
 dim(alcaldes_merge_r2)
-
-# Load party codes and municipal covariates
-party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
-controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
 
 # Load presidential for t+1
 win_apellido <- c("PASTRANA", "URIBE", "SANTOS")
@@ -48,6 +50,11 @@ win_nom <- c("ANDRES", "ALVARO", "JUAN MANUEL")
 
 president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
   mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0))
+
+# Load ejecuciones
+ejecu_mean <- read_dta(paste0(dnp,"Ejecuciones_coat_mean.dta"))
+ejecu_before1 <- read_dta(paste0(dnp,"Ejecuciones_coat_before1.dta"))
+ejecu_after1 <- read_dta(paste0(dnp,"Ejecuciones_coat_after1.dta"))
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
@@ -65,30 +72,44 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., president,  by.x = c("year", "codmpio", "coalition"), by.y = c("ano", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
+  merge(., ejecu_before1,  by.x = c("ano", "codmpio"), by.y = c("ano", "codmpio"), all.x = T) %>%
   dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
-                votos_t, votos_t1, starts_with("prop")) %>% 
+                votos_t, votos_t1, starts_with("prop"), ends_with("_pc")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>%
   arrange(codmpio, ano)
 
 # RD and OLS regressions on restricted sample
 l <- alcaldes_rd 
+# %>% filter(ano >= 2000) 
 # %>% filter(prop_votes_c2 <= 0.5 + sd(prop_votes_c2) * 1.96 & prop_votes_c2 >= 0.5 - sd(prop_votes_c2) * 1.96)
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 dim(l)
 # hist(l$prop_votes_c2)
 
-rdrobust(y = l$prop_votes_total_t1,
-              x = l$prop_votes_c2,
-              covs = cbind(as.factor(l$ano), l$pobl_tot, as.factor(l$coddepto)),
-              c = 0.5,
-              all = T,
-              vce = "nn")
+
+# Regressions for list of outcomes
+l_f <- function(o){
+  r <- rdrobust(y = l[,o],
+                x = l$prop_votes_c2,
+                covs = cbind(as.factor(l$ano), l$pobl_tot, as.factor(l$coddepto)),
+                c = 0.5,
+                all = F)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+         binselect="es", nbins= 15, kernel="triangular", p=3, ci=95, 
+  )
+  return(r)
+}
+
+# out <- c("prop_votes_total_t1","A1000_d","A1010_d","A1020_d","B_d","B1000_d","B1010_d","B1020_d","B1030_d","E1000_d","E2000_d")
+out <- c("prop_votes_total_t1", "A1000_pc","A1010_pc","A1020_pc","B_pc","B1000_pc","B1010_pc","B1020_pc","B1030_pc","E1000_pc","E2000_pc","D1000_pc", "D2000_pc", "D3000_pc")
+
+out <- c("prop_votes_total_t1")
+lapply(out, l_f) 
 
 
-rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
-       binselect="es", nbins= 12, kernel="triangular", p=2, ci=95, 
-       y.lim=c(0.3,0.7))
+
+
 
 
 # RD and OLS regressions by year (restricted sample)
@@ -113,8 +134,6 @@ l2 <- l_y[[1]] %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
        binselect="es", nbins= 12, kernel="triangular", p=2, ci=95, 
        )
-
-
 
 
 # ggplot RD 
