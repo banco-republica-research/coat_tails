@@ -55,6 +55,8 @@ president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
 ejecu_mean <- read_dta(paste0(dnp,"Ejecuciones_coat_mean.dta"))
 ejecu_before1 <- read_dta(paste0(dnp,"Ejecuciones_coat_before1.dta"))
 ejecu_after1 <- read_dta(paste0(dnp,"Ejecuciones_coat_after1.dta"))
+ejecu_dep <- read_dta(paste0(dnp,"Ejecuciones_coat_dep.dta"))
+
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
@@ -72,20 +74,24 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., president,  by.x = c("year", "codmpio", "coalition"), by.y = c("ano", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  merge(., ejecu_before1,  by.x = c("ano", "codmpio"), by.y = c("ano", "codmpio"), all.x = T) %>%
+  merge(., ejecu_dep,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  mutate(eje_dep1 = ifelse(eje_dep >= 0.8, 1,0)) %>%
+  merge(., ejecu_mean,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
-                votos_t, votos_t1, starts_with("prop"), ends_with("_pc")) %>% 
+                votos_t, votos_t1, starts_with("prop"), starts_with("eje_")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>%
   arrange(codmpio, ano)
 
-# RD and OLS regressions on restricted sample
 l <- alcaldes_rd 
 # %>% filter(ano >= 2000) 
 # %>% filter(prop_votes_c2 <= 0.5 + sd(prop_votes_c2) * 1.96 & prop_votes_c2 >= 0.5 - sd(prop_votes_c2) * 1.96)
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
 dim(l)
 # hist(l$prop_votes_c2)
+
+
+############################
+# RD and OLS regressions on restricted sample
 
 
 # Regressions for list of outcomes
@@ -101,17 +107,49 @@ l_f <- function(o){
   return(r)
 }
 
-# out <- c("prop_votes_total_t1","A1000_d","A1010_d","A1020_d","B_d","B1000_d","B1010_d","B1020_d","B1030_d","E1000_d","E2000_d")
-out <- c("prop_votes_total_t1", "A1000_pc","A1010_pc","A1020_pc","B_pc","B1000_pc","B1010_pc","B1020_pc","B1030_pc","E1000_pc","E2000_pc","D1000_pc", "D2000_pc", "D3000_pc")
-
-out <- c("prop_votes_total_t1")
+out <- c("prop_votes_total_t1", "eje_A1000","eje_A1010","eje_A1020","eje_B","eje_B1000","eje_B1010","eje_B1020","eje_B1030","eje_E1000","eje_E2000","eje_D1000", "eje_D2000", "eje_D3000")
 lapply(out, l_f) 
 
 
 
+############################
+# RD and OLS regressions by national transfers dependency (restricted sample)
+
+dep <- c(0,1)
+l_y <- lapply(dep, function(x){
+  l %>% filter(eje_dep1 == x)
+}) 
+
+lapply(l_y, function(a){
+  rdrobust(y = a$prop_votes_total_t1,
+           x = a$prop_votes_c2,
+           covs = cbind(a$pobl_tot),
+           c = 0.5,
+           all = T,
+           vce = "hc1")
+})
+
+l2 <- l_y[[2]] %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
+       binselect="es", nbins= 12, kernel="triangular", p=2, ci=95, 
+)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+############################
 # RD and OLS regressions by year (restricted sample)
 
 years <- names(table(l$ano))
@@ -136,6 +174,7 @@ rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5,
        )
 
 
+############################
 # ggplot RD 
 g <- l %>%
   mutate(bin = cut(prop_votes_c2, breaks = seq(0.3, 0.7, 0.001), include.lowest = T)) %>%
@@ -154,6 +193,14 @@ p <- p + stat_smooth(data = alcaldes_rd, aes(x = prop_votes_c2, y = prop_votes_t
 p <- p + scale_x_continuous(limits = c(0.45, 0.55))
 # p <- p + coord_cartesian(xlim = c(0.45, 0.55))
 p
+
+
+
+
+
+
+
+
 
 
 ###########################################################################################################
