@@ -1,6 +1,6 @@
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust")
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr""xlsx" )
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
@@ -9,6 +9,7 @@ lapply(packageList,require,character.only=TRUE)
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
+coal <-"Data/CEDE/coaliciones/"
 res <-"Data/CEDE/Bases/"
 
 ###########################################################################################################
@@ -39,26 +40,26 @@ list_files <- list.files(path=data) %>%
 alcaldes <- lapply(list_files, read_dta) 
 
 # Party codes in 2003: # correct POLO that changed name
-# alcaldes[[3]] <- alcaldes[[3]] %>%
-  # mutate(codpartido = as.factor(codpartido)) %>%
-  # mutate(codpartido = fct_recode(codpartido, "194" = "164")) %>% 
-  # mutate(codpartido = as.character(codpartido)) 
-# table(alcaldes[[3]]$codpartido)
+alcaldes[[3]] <- alcaldes[[3]] %>%
+   mutate(codpartido = as.factor(codpartido)) %>%
+   mutate(codpartido = fct_recode(codpartido, "194" = "164")) %>% 
+   mutate(codpartido = as.character(codpartido)) 
+ table(alcaldes[[3]]$codpartido)
 
 # Party codes in 2011: merged from party name
 # correct parties that changed name
 alcaldes[[5]] <- alcaldes[[5]] %>%
+  mutate(partido_1 = as.factor(partido_1)) %>%
+  mutate(partido_1 = fct_recode(partido_1,
+                             "MOVIMIENTO ALIANZA SOC INDIGENA ASI" = "PARTIDO ALIANZA SOCIAL INDEPENDIENTE",
+                             "PARTIDO DE INTEGRACION NACIONAL PIN" = "PARTIDO DE INTEGRACION NACIONAL" )) %>% 
+  mutate(partido_1 = as.character(partido_1)) %>%
   mutate(nombre = "") %>%
   stringdist_left_join(party_code, by = c(partido_1 = "name_party"), distance_col = "distance", max_dist = 2) %>% #Correct party_codes using the dictionary
   plyr::rename(., c("party_code" = "codpartido"))
-# mutate(partido_1 = as.factor(partido_1)) %>%
-# mutate(partido_1 = fct_recode(partido_1,
-#                             "MOVIMIENTO ALIANZA SOC INDIGENA ASI" = "PARTIDO ALIANZA SOCIAL INDEPENDIENTE",
-#                             "PARTIDO DE INTEGRACION NACIONAL PIN" = "PARTIDO DE INTEGRACION NACIONAL" )) %>% 
-# mutate(partido_1 = as.character(partido_1)) %>%
 
 
-# #Identify mismatch (run before running the fct_recode line above)
+# Identify mismatch (run before running the fct_recode line above)
 # c(setdiff(unique(alcaldes_aggregate[[5]]$codigo_partido_1), unique(alcaldes_aggregate[[5]]$party_code)))
 # a <- alcaldes_aggregate[[5]] %>% filter(partido_1 == name_party & codigo_partido_1 != party_code) %>%
 #   plyr::rename(., c("party_code" = "codpartido"))
@@ -66,7 +67,7 @@ alcaldes[[5]] <- alcaldes[[5]] %>%
 # Party codes in 2015: correct ASI that changed name
  alcaldes[[6]] <- alcaldes[[6]] %>%
   mutate(codpartido = as.factor(codpartido_1))%>%
-  # mutate(codpartido = fct_recode(codpartido, "15" = "654")) %>% 
+  mutate(codpartido = fct_recode(codpartido, "15" = "654")) %>% 
   mutate(codpartido = as.character(codpartido)) 
 # table(alcaldes[[6]]$codpartido)
 
@@ -103,13 +104,6 @@ alcaldes_aggregate <- alcaldes %>%
 # a <- alcaldes_aggregate[[5]] %>% filter(partido_1 == name_party & codigo_partido_1 != codpartido)
 
 
-#############################
-# TO DO: fix codes for specific parties: Polo, ASI, PIN
-# 
-
-
-
-
 # Reshape data in a long format
 alcaldes_merge <- alcaldes_aggregate %>%
   ldply() %>%  
@@ -127,9 +121,10 @@ saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
 ######################################## COALITIONS DATA ##################################################
 ###########################################################################################################
 
-# Hand-made based on oficial data, campaign reports and press 
+# Coalition by party: Hand-made based on oficial data, campaign reports and press 
 
-coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";")%>%
+coalitions <- read.csv(str_c(coal, "coaliciones.csv"), sep = ";") %>%
+  filter(is.na(party_code)==0) %>%
   mutate(X2006 = as.character(X2006)) %>%
   gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
   mutate(year = fct_recode(year, 
@@ -145,18 +140,23 @@ coalitions <- read.csv(str_c(data, "coaliciones.csv"), sep = ";")%>%
                                             "2007" = "2010",
                                             "2011" = "2014"
   )) %>%
-  mutate_all(funs(as.character(.)))
-
-
-#############################
-# TO DO: fix codes for specific parties: Polo, ASI, PIN
-# 
-
-
-
-
+  mutate_all(funs(as.character(.))) %>% 
+  filter(party_code != 164) %>% # Fix Polo
+  mutate(coalition = ifelse(party_code==15 & year == 2014, 1,coalition)) %>% 
+  filter(party_code != 654)  # Fix ASI 
 
 saveRDS(coalitions,paste0(res,"coalitions.rds"))
+
+# Coalition for conservatives in 2011-2015: 
+coalitions_con <- read.csv(str_c(coal, "coaliciones_conservadores.csv"), sep = ";") %>%
+  dplyr::select(muni_code, ano, code1, coalition_con) %>% 
+  rename(.,codmpio = muni_code, codpartido = code1)
+
+
+saveRDS(coalitions_con,paste0(res,"coalitions_con.rds"))
+
+
+
 
 
 ###########################################################################################################
