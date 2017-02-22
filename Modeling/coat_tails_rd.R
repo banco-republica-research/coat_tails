@@ -13,8 +13,6 @@ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
-dnp <-"Data/DNP/Ejecuciones/"
-
 
 ###########################################################################################################
 ######################################## ELECTIONS DATA ###################################################
