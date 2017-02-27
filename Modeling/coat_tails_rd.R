@@ -13,7 +13,8 @@ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
-
+dnp <- "Data/DNP/Ejecuciones/"
+  
 ###########################################################################################################
 ######################################## ELECTIONS DATA ###################################################
 ###########################################################################################################
@@ -53,9 +54,11 @@ president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
 
 # Load ejecuciones
 ejecu_mean <- read_dta(paste0(dnp,"Ejecuciones_coat_mean.dta"))
+vias_mean <- read_dta(paste0(dnp,"Vias_SICEP_mean.dta"))
 ejecu_dep <- read_dta(paste0(dnp,"Ejecuciones_coat_dep.dta"))
 # ejecu_before1 <- read_dta(paste0(dnp,"Ejecuciones_coat_before1.dta"))
 # ejecu_after1 <- read_dta(paste0(dnp,"Ejecuciones_coat_after1.dta"))
+
 
 
 ###########################################################################################################
@@ -77,13 +80,16 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   merge(., ejecu_dep,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   mutate(eje_dep1 = ifelse(eje_dep >= 0.8, 1,0)) %>%
   merge(., ejecu_mean,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., vias_mean,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
-                votos_t, votos_t1, starts_with("prop"), starts_with("eje_")) %>% 
+                votos_t, votos_t1, starts_with("prop"), starts_with("eje_"), starts_with("vias"),starts_with("f_"), starts_with("log")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>%
   arrange(codmpio, ano)
 
+   
+
 # Second rounds only
-l <- alcaldes_rd %>% filter(ano != 2000 & ano != 2003) 
+l <- alcaldes_rd  %>% filter(ano != 2000 & ano != 2003) 
 dim(l)
 # hist(l$prop_votes_c2)
 
@@ -94,7 +100,6 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 ############################
 # RD and OLS regressions 
 
-
 # Regressions for list of outcomes
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
@@ -102,25 +107,35 @@ l_f <- function(o){
                 covs = cbind(as.factor(l$ano), l$pobl_tot, as.factor(l$coddepto)),
                 c = 0.5,
                 all = T,
-                vce = "hc1")
+                vce = "nn")
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
          binselect="es", nbins= 15, kernel="triangular", p=3, ci=95, 
   )
   return(r)
 }
 
-# out <- c("eje_A1000","eje_A1010","eje_A1020","eje_B","eje_B1000","eje_B1010","eje_B1020","eje_B1030","eje_E1000","eje_E2000","eje_D1000", "eje_D2000", "eje_D3000", "prop_votes_total_t1")
-out <- c("prop_votes_total_t1")
+# out <- c("log_A1000","log_A1010","log_A1020","log_B","log_B1000","log_B1010","log_B1020","log_B1030","log_E1000","log_E2000","log_D1000", "log_D2000", "log_D3000", "prop_votes_total_t1")
+out <- c("log_vias","log_f_nac2","log_f_nac3","prop_votes_total_t1")
 
 lapply(out, l_f) 
 
+# linear
+
+lm_f <- function(o){
+  r <- summary(lm(l[,o] ~ prop_votes_c2 + pobl_tot + as.factor(ano) + as.factor(coddepto), l))
+  return(r)
+}
+
+lapply(out, lm_f) 
+
+
 
 ############################
-# RD and OLS regressions by national transfers dependency
+# RD and OLS regressions by subgroup: national transfers dependency
 
 dep <- c(0,1)
 l_y <- lapply(dep, function(x){
-  l %>% filter(eje_dep1 == x)
+  l %>% filter(log_dep1 == x)
 }) 
 
 lapply(l_y, function(a){
@@ -173,6 +188,8 @@ l2 <- l_y[[1]] %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
        binselect="es", nbins= 12, kernel="triangular", p=2, ci=95, 
 )
+
+
 
 
 ############################
