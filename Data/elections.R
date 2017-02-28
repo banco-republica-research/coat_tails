@@ -7,12 +7,13 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
+coal <-"Data/CEDE/coaliciones/"
 
 
 ###########################################################################################################
@@ -182,7 +183,7 @@ saveRDS(presidentes_merge_segunda, paste0(res,"presidentes_segunda_merge.rds"))
 ###########################################################################################################
 #######################################  HOUSE OF REPRESENTATIVES   #######################################
 ###########################################################################################################
-
+coalitions <- readRDS(paste0(res, "coalitions.rds"))
 
 # Get presidents election data (Winners and loosers since 1997). 
 
@@ -216,7 +217,7 @@ representantes_aggregate <- representantes %>%
       mutate(codpartido = ifelse(no_cand == 0, codpartido, NA)) %>%      
       mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
       group_by(codmpio, ano) %>%
-      mutate(rank = row_number(desc(votos))) %>% 
+      mutate(rank = row_number(desc(votos))) %>%
       mutate(prop_votes_total = votos / sum(votos)) %>%
       mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>%
       mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
@@ -250,9 +251,31 @@ representantes_merge <- representantes_collapse %>%
   mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
   mutate_at(vars(matches("cod")), as.character)
 
-
-
 saveRDS(representantes_merge,paste0(res,"representantes_merge.rds"))
+
+# Collapse candidates by coalition (identified mannually)
+
+representantes_collapse <- representantes_aggregate %>%
+  ldply() %>%
+  filter(cand == 1) %>%
+  filter(is.na(codpartido) == 0) %>%
+  arrange(codmpio, ano, rank) %>% mutate(ano = as.factor(ano)) %>%
+  mutate(year_lag_presidencial = fct_recode(ano,
+                                            "1997" = "1998",
+                                            "2000" = "2002",
+                                            "2003" = "2006",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
+  merge(., coalitions, by.x = c("codpartido", "year_lag_presidencial"), by.y = c("party_code", "year_lag_presidencial"), all = T) %>%
+  group_by(ano, codep, codmpio, coalition) %>%
+  summarise_at(vars(matches("vot")), sum) %>%
+  group_by(ano, codep, codmpio) %>%
+  mutate(rank = row_number(desc(votos)))
+
+saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_merge.rds"))
+
 
 ###########################################################################################################
 ##############################################  SENATE  ###################################################
