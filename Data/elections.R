@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -183,6 +183,7 @@ saveRDS(presidentes_merge_segunda, paste0(res,"presidentes_segunda_merge.rds"))
 ###########################################################################################################
 #######################################  HOUSE OF REPRESENTATIVES   #######################################
 ###########################################################################################################
+
 coalitions <- readRDS(paste0(res, "coalitions.rds"))
 
 # Get presidents election data (Winners and loosers since 1997). 

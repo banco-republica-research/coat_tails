@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -39,6 +39,7 @@ controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"
 representantes <- readRDS(paste0(res, "representantes_merge.rds")) %>%
   dplyr::rename(., ano_t = ano)
 
+coalitions <- readRDS(paste0(res, "coalitions.rds"))
 representantes_coalition <- readRDS(paste0(res,"representantes_coalition_merge.rds"))
 
 ###########################################################################################################
@@ -138,7 +139,6 @@ a
 ###################################### COAT TAILS HOUSE + COALITION: RD ###################################
 ###########################################################################################################
 
-
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
@@ -156,7 +156,6 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
-######################################### PRESIDENT SECOND ROUND ##########################################
 ###########################################################################################################
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
@@ -170,21 +169,34 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., representantes_coalition,  by.x = c("year", "codmpio", "coalition"), by.y = c("ano", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  # merge(., ejecu_mean,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  # merge(., vias_mean,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  # merge(., invias_mean,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  # merge(., ejecu_dep,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  # mutate(eje_dep1 = ifelse(eje_dep >= 0.8, 1,0)) %>%
-  # dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
-                # votos_t, votos_t1, starts_with("prop"), starts_with("eje_"), starts_with("vias"),starts_with("f_"), starts_with("log")) %>% 
   filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
 
-a <- rdrobust(y = alcaldes_rd$prop_votes_total_t1,
-              x = alcaldes_rd$prop_votes_c2,
+# All 
+l <- alcaldes_rd 
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+
+rdrobust(y = l$prop_votes_total_t1,
+              x = l$prop_votes_c2,
               c = 0.5,
               all = T,
               vce = "hc1")
 
 
+############################
+# RD and OLS regressions by year 
 
+years <- names(table(l$ano))
+l_y <- lapply(years, function(x){
+  alcaldes_rd %>% filter(ano == x)
+}) 
+
+lapply(l_y, function(a){
+  rdrobust(y = a$prop_votes_total_t1,
+           x = a$prop_votes_c2,
+           covs = cbind(a$pobl_tot),
+           c = 0.5,
+           all = T,
+           vce = "hc1")
+})
