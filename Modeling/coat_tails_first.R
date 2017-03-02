@@ -53,14 +53,6 @@ win_nom <- c("ANDRES", "ALVARO", "JUAN MANUEL")
 president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
   mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0))
 
-# Load ejecuciones
-ejecu_mean <- read_dta(paste0(dnp,"Ejecuciones_coat_mean.dta"))
-vias_mean <- read_dta(paste0(dnp,"Vias_SICEP_mean.dta"))
-invias_mean <- read_dta(paste0(invias,"invias_mean.dta"))
-ejecu_dep <- read_dta(paste0(dnp,"Ejecuciones_coat_dep.dta"))
-# ejecu_before1 <- read_dta(paste0(dnp,"Ejecuciones_coat_before1.dta"))
-# ejecu_after1 <- read_dta(paste0(dnp,"Ejecuciones_coat_after1.dta"))
-
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
