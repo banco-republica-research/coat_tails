@@ -53,11 +53,6 @@ win_nom <- c("ANDRES", "ALVARO", "JUAN MANUEL")
 president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
   mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0))
 
-# Load ejecuciones
-ejecu_dep <- read_dta(paste0(dnp,"Ejecuciones_coat_dep.dta"))
-vias_dep <- read_dta(paste0(dnp,"Vias_SICEP_dep.dta"))
-
-
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
@@ -78,8 +73,6 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
                 votos_t, votos_t1, starts_with("prop")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>%
-  merge(., ejecu_dep,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., vias_dep,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano)
 
    
@@ -111,51 +104,11 @@ lapply(out, l_f)
 
 # linear
 lm_f <- function(o){
-  r <- summary(lm(l[,o] ~ prop_votes_c2 + pobl_tot + as.factor(ano) + as.factor(coddepto), l))
+  r <- summary(lm(l[,o] ~ prop_votes_c2 + pobl_tot, l))
   return(r)
 }
 
 lapply(out, lm_f) 
-
-
-############################
-# RD and OLS regressions by subgroup: national transfers dependency
-
-l <- alcaldes_rd %>% filter(ano != 2000 & ano != 2003) %>% 
-  mutate(dep = ifelse(vias_dep2 >= summary(.$vias_dep2)[[3]], 1,0)) 
-dep <- c(0,1)
-
-l_y <- lapply(dep, function(x){
-  l %>% filter(dep == x)
-  }) 
-
-lapply(l_y, function(a){
-  rdrobust(y = a$prop_votes_total_t1,
-           x = a$prop_votes_c2,
-           covs = cbind(a$pobl_tot),
-           c = 0.5,
-           all = T,
-           vce = "hc1")
-  })
-
-############################
-# RD and OLS regressions by year (incluiding Uribe: first round)
-
-l <- alcaldes_rd 
-
-years <- names(table(l$ano))
-l_y <- lapply(years, function(x){
-  alcaldes_rd %>% filter(ano == x)
-}) 
-
-lapply(l_y, function(a){
-  rdrobust(y = a$prop_votes_total_t1,
-           x = a$prop_votes_c2,
-           covs = cbind(a$pobl_tot),
-           c = 0.5,
-           all = T,
-           vce = "hc1")
-})
 
 
 ############################
@@ -176,7 +129,7 @@ lapply(l_y, function(a){
 })
 
 
-l2 <- l_y[[1]] %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+l2 <- l_y[[3]] %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
        binselect="es", nbins= 12, kernel="triangular", p=2, ci=95, 
@@ -184,41 +137,24 @@ rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5,
 
 
 ############################
-# RD and OLS regressions: Santos II (vias para la prosperidad)
+# RD and OLS regressions by year (incluiding Uribe: first round)
 
-# Second rounds only
-l <- alcaldes_rd  %>% filter(ano == 2011) 
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+l <- alcaldes_rd 
 
-# out <- c("log_A1000","log_A1010","log_A1020","log_B","log_B1000","log_B1010","log_B1020","log_B1030","log_E1000","log_E2000","log_D1000", "log_D2000", "log_D3000", "prop_votes_total_t1")
-# out <- c("log_E1000","log_E2000","log_D1000", "log_D2000", "log_D3000")
-# out <- c("log_vias","log_f_nac2","log_f_nac3","prop_votes_total_t1")
- out <- c("log_vias_ter","prop_votes_total_t1")
+years <- names(table(l$ano))
+l_y <- lapply(years, function(x){
+  alcaldes_rd %>% filter(ano == x)
+}) 
 
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot),
-                c = 0.5,
-                all = T,
-                vce = "hc1")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 15, kernel="triangular", p=3, ci=95, 
-  )
-  return(r)
-}
+lapply(l_y, function(a){
+  rdrobust(y = a$prop_votes_total_t1,
+           x = a$prop_votes_c2,
+           covs = cbind(a$pobl_tot),
+           c = 0.5,
+           all = T,
+           vce = "hc1")
+})
 
-lapply(out, l_f) 
-
-
-# linear
-lm_f <- function(o){
-  r <- summary(lm(l[,o] ~ prop_votes_c2 + pobl_tot, l))
-  return(r)
-}
-
-lapply(out, lm_f) 
 
 
 
