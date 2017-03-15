@@ -1,7 +1,7 @@
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr")
-lapply(packageList,require,character.only=TRUE)
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "tidyr", "forcats", "stringr", "xlsx")
+lapply(packageList,library,character.only=TRUE)
 
 # Directory 
 setwd("~/Dropbox/BANREP/Elecciones/")
@@ -121,8 +121,26 @@ saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
 ######################################## COALITIONS DATA ##################################################
 ###########################################################################################################
 
-# Coalition by party: Hand-made based on oficial data, campaign reports and press 
+# Coalitions in the Consevador party for 2011: year of extreme division between the party  
+muni_cons_2011 <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "munp_conser_2011") %>%
+  mutate(year = 2011, party_code = 2) %>%
+  select(muni_code = COD_MUN, municipio = MUNI, name = CANDIDATO, party_code, slant = CORRIENTE, coalition = COALICIÓN, year)
+  
+#Other parties and movements identified by municipality and coalition
+other_parties_coal <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "98 y 99") %>%
+  select(party_code = code, muni_code = muni, position = posici_muni, year, X1998, X2002, X2006, X2010) %>%
+  gather(year_2, coalition, X1998:X2010) %>% mutate(year_2 = fct_recode(year_2,
+                                                                        "1998" = "X1998",
+                                                                        "2002" = "X2002",
+                                                                        "2006" = "X2006",
+                                                                        "2010" = "X2010")) %>%
+  mutate(year_2 = as.numeric(as.character(year_2))) %>%
+  filter(year == 2000 & year_2 == 2002 |
+         year == 2003 & year_2 == 2006 |
+         year == 2007 & year_2 == 2010)
 
+  
+# Coalition by party: Hand-made based on oficial data, campaign reports and press 
 coalitions <- read.csv(str_c(coal, "coaliciones.csv"), sep = ";") %>%
   filter(is.na(party_code)==0) %>%
   mutate(X2006 = as.character(X2006)) %>%
@@ -140,12 +158,31 @@ coalitions <- read.csv(str_c(coal, "coaliciones.csv"), sep = ";") %>%
                                             "2007" = "2010",
                                             "2011" = "2014"
   )) %>%
-  mutate_all(funs(as.character(.))) %>% 
+  mutate_at(c("party_code", "year", "coalition", "year_lag_presidencial") ,funs(as.character(.) %>% as.numeric(.))) %>%
+  mutate(name_party = as.character(name_party)) %>%
   filter(party_code != 164) %>% # Fix Polo
-  mutate(coalition = ifelse(party_code==15 & year == 2014, 1,coalition)) %>% 
-  filter(party_code != 654)  # Fix ASI 
+  mutate(coalition = ifelse(party_code==15 & year == 2014, 1, coalition)) %>% 
+  filter(party_code != 654)  # Fix ASI
 
 saveRDS(coalitions,paste0(res,"coalitions.rds"))
+
+#Create a df with coalition dummies by municipalities, party and year of election
+coalitions_long <- alcaldes_merge %>%
+  select(ano:cand) %>% filter(cand == 1 & is.na(codpartido) == F & ano != 2015) %>%
+  select(codmpio, codep, ano, municipio, codpartido, primer_apellido, nombre, rank) %>%
+  merge(., coalitions, by.x = c("codpartido", "ano"), by.y = c("party_code", "year_lag_presidencial"), all.x = T) %>%
+  rename(coalition_old = coalition) %>% 
+  merge(., other_parties_coal, by.x = c("codpartido", "ano", "codmpio"), 
+                                              by.y = c("party_code", "year", "muni_code"), all.x = T) %>%
+  rename(coalition_other = coalition) %>%
+  merge(., muni_cons_2011, by.x = c("codpartido", "ano", "codmpio"), by.y = c("party_code", "muni_code", "year"), all.x = T) %>%
+  rename(coalition_cons = coalition) 
+    
+saveRDS(coalitions_long, paste0(res, "coalitions_new.rds"))
+  
+
+
+
 
 # Coalition for conservatives in 2011-2015: 
 coalitions_con <- read.csv(str_c(coal, "coaliciones_conservadores.csv"), sep = ";") %>%
@@ -154,8 +191,6 @@ coalitions_con <- read.csv(str_c(coal, "coaliciones_conservadores.csv"), sep = "
 
 
 saveRDS(coalitions_con,paste0(res,"coalitions_con.rds"))
-
-
 
 
 
