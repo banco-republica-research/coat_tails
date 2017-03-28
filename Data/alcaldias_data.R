@@ -4,8 +4,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "tidyr", "forcats",
 lapply(packageList,library,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
- setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
   data <-"Data/CEDE/Microdatos/"
@@ -125,6 +125,8 @@ saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
 muni_cons_2011 <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "munp_conser_2011") %>%
   mutate(year = 2011, party_code = 2) %>%
   select(muni_code = COD_MUN, municipio = MUNI, name = CANDIDATO, party_code, slant = CORRIENTE, coalition = COALICIÓN, year)
+
+saveRDS(muni_cons_2011,paste0(res,"coalitions_cons.rds"))
   
 #Other parties and movements identified by municipality and coalition
 ### A warning may be appear caused by different levels in the factor variables of coalition 
@@ -140,6 +142,7 @@ other_parties_coal <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetN
          year == 2003 & year_2 == 2006 |
          year == 2007 & year_2 == 2010)
 
+saveRDS(other_parties_coal, paste0(res,"coalitions_other.rds"))
   
 # Coalition by party: Hand-made based on oficial data, campaign reports and press 
 coalitions <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "COALICION") %>%
