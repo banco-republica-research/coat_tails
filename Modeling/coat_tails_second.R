@@ -23,7 +23,7 @@ invias <- "Data/invias/"
 # Load maire and coalition data
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 coalitions <- readRDS(paste0(res,"coalitions.rds"))
-# coalitions_con <- readRDS(paste0(res,"coalitions_con.rds"))
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
 
 # Load party codes and municipal covariates
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
@@ -33,10 +33,9 @@ controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
   filter(rank <= 2) %>% 
-  merge(., coalitions, by.x = c("codpartido","ano") , by.y = c("party_code", "year_lag_presidencial"), all.x = T) %>%
-#   merge(., coalitions_con, by = c("codmpio", "codpartido","ano"), all.x = T) 
+  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
-  filter(is.na(coalition) == 0 & coalition != 98 & coalition != 99) %>%
+  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
   mutate(ano = as.character(ano)) %>%
   group_by(codmpio, ano) %>%
   mutate(n = 1, nn = sum(n)) %>%
@@ -63,12 +62,12 @@ president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
 # Drop elections where party is both 1 and 2 in t
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
-  filter(coalition == 1) %>%
+  filter(coalition_new == 1) %>%
   group_by(ano, codmpio) %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
   filter(party_2 == 1) %>% 
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., president,  by.x = c("year", "codmpio", "coalition"), by.y = c("ano", "codmpio", "coalition"), 
+  merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
                 votos_t, votos_t1, starts_with("prop")) %>% 
@@ -93,7 +92,7 @@ l_f <- function(o){
                 covs = cbind(l$pobl_tot),
                 c = 0.5,
                 all = T,
-                vce = "hc1")
+                vce = "nn")
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
   )

@@ -4,8 +4,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "tidyr", "forcats",
 lapply(packageList,library,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
   data <-"Data/CEDE/Microdatos/"
@@ -124,7 +124,8 @@ saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
 # Coalitions in the Consevador party for 2011: year of extreme division between the party  
 muni_cons_2011 <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "munp_conser_2011") %>%
   mutate(year = 2011, party_code = 2) %>%
-  select(muni_code = COD_MUN, municipio = MUNI, name = CANDIDATO, party_code, slant = CORRIENTE, coalition = COALICIÓN, year)
+  select(muni_code = COD_MUN, municipio = MUNI, name = CANDIDATO, party_code, slant = CORRIENTE, coalition = COALICIÓN, year) %>% 
+  mutate(coalition = ifelse(coalition == 99, 0,coalition))
 
 saveRDS(muni_cons_2011,paste0(res,"coalitions_cons.rds"))
   
@@ -171,10 +172,14 @@ coalitions <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "C
 saveRDS(coalitions,paste0(res,"coalitions.rds"))
 
 
+coalitions <- readRDS(paste0(res,"coalitions.rds"))
+muni_cons_2011 <- readRDS(paste0(res,"coalitions_cons.rds")) 
+other_parties_coal <- readRDS(paste0(res,"coalitions_other.rds"))
+
 #Create a df with coalition dummies by municipalities, party and year of election
 coalitions_long <- alcaldes_merge %>%
-  select(ano:cand) %>% filter(cand == 1 & is.na(codpartido) == F & ano != 2015) %>%
-  select(codmpio, codep, ano, municipio, codpartido, primer_apellido, nombre, rank) %>%
+  dplyr::select(ano:cand) %>% filter(cand == 1 & is.na(codpartido) == F & ano != 2015) %>%
+  dplyr::select(codmpio, codep, ano, municipio, codpartido, primer_apellido, nombre, rank) %>%
   merge(., coalitions, by.x = c("codpartido", "ano"), by.y = c("party_code", "year_lag_presidencial"), all.x = T) %>%
   rename(coalition_old = coalition) %>% 
   merge(., other_parties_coal, by.x = c("codpartido", "ano", "codmpio"), 
@@ -182,13 +187,14 @@ coalitions_long <- alcaldes_merge %>%
   rename(coalition_other = coalition) %>%
   merge(., muni_cons_2011, by.x = c("codpartido", "codmpio", "ano"), by.y = c("party_code", "muni_code", "year"), all.x = T) %>%
   rename(coalition_cons = coalition) %>% 
-  mutate(coalition_new = ifelse(coalition_old == 99 & coalition_other != 99, coalition_other,
-                         ifelse(codpartido == 2 & ano == 2011 & coalition_old != coalition_cons, coalition_cons, coalition_old)))
+  mutate(coalition_new = coalition_old) %>%
+  mutate(coalition_new = ifelse(coalition_new == 99 & coalition_other != 99, coalition_other,coalition_new)) %>% 
+  mutate(coalition_new = ifelse(codpartido == 2 & ano == 2011 & coalition_new != coalition_cons, coalition_cons, coalition_new))
 
- saveRDS(coalitions_long, paste0(res, "coalitions_new.rds"))
+#  mutate(coalition_new = ifelse(coalition_old == 99 & coalition_other != 99, coalition_other,
+#                         ifelse(codpartido == 2 & ano == 2011 & coalition_old != coalition_cons, coalition_cons, coalition_old)))
 
-coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))
-
+saveRDS(coalitions_long, paste0(res, "coalitions_new.rds"))
 
 
 ###########################################################################################################
