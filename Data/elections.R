@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -184,7 +184,8 @@ saveRDS(presidentes_merge_segunda, paste0(res,"presidentes_segunda_merge.rds"))
 #######################################  HOUSE OF REPRESENTATIVES   #######################################
 ###########################################################################################################
 
-coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% dplyr::select(codpartido, codmpio, ano, year, coalition_old, coalition_new)
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% 
+  dplyr::select(codpartido, codmpio, ano, year, coalition_old, coalition_new)
 
 # Get House election data (Winners and loosers since 1997). 
 
@@ -272,7 +273,8 @@ representantes_collapse <- representantes_aggregate %>%
                                             "2011" = "2014"
   )) %>%
   mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
-  merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio"), all = T) %>%
+  merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+  #This merge ignore the un-matched observations, because they represent non-existent voting. 
   group_by(ano, codep, codmpio, coalition_new) %>%
   summarise_at(vars(matches("vot")), sum) %>%
   group_by(ano, codep, codmpio) %>%
@@ -286,7 +288,7 @@ saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_merge.rds"
 ###########################################################################################################
 
 
-# Get presidents election data (Winners and loosers since 1997). 
+# Get senate election data (Winners and loosers since 1997). 
 
 list_files <- list.files(path = data) %>%
   .[. %in% c("1998", "2002", "2006", "2010", "2014")] %>%
@@ -352,9 +354,32 @@ senado_merge <- senado_collapse %>%
   mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
   mutate_at(vars(matches("cod")), as.character)
 
-
-
 saveRDS(senado_merge,paste0(res,"senado_merge.rds"))
+
+##########################################  (Group by coalition)   ############################################
+# Collapse candidates by coalition (identified mannually)
+
+senado_collapse <- senado_aggregate %>%
+  ldply() %>%
+  filter(cand == 1) %>%
+  filter(is.na(codpartido) == 0) %>%
+  arrange(codmpio, ano, rank) %>% mutate(ano = as.factor(ano)) %>%
+  mutate(year_lag_presidencial = fct_recode(ano,
+                                            "1997" = "1998",
+                                            "2000" = "2002",
+                                            "2003" = "2006",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
+  merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+  #This merge ignore the un-matched observations, because they represent non-existent voting. 
+  group_by(ano, codep, codmpio, coalition_new) %>%
+  summarise_at(vars(matches("vot")), sum) %>%
+  group_by(ano, codep, codmpio) %>%
+  mutate(rank = row_number(desc(votos)))
+
+saveRDS(representantes_collapse ,paste0(res,"senate_coalition_merge.rds"))
 
 
 
