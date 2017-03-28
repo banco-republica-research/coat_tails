@@ -1,16 +1,16 @@
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "tidyr", "forcats", "stringr", "xlsx")
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "tidyr", "forcats", "stringr", "rJava","xlsx")
 lapply(packageList,library,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
- # setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
-data <-"Data/CEDE/Microdatos/"
-coal <-"Data/CEDE/coaliciones/"
-res <-"Data/CEDE/Bases/"
+  data <-"Data/CEDE/Microdatos/"
+  coal <-"Data/CEDE/coaliciones/"
+  res <-"Data/CEDE/Bases/"
 
 ###########################################################################################################
 ############################ Winners and loosers since 1997  ##############################################
@@ -167,6 +167,7 @@ coalitions <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "C
 
 saveRDS(coalitions,paste0(res,"coalitions.rds"))
 
+
 #Create a df with coalition dummies by municipalities, party and year of election
 coalitions_long <- alcaldes_merge %>%
   select(ano:cand) %>% filter(cand == 1 & is.na(codpartido) == F & ano != 2015) %>%
@@ -180,19 +181,10 @@ coalitions_long <- alcaldes_merge %>%
   rename(coalition_cons = coalition) %>% 
   mutate(coalition_new = ifelse(coalition_old == 99 & coalition_other != 99, coalition_other,
                          ifelse(codpartido == 2 & ano == 2011 & coalition_old != coalition_cons, coalition_cons, coalition_old)))
-saveRDS(coalitions_long, paste0(res, "coalitions_new.rds"))
-  
 
+ saveRDS(coalitions_long, paste0(res, "coalitions_new.rds"))
 
-
-
-# Coalition for conservatives in 2011-2015: 
-coalitions_con <- read.csv(str_c(coal, "coaliciones_conservadores.csv"), sep = ";") %>%
-  dplyr::select(muni_code, ano, code1, coalition_con) %>% 
-  rename(.,codmpio = muni_code, codpartido = code1)
-
-
-saveRDS(coalitions_con,paste0(res,"coalitions_con.rds"))
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))
 
 
 
