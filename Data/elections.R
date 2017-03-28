@@ -184,9 +184,9 @@ saveRDS(presidentes_merge_segunda, paste0(res,"presidentes_segunda_merge.rds"))
 #######################################  HOUSE OF REPRESENTATIVES   #######################################
 ###########################################################################################################
 
-coalitions <- readRDS(paste0(res, "coalitions.rds"))
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% dplyr::select(codpartido, codmpio, ano, year, coalition_old, coalition_new)
 
-# Get presidents election data (Winners and loosers since 1997). 
+# Get House election data (Winners and loosers since 1997). 
 
 list_files <- list.files(path = data) %>%
   .[. %in% c("1998", "2002", "2006", "2010", "2014")] %>%
@@ -228,6 +228,8 @@ representantes_aggregate <- representantes %>%
       filter(is.na(prop_votes_total)==0) 
   })
 
+
+##########################################  (Group by party)   ############################################
 #Collapse candidates by party (remember that the number of delegates depends on the district magnitude)
 
 representantes_collapse <- representantes_aggregate %>%
@@ -254,6 +256,7 @@ representantes_merge <- representantes_collapse %>%
 
 saveRDS(representantes_merge,paste0(res,"representantes_merge.rds"))
 
+##########################################  (Group by coalition)   ############################################
 # Collapse candidates by coalition (identified mannually)
 
 representantes_collapse <- representantes_aggregate %>%
@@ -269,8 +272,8 @@ representantes_collapse <- representantes_aggregate %>%
                                             "2011" = "2014"
   )) %>%
   mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
-  merge(., coalitions, by.x = c("codpartido", "year_lag_presidencial"), by.y = c("party_code", "year_lag_presidencial"), all = T) %>%
-  group_by(ano, codep, codmpio, coalition) %>%
+  merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio"), all = T) %>%
+  group_by(ano, codep, codmpio, coalition_new) %>%
   summarise_at(vars(matches("vot")), sum) %>%
   group_by(ano, codep, codmpio) %>%
   mutate(rank = row_number(desc(votos)))

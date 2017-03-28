@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -39,7 +39,7 @@ controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"
 representantes <- readRDS(paste0(res, "representantes_merge.rds")) %>%
   dplyr::rename(., ano_t = ano)
 
-coalitions <- readRDS(paste0(res, "coalitions.rds"))
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% dplyr::select(codpartido, codmpio, ano, year, coalition_old, coalition_new)
 representantes_coalition <- readRDS(paste0(res,"representantes_coalition_merge.rds"))
 
 ###########################################################################################################
@@ -143,9 +143,9 @@ a
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
   filter(rank <= 2) %>% 
-  merge(., coalitions, by.x = c("codpartido","ano") , by.y = c("party_code", "year_lag_presidencial"), all.x = T) %>%
+  merge(., coalitions_long, by.x = c("codpartido","ano", "codmpio") , by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
-  filter(is.na(coalition) == F & coalition != 98 & coalition != 99) %>%
+  filter(is.na(coalition_new) == F & coalition_new != 98 & coalition_new != 99) %>%
   mutate(ano = as.character(ano)) %>%
   group_by(codmpio, ano) %>%
   mutate(n = 1, nn = sum(n)) %>%
@@ -162,12 +162,12 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
 # Drop elections where party is both 1 and 2 in t
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
-  filter(coalition == 1) %>%
+  filter(coalition_old == 1) %>%
   group_by(ano, codmpio) %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
   filter(party_2 == 1) %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., representantes_coalition,  by.x = c("year", "codmpio", "coalition"), by.y = c("ano", "codmpio", "coalition"), 
+  merge(., representantes_coalition,  by.x = c("year", "codmpio", "coalition_old"), by.y = c("ano", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
@@ -181,7 +181,8 @@ rdrobust(y = l$prop_votes_total_t1,
               x = l$prop_votes_c2,
               c = 0.5,
               all = T,
-              vce = "hc1")
+              # covs = cbind(as.factor(l$year)),
+              vce = "nn")
 
 
 ############################
