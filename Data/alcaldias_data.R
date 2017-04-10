@@ -145,12 +145,13 @@ other_parties_coal <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetN
 
 saveRDS(other_parties_coal, paste0(res,"coalitions_other.rds"))
   
-# Coalition by party: Hand-made based on oficial data, campaign reports and press 
-coalitions <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "COALICION") %>%
+# Coalition by party (First round): Hand-made based on oficial data, campaign reports and press 
+coalitions_primera <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "COALICION_1ra_VUELTA") %>%
   filter(is.na(party_code)==0) %>%
-  mutate(X2006 = as.character(X2006)) %>%
+  mutate_all(funs(as.character(.))) %>%
+  rename(name_party = Nombre.Partido) %>%
   gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
-  mutate(year = fct_recode(year, 
+  mutate(year = fct_recode(year,
                            "1998" = "X1998",
                            "2002" = "X2002",
                            "2006" = "X2006",
@@ -167,9 +168,37 @@ coalitions <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "C
   mutate(name_party = as.character(name_party)) %>%
   filter(party_code != 164) %>% # Fix Polo
   mutate(coalition = ifelse(party_code==15 & year == 2014, 1, coalition)) %>% 
-  filter(party_code != 654)  # Fix ASI
+  filter(party_code != 654) %>% # Fix ASI 
+  mutate(coalition = ifelse(coalition == "na", NA, coalition))
 
-saveRDS(coalitions,paste0(res,"coalitions.rds"))
+saveRDS(coalitions_primera,paste0(res,"coalitions_primera.rds"))
+
+
+# Coalition by party (Second round): Hand-made based on oficial data, campaign reports and press 
+coalitions_segunda <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "COALICION_2da_VUELTA") %>%
+  filter(is.na(party_code)==0) %>%
+  mutate_all(funs(as.character(.))) %>%
+  rename(name_party = Nombre.Partido) %>%
+  gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
+  mutate(year = fct_recode(year,
+                           "1994" = "X1994",
+                           "1998" = "X1998",
+                           "2010" = "X2010", 
+                           "2014" = "X2014")) %>%
+  mutate(year_lag_presidencial = fct_recode(year,
+                                            "1994" = "1994",
+                                            "1997" = "1998",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  # mutate_at(c("party_code", "year", "coalition", "year_lag_presidencial") ,funs(as.character(.) %>% as.numeric(.))) %>%
+  mutate(name_party = as.character(name_party)) %>%
+  filter(party_code != 164) %>% # Fix Polo
+  mutate(coalition = ifelse(party_code==15 & year == 2014, 1, coalition)) %>% 
+  filter(party_code != 654) %>% # Fix ASI 
+  mutate(coalition = ifelse(coalition == "na", NA, coalition))
+
+saveRDS(coalitions_segunda,paste0(res,"coalitions_segunda.rds"))
 
 
 coalitions <- readRDS(paste0(res,"coalitions.rds"))
