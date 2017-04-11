@@ -13,8 +13,6 @@ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
-dnp <- "Data/DNP/Ejecuciones/"
-invias <- "Data/invias/"
 
 ###########################################################################################################
 ######################################## ELECTIONS DATA ###################################################
@@ -22,8 +20,7 @@ invias <- "Data/invias/"
 
 # Load maire and coalition data
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
-coalitions <- readRDS(paste0(res,"coalitions.rds"))
-coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
+coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
 
 # Load party codes and municipal covariates
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
@@ -35,8 +32,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   filter(rank <= 2) %>% 
   merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
-  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
-  mutate(ano = as.character(ano)) %>%
+  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99)  %>%
   group_by(codmpio, ano) %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn==2) %>%
@@ -79,7 +75,6 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 # RD and OLS regressions 
 
 # Second rounds only
-l <- alcaldes_rd %>% filter(ano != 2000 & ano != 2003) 
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # outcomes
@@ -115,8 +110,7 @@ lapply(out, lm_f)
 
 l_y <- list()
 l_y[[1]] <- alcaldes_rd %>% filter(ano == 1997)
-l_y[[2]] <- alcaldes_rd %>% filter(ano == 2000 | ano == 2003)
-l_y[[3]] <- alcaldes_rd %>% filter(ano == 2007 | ano == 2011)
+l_y[[2]] <- alcaldes_rd %>% filter(ano == 2007 | ano == 2011)
 
 lapply(l_y, function(a){
   rdrobust(y = a$prop_votes_total_t1,
@@ -128,32 +122,11 @@ lapply(l_y, function(a){
 })
 
 
-l2 <- l_y[[3]] %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+l2 <- l_y[[2]] %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
        binselect="es", nbins= 12, kernel="triangular", p=2, ci=95, 
 )
-
-
-############################
-# RD and OLS regressions by year (incluiding Uribe: first round)
-
-l <- alcaldes_rd 
-
-years <- names(table(l$ano))
-l_y <- lapply(years, function(x){
-  alcaldes_rd %>% filter(ano == x)
-}) 
-
-lapply(l_y, function(a){
-  rdrobust(y = a$prop_votes_total_t1,
-           x = a$prop_votes_c2,
-           covs = cbind(a$pobl_tot),
-           c = 0.5,
-           all = T,
-           vce = "hc1")
-})
-
 
 
 
