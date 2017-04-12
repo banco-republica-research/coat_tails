@@ -75,6 +75,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 # RD and OLS regressions 
 
 # Second rounds only
+l <- alcaldes_rd 
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # outcomes

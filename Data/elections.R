@@ -15,7 +15,6 @@ data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 coal <-"Data/CEDE/coaliciones/"
 
-
 ###########################################################################################################
 ###############################  PRESIDENTIAL ELECTIONS: CANDIDATES  ######################################
 ###########################################################################################################
@@ -52,6 +51,8 @@ candidates <- presidentes_primera %>% ldply() %>%
                                   ))
 
 saveRDS(candidates ,paste0(res, "candidates_primera_vuelta.rds"))
+
+
 
 ###########################################################################################################
 ################################ FIRST ROUND PRESIDENTIAL ELECTIONS  ######################################
@@ -184,8 +185,7 @@ saveRDS(presidentes_merge_segunda, paste0(res,"presidentes_segunda_merge.rds"))
 #######################################  HOUSE OF REPRESENTATIVES   #######################################
 ###########################################################################################################
 
-coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% 
-  dplyr::select(codpartido, codmpio, ano, year, coalition_old, coalition_new)
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) 
 
 # Get House election data (Winners and loosers since 1997). 
 
@@ -287,6 +287,7 @@ saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_merge.rds"
 ##############################################  SENATE  ###################################################
 ###########################################################################################################
 
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) 
 
 # Get senate election data (Winners and loosers since 1997). 
 

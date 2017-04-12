@@ -35,11 +35,9 @@ party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
 
 # Load house candidates (collapsed by party) for t+1
-senado <- readRDS(paste0(res, "senado_merge.rds")) %>%
-  dplyr::rename(., ano_t = ano)
-
-coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% dplyr::select(codpartido, codmpio, ano, year, coalition_old, coalition_new)
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) 
 senado_coalition <- readRDS(paste0(res,"senate_coalition_merge.rds"))
+# senado <- readRDS(paste0(res, "senado_merge.rds")) %>% dplyr::rename(., ano_t = ano)
 
 
 
@@ -159,7 +157,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
 ###########################################################################################################
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
-  filter(coalition_old == 1) %>%
+  filter(coalition_new == 1) %>%
   group_by(ano, codmpio) %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
   filter(party_2 == 1) %>%
@@ -169,17 +167,31 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
 
+############################
+# RD and OLS regressions 
+
 # All 
 l <- alcaldes_rd 
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
+# outcomes
+out <- c("prop_votes_total_t1")
 
-rdrobust(y = l$prop_votes_total_t1,
-         x = l$prop_votes_c2,
-         c = 0.5,
-         all = T,
-         covs = cbind(as.factor(l$year)),
-         vce = "nn")
+# Regressions for list of outcomes
+l_f <- function(o){
+  r <- rdrobust(y = l[,o],
+                x = l$prop_votes_c2,
+                covs = cbind(l$pobl_tot),
+                c = 0.5,
+                all = T,
+                vce = "nn")
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+  )
+  return(r)
+}
+
+lapply(out, l_f) 
 
 
 

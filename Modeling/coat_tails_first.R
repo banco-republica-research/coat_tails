@@ -74,6 +74,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 # RD and OLS regressions 
 
 # Second rounds only
+l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # outcomes
@@ -103,6 +104,19 @@ lm_f <- function(o){
 
 lapply(out, lm_f) 
 
+############################
+# RD and OLS regressions by president (incluiding Uribe: first round)
+
+l_y <- split(l,l$ano)
+
+lapply(l_y, function(a){
+  rdrobust(y = a$prop_votes_total_t1,
+           x = a$prop_votes_c2,
+           covs = cbind(a$pobl_tot),
+           c = 0.5,
+           all = T,
+           vce = "hc1")
+})
 
 
 

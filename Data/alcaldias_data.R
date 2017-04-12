@@ -173,7 +173,9 @@ coalitions_primera <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetN
 
 saveRDS(coalitions_primera,paste0(res,"coalitions_primera.rds"))
 
+# Long
 coalitions <- readRDS(paste0(res,"coalitions_primera.rds"))
+table(coalitions$year ,coalitions$coalition)
 muni_cons_2011 <- readRDS(paste0(res,"coalitions_cons.rds")) 
 other_parties_coal <- readRDS(paste0(res,"coalitions_other.rds"))
 
@@ -230,13 +232,14 @@ coalitions_segunda <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetN
 
 saveRDS(coalitions_segunda,paste0(res,"coalitions_segunda.rds"))
 
-
+# Long
 coalitions <- readRDS(paste0(res,"coalitions_segunda.rds"))
+table(coalitions$year ,coalitions$coalition)
 muni_cons_2011 <- readRDS(paste0(res,"coalitions_cons.rds")) 
 other_parties_coal <- readRDS(paste0(res,"coalitions_other.rds"))
 
 #Create a df with coalition dummies by municipalities, party and year of election
-coalitions_long_2 <- alcaldes_merge %>%
+coalitions_long <- alcaldes_merge %>%
   dplyr::select(ano:cand) %>% filter(cand == 1 & is.na(codpartido) == F & ano != 2015) %>%
   dplyr::select(codmpio, codep, ano, municipio, codpartido, primer_apellido, nombre, rank) %>%
   merge(., coalitions, by.x = c("codpartido", "ano"), by.y = c("party_code", "year_lag_presidencial"), all.x = T) %>%
@@ -255,6 +258,22 @@ coalitions_long_2 <- alcaldes_merge %>%
 #                         ifelse(codpartido == 2 & ano == 2011 & coalition_old != coalition_cons, coalition_cons, coalition_old)))
 
 saveRDS(coalitions_long, paste0(res, "coalitions_segunda_new.rds"))
+
+
+###########################################################################################################
+######################################## COALITIONS mix ###################################################
+###########################################################################################################
+
+# Primera vuelta para Uribe
+
+coalitions_primera_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) 
+coalitions_segunda_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) 
+coalitions_long <- coalitions_primera_long %>% 
+  filter(year==2002 | year== 2006) %>%
+  rbind(.,coalitions_segunda_long) %>% 
+  dplyr::select(codpartido, codmpio, ano, year, coalition_old, coalition_new)
+
+saveRDS(coalitions_long, paste0(res, "coalitions_new.rds"))
 
 
 ###########################################################################################################
