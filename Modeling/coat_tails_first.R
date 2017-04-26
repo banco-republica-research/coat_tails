@@ -104,10 +104,14 @@ lm_f <- function(o){
 
 lapply(out, lm_f) 
 
-############################
-# RD and OLS regressions by president (incluiding Uribe: first round)
 
-l_y <- split(l,l$ano)
+############################
+# RD and OLS regressions by year 
+
+years <- names(table(l$ano))
+l_y <- lapply(years, function(x){
+  alcaldes_rd %>% filter(ano == x)
+}) 
 
 lapply(l_y, function(a){
   rdrobust(y = a$prop_votes_total_t1,
@@ -115,8 +119,13 @@ lapply(l_y, function(a){
            covs = cbind(a$pobl_tot),
            c = 0.5,
            all = T,
-           vce = "hc1")
+           vce = "nn")
 })
+
+
+
+
+
 
 
 

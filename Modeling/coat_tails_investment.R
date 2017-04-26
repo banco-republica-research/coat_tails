@@ -20,69 +20,21 @@ invias <- "Data/invias/"
 ######################################## ELECTIONS DATA ###################################################
 ###########################################################################################################
 
-# Load maire and coalition data
+# Load maire data
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
-coalitions <- readRDS(paste0(res,"coalitions.rds"))
-coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
-
-# Coalitions lagged (current president, not next) 
-coalitions_long_l <- coalitions_long %>% 
-  filter(is.na(year)==0) %>% 
-  mutate(ano_l = fct_recode(year, 
-      "1997" = "1994",
-      "2000" = "1998",
-      "2003" = "2002",
-      "2007" = "2006",
-      "2011" = "2010",
-      "2015" = "2014")) %>% 
-  dplyr::select(-c(ano)) 
-                                    
 
 # Load party codes and municipal covariates
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
 
-# top2 and drop municipality if at least one of the top2 is 98 or 99 
-alcaldes_merge_r2 <- alcaldes_merge %>% 
-  filter(ano != 2015) %>%
-  filter(rank <= 2) %>% 
-  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
-  arrange(codmpio, ano, codpartido) %>%
-  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
-  mutate(ano = as.character(ano)) %>%
-  group_by(codmpio, ano) %>%
-  mutate(n = 1, nn = sum(n)) %>%
-  filter(nn==2) %>%
-  dplyr::select(-c(codep,n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
-
-dim(alcaldes_merge_r2)
-
-# Load presidential for t+1
+# Load presidential 
 win_apellido <- c("PASTRANA", "URIBE", "SANTOS")
 win_nom <- c("ANDRES", "ALVARO", "JUAN MANUEL")
 
 president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
-  mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0))
-
-
-# top2: current presidents
-# Note: maires elected in 1997 begin in 01/01/1998 which is a presidential election year. Not enough overlapping with current
-# Not enough observations for 2015 maires either 
-
-alcaldes_merge_r2_b <- alcaldes_merge %>% 
-  filter(ano != 2015) %>%
-  filter(rank <= 2) %>% 
-  merge(., coalitions_long_l, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano_l","codmpio"), all.x = T) %>%
-  arrange(codmpio, ano, codpartido) %>%
-  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
-  mutate(ano = as.character(ano)) %>%
-  group_by(codmpio, ano) %>%
-  mutate(n = 1, nn = sum(n)) %>%
-  filter(nn==2) %>%
-  dplyr::select(-c(codep,n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
-
+  mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0)) %>% 
+  plyr::rename(., c("ano" = "ano_p")) %>%
+  mutate(ano_pl = ano_p-4) 
 
 # Load ejecuciones
 ejecu_all <- read_dta(paste0(dnp,"Ejecuciones_all.dta"))
@@ -97,150 +49,32 @@ invias_before <- read_dta(paste0(invias,"invias_before.dta"))
 
 
 ###########################################################################################################
-##################################### INVESTMENT: maire term ##############################################
-############################### Coalition wrt current president  ##########################################
+################################### INVESTMENT: BEFORE NEXT ###############################################
+################################ Coalition wrt CURRENT president ##########################################
+######################################### Should be + #####################################################
 ###########################################################################################################
+
+# Note: maires elected in 1997 begin in 01/01/1998 which is a presidential election year. Not enough overlapping with current
+# Not enough observations for 2015 maires either 
+
+# FINAL round CURRENT coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
+table(coalitions_long$ano,coalitions_long$year)
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
 
-alcaldes_rd <- alcaldes_merge_r2_b %>%
-  filter(coalition_new == 1) %>%
-  group_by(ano, codmpio) %>%
-  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
-  filter(party_2 == 1) %>% 
-  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano", "codmpio", "coalition"), 
-        suffixes = c("_t", "_t1"), all.x = T) %>%
-  dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
-                votos_t, votos_t1, starts_with("prop")) %>% 
-  filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
-  merge(., ejecu_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., vias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., invias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  arrange(codmpio, ano)
-
-
-############################
-# Do coallition maires get more funds after presidential election?   
-
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot, as.factor(l$ano)),
-                c = 0.5,
-                all = T,
-                vce = "hc1")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
-  )
-  return(r)
-}
-
-# linear
-lm_f <- function(o){
-  r <- summary(lm(l[,o] ~ prop_votes_c2 + pobl_tot + as.factor(ano), l))
-  return(r)
-}
-
-
-# Reelection only
-l <- alcaldes_rd %>% filter(ano >= 2003) 
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
-# outcomes
-# out <- c("log_A","log_A1000","log_A2000","log_A3010")
- out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
-# out <- c("D_pc","D1000_pc", "D2000_pc", "D3000_pc")
-# out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
-# out <- c("log_E","log_E1000","log_E2000")
-# out <- c("log_vias","log_f_nac","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_ter")
-
-lapply(out, l_f) 
-# lapply(out, lm_f) 
-
-
-
-
-
-###########################################################################################################
-##################################### INVESTMENT: maire term ##############################################
-################################## Coalition wrt next president  ##########################################
-######################################### Reelections only  ###############################################
-###########################################################################################################
-
-# For a specific party (or group of parties), merge RD in t to outcomes in t+1
-# Drop elections where party is both 1 and 2 in t
-
-alcaldes_rd <- alcaldes_merge_r2 %>%
-  filter(coalition_new == 1) 
-%>%
-  group_by(ano, codmpio) %>%
-  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
-  filter(party_2 == 1) %>% 
-  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano", "codmpio", "coalition"), 
-        suffixes = c("_t", "_t1"), all.x = T) %>%
-  dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
-                votos_t, votos_t1, starts_with("prop")) %>% 
-  filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
-  merge(., ejecu_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., vias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., invias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  arrange(codmpio, ano)
-
-
-############################
-# Do coallition maires get more funds after presidential election?   
-
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot, as.factor(l$ano)),
-                c = 0.5,
-                all = T,
-                vce = "hc1")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
-  )
-  return(r)
-}
-
-# linear
-lm_f <- function(o){
-  r <- summary(lm(l[,o] ~ prop_votes_c2 + pobl_tot + as.factor(ano), l))
-  return(r)
-}
-
-
-# Reelection only
-l <- alcaldes_rd %>% filter(ano >= 2003) 
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
-# outcomes
-# out <- c("log_A","log_A1000","log_A2000","log_A3010")
-# out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
-# out <- c("D_pc","D1000_pc", "D2000_pc", "D3000_pc")
-# out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
-# out <- c("log_E","log_E1000","log_E2000")
- out <- c("log_vias","log_f_nac","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_ter")
-
-lapply(out, l_f) 
-# lapply(out, lm_f) 
-
-
-
-###########################################################################################################
-###################################### INVESTMENT: Incentivo ##############################################
-################################## Coalition wrt next president ###########################################
-######################################### Reelections only  ###############################################
-###########################################################################################################
-
-############################
+alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(rank <= 2) %>% 
+  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
+  arrange(codmpio, ano, codpartido) %>%
+  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>%
+  filter(nn==2) %>%
+  dplyr::select(-c(codep,n,nn)) %>%
+  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
   filter(coalition_new == 1) %>%
@@ -248,18 +82,23 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
   filter(party_2 == 1) %>% 
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano", "codmpio", "coalition"), 
+  merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano_pl", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
                 votos_t, votos_t1, starts_with("prop")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
   merge(., ejecu_before,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., vias_before,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., invias_before,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano)
 
 
 ############################
-# Do coallition maires get more funds after presidential election?   
+# RD and OLS regressions 
+
+# Select period: Drop 2011 given the coalition change during Santos I
+l <- alcaldes_rd
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # Regressions for list of outcomes
 l_f <- function(o){
@@ -275,36 +114,207 @@ l_f <- function(o){
   return(r)
 }
 
-# linear
-lm_f <- function(o){
-  r <- summary(lm(l[,o] ~ prop_votes_c2 + pobl_tot + as.factor(ano), l))
+
+# outcomes
+# out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
+# out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
+out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
+# out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
+# out <- c("log_E","log_E1000","log_E2000")
+# out <- c("log_vias","log_f_SGP","log_f_regalias", "log_f_trans_nac")
+# out <- c("log_vias_pc","log_f_SGP_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias_ter","log_vias_ter_pc")
+
+lapply(out, l_f) 
+
+
+###########################################################################################################
+##################################### INVESTMENT: TOTAL term ##############################################
+############################### Coalition wrt CURRENT president  ##########################################
+########################################## Could be 0 #####################################################
+###########################################################################################################
+
+# Note: maires elected in 1997 begin in 01/01/1998 which is a presidential election year. Not enough overlapping with current
+# Not enough observations for 2015 maires either 
+
+# FINAL round CURRENT coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
+table(coalitions_long$ano,coalitions_long$year)
+
+# For a specific party (or group of parties), merge RD in t to outcomes in t+1
+# Drop elections where party is both 1 and 2 in t
+
+alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(rank <= 2) %>% 
+  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
+  arrange(codmpio, ano, codpartido) %>%
+  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>%
+  filter(nn==2) %>%
+  dplyr::select(-c(codep,n,nn)) %>%
+  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+
+alcaldes_rd <- alcaldes_merge_r2 %>%
+  filter(coalition_new == 1) %>%
+  group_by(ano, codmpio) %>%
+  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
+  filter(party_2 == 1) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano_pl", "codmpio", "coalition"), 
+        suffixes = c("_t", "_t1"), all.x = T) %>%
+  dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
+                votos_t, votos_t1, starts_with("prop")) %>% 
+  filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
+  merge(., ejecu_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., vias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., invias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  arrange(codmpio, ano)
+
+############################
+# RD and OLS regressions 
+
+# Select period: Drop 2011 given the coalition change during Santos I
+l <- alcaldes_rd %>% filter(ano!=2011)
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+# Regressions for list of outcomes
+l_f <- function(o){
+  r <- rdrobust(y = l[,o],
+                x = l$prop_votes_c2,
+                covs = cbind(l$pobl_tot),
+                c = 0.5,
+                all = T,
+                vce = "hc1")
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+  )
   return(r)
 }
 
-# Reelection only
-l <- alcaldes_rd  %>% filter(ano >= 2003) 
+# outcomes
+# out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
+# out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
+ out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
+# out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
+# out <- c("log_E","log_E1000","log_E2000")
+# out <- c("log_vias","log_f_SGP","log_f_regalias", "log_f_trans_nac")
+# out <- c("log_vias_pc","log_f_SGP_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias_ter","log_vias_ter_pc")
+
+
+lapply(out, l_f) 
+
+
+
+
+
+###########################################################################################################
+################################### INVESTMENT: AFTER NEXT ################################################
+################################ Coalition wrt CURRENT president ##########################################
+######################################### Should be 0 #####################################################
+###########################################################################################################
+
+# Note: maires elected in 1997 begin in 01/01/1998 which is a presidential election year. Not enough overlapping with current
+# Not enough observations for 2015 maires either 
+
+# FINAL round CURRENT coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
+table(coalitions_long$ano,coalitions_long$year)
+
+# For a specific party (or group of parties), merge RD in t to outcomes in t+1
+# Drop elections where party is both 1 and 2 in t
+
+alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(rank <= 2) %>% 
+  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
+  arrange(codmpio, ano, codpartido) %>%
+  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>%
+  filter(nn==2) %>%
+  dplyr::select(-c(codep,n,nn)) %>%
+  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+
+alcaldes_rd <- alcaldes_merge_r2 %>%
+  filter(coalition_new == 1) %>%
+  group_by(ano, codmpio) %>%
+  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
+  filter(party_2 == 1) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano_pl", "codmpio", "coalition"), 
+        suffixes = c("_t", "_t1"), all.x = T) %>%
+  dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
+                votos_t, votos_t1, starts_with("prop")) %>% 
+  filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
+  merge(., ejecu_after,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., vias_after,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., invias_after,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  arrange(codmpio, ano)
+
+
+############################
+# RD and OLS regressions 
+
+# Select period 
+l <- alcaldes_rd 
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+# Regressions for list of outcomes
+l_f <- function(o){
+  r <- rdrobust(y = l[,o],
+                x = l$prop_votes_c2,
+                covs = cbind(l$pobl_tot, as.factor(l$ano)),
+                c = 0.5,
+                all = T,
+                vce = "nn")
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+  )
+  return(r)
+}
 
 
 # outcomes
-# out <- c("log_A","log_A1000","log_A2000","log_A3010")
- out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
-#  out <- c("D_pc","D1000_pc", "D2000_pc", "D3000_pc")
- 
+# out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
+out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
+# out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
-# out <- c("log_inv","log_vias","log_f_nac","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias","log_f_nac","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_ter")
+# out <- c("log_vias","log_f_SGP","log_f_regalias", "log_f_trans_nac")
+# out <- c("log_vias_pc","log_f_SGP_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias_ter","log_vias_ter_pc")
 
 lapply(out, l_f) 
-# lapply(out, lm_f) 
+
+
+
 
 
 ###########################################################################################################
-######################################### INVESTMENT: PREMIO ##############################################
-################################## Coalition wrt next president  ##########################################
+##################################### INVESTMENT: AFTER NEXT ##############################################
+################################## Coalition wrt NEXT president  ##########################################
+########################################### Could be + ####################################################
 ###########################################################################################################
+
+# FINAL round NEXT coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))  
+
+# top2 and drop municipality if at least one of the top2 is 98 or 99 
+alcaldes_merge_r2 <- alcaldes_merge %>%
+  filter(ano != 2015) %>%
+  filter(rank <= 2) %>% 
+  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
+  arrange(codmpio, ano, codpartido) %>%
+  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>%
+  filter(nn==2) %>%
+  dplyr::select(-c(codep,n,nn)) %>%
+  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -315,7 +325,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
   filter(party_2 == 1) %>% 
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano", "codmpio", "coalition"), 
+  merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano_p", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
                 votos_t, votos_t1, starts_with("prop")) %>% 
@@ -328,6 +338,11 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 
 ############################
 # Do coallition maires get more funds after presidential election?   
+
+# Select periods
+l <- alcaldes_rd 
+# %>% filter(ano != 2011)
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # Regressions for list of outcomes
 l_f <- function(o){
@@ -343,30 +358,20 @@ l_f <- function(o){
   return(r)
 }
 
-# linear
-lm_f <- function(o){
-  r <- summary(lm(l[,o] ~ prop_votes_c2 + pobl_tot + as.factor(ano), l))
-  return(r)
-}
-
-
-# All periods? or drop 2011 (cambio en  ley regalias)
-l <- alcaldes_rd 
-# %>% filter(ano != 2011)
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
 # outcomes
-# out <- c("log_A","log_A1000","log_A2000","log_A3010")
-# out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
-# out <- c("D_pc","D1000_pc", "D2000_pc", "D3000_pc")
-
+# out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
+ out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
+# out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
-out <- c("log_vias","log_f_nac","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_ter")
+# out <- c("log_vias","log_f_SGP","log_f_regalias", "log_f_trans_nac")
+# out <- c("log_vias_pc","log_f_SGP_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias_ter","log_vias_ter_pc")
 
 lapply(out, l_f) 
-# lapply(out, lm_f) 
+
+
+
 
 
 

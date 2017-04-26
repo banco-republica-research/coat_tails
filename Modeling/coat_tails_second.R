@@ -76,6 +76,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 
 # Second rounds only
 l <- alcaldes_rd 
+# %>% filter(ano > 1997)  # Solo Santos
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # outcomes
@@ -106,12 +107,15 @@ lm_f <- function(o){
 lapply(out, lm_f) 
 
 
-############################
-# RD and OLS regressions by president (incluiding Uribe: first round)
 
-l_y <- list()
-l_y[[1]] <- alcaldes_rd %>% filter(ano == 1997)
-l_y[[2]] <- alcaldes_rd %>% filter(ano == 2007 | ano == 2011)
+
+############################
+# RD and OLS regressions by year 
+
+years <- names(table(l$ano))
+l_y <- lapply(years, function(x){
+  alcaldes_rd %>% filter(ano == x)
+}) 
 
 lapply(l_y, function(a){
   rdrobust(y = a$prop_votes_total_t1,
@@ -119,15 +123,14 @@ lapply(l_y, function(a){
            covs = cbind(a$pobl_tot),
            c = 0.5,
            all = T,
-           vce = "hc1")
+           vce = "nn")
 })
 
 
-l2 <- l_y[[2]] %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
-rdplot(y=l2$prop_votes_total_t1, x=l2$prop_votes_c2, c = 0.5, 
-       binselect="es", nbins= 12, kernel="triangular", p=2, ci=95, 
-)
+
+
+
 
 
 

@@ -34,16 +34,13 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
 
-# Load house candidates (collapsed by party) for t+1
-coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) 
-senado_coalition <- readRDS(paste0(res,"senate_coalition_merge.rds"))
-# senado <- readRDS(paste0(res, "senado_merge.rds")) %>% dplyr::rename(., ano_t = ano)
-
-
-
 # ###########################################################################################################
 # ########################### RD: REVERSE COAT-TAIL EFFECT - ONE PARTY APPROACH #############################
 # ###########################################################################################################
+
+# Load house candidates (collapsed by party) for t+1
+# senado <- readRDS(paste0(res, "senado_merge.rds")) %>% dplyr::rename(., ano_t = ano)
+
 # 
 # # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # # Drop elections where party is both 1 and 2 in t
@@ -134,8 +131,13 @@ senado_coalition <- readRDS(paste0(res,"senate_coalition_merge.rds"))
 # a
 
 ###########################################################################################################
-###################################### COAT TAILS SENATE + COALITION: RD ###################################
+##################################### COAT TAILS SENATE + COALITION: RD ###################################
+########################################  COALITION FIRST ROUND ###########################################
 ###########################################################################################################
+
+# coalition FIRST roundS
+coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
+senado_coalition <- readRDS(paste0(res,"senate_coalition_primera_merge.rds"))
 
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
@@ -148,13 +150,11 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   group_by(codmpio, ano) %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn == 2) %>%
-  dplyr::select(-c(codep,n,nn)) %>%
+  dplyr::select(-c(n,nn)) %>%
   merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
 
-
-###########################################################################################################
-##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
-###########################################################################################################
+# For a specific party (or group of parties), merge RD in t to outcomes in t+1
+# Drop elections where party is both 1 and 2 in t
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
   filter(coalition_new == 1) %>%
@@ -194,5 +194,88 @@ l_f <- function(o){
 lapply(out, l_f) 
 
 
+
+###########################################################################################################
+##################################### COAT TAILS SENATE + COALITION: RD ###################################
+########################################  COALITION FINAL ROUND ###########################################
+###########################################################################################################
+
+# coalition FINAL roundS
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
+senado_coalition <- readRDS(paste0(res,"senate_coalition_merge.rds"))
+
+# Top 2 and drop municipality if at least one of the top2 is 98 or 99 
+alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(ano != 2015) %>%
+  filter(rank <= 2) %>% 
+  merge(., coalitions_long, by.x = c("codpartido","ano", "codmpio") , by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>%
+  arrange(codmpio, ano, codpartido) %>%
+  filter(is.na(coalition_new) == F & coalition_new != 98 & coalition_new != 99) %>%
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>%
+  filter(nn == 2) %>%
+  dplyr::select(-c(n,nn)) %>%
+  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+
+# For a specific party (or group of parties), merge RD in t to outcomes in t+1
+# Drop elections where party is both 1 and 2 in t
+
+alcaldes_rd <- alcaldes_merge_r2 %>%
+  filter(coalition_new == 1) %>%
+  group_by(ano, codmpio) %>%
+  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
+  filter(party_2 == 1) %>%
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  merge(., senado_coalition,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano", "codmpio", "coalition_new"), 
+        suffixes = c("_t", "_t1"), all.x = T) %>%
+  filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
+  arrange(codmpio, ano)
+
+############################
+# RD and OLS regressions 
+
+# All 
+l <- alcaldes_rd 
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+# outcomes
+out <- c("prop_votes_total_t1")
+
+# Regressions for list of outcomes
+l_f <- function(o){
+  r <- rdrobust(y = l[,o],
+                x = l$prop_votes_c2,
+                covs = cbind(l$pobl_tot),
+                c = 0.5,
+                all = T,
+                vce = "nn")
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+  )
+  return(r)
+}
+
+lapply(out, l_f) 
+
+
+
+
+############################
+# RD and OLS regressions by year 
+
+years <- names(table(l$ano))
+l_y <- lapply(years, function(x){
+  alcaldes_rd %>% filter(ano == x)
+}) 
+
+lapply(l_y, function(a){
+  rdrobust(y = a$prop_votes_total_t1,
+           x = a$prop_votes_c2,
+           covs = cbind(a$pobl_tot),
+           c = 0.5,
+           all = T,
+           vce = "nn")
+})
 
 
