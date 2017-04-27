@@ -10,6 +10,8 @@ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
+final <- "Results/Descriptives/"
+doc <- "Document/Figures/"
 
 ###########################################################################################################
 ############################### WINNING PARTIES 1997-2015 #################################################
@@ -63,8 +65,17 @@ parties_win_lc <- parties_win %>%
   arrange(ano, party_lc) 
 
 ggplot(parties_win_lc, aes(x = ano, y = win_share, fill = party)) + geom_bar(stat = "identity") + 
-  labs(x = "Año") + scale_x_continuous(breaks = round(seq(min(parties_win_big$ano), max(parties_win_big$ano), by = 1),1)) + 
-  theme_bw() + scale_fill_manual(values=c("grey","blue","red"), name = "", labels = c("Otros","Conservador","Liberal")) 
+  labs(y= "Percentage of Winners", x = "Year") + scale_x_continuous(breaks = c(1988 ,1990, 1992, 1994, 1997, 2000, 2003, 2007, 2011, 2015)) + 
+  theme_bw() + scale_fill_manual(values=c("grey","dodgerblue3","red3"), name = "", labels = c("New Parties","Conservative","Liberal")) + theme_bw() +  
+  theme(legend.position="bottom", axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+ggsave(path=final,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
+ggsave(path=doc,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
+
 
 
 
@@ -87,7 +98,6 @@ p_ef <- ggplot(alcaldes_difference, aes(parties_ef, colour = factor(ano))) + geo
 ggplotly(p_ef)
 
 # Number of parties and political competition 
-
 s <- ggplot(alcaldes_difference, aes(parties, difference)) + geom_point(aes(colour = factor(ano), size=votes_tot)) + 
   labs(shape = "", color="Año", y= "Competencia", x = "Partidos") + theme_bw() 
 

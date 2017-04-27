@@ -60,83 +60,6 @@ alcaldes_merge_t1 <- alcaldes_merge %>%
 # table(duplicated(alcaldes_merge_collapse[,c("codmpio", "ano_lag", "codpartido")]))
 
 
-
-###########################################################################################################
-############################# RD: IMCUMBENCY EFFECT - N PARTIES APPROACH ##################################
-###########################################################################################################
-
-# list of parties by total number of wins
-parties <- alcaldes_merge %>% filter(rank == 1) %>% filter(codpartido!= 98 & codpartido!= 99) %>% 
-  group_by(codpartido) %>% summarize(win = n()) %>% 
-  merge(party_code,  by.x = c("codpartido"), by.y = c("party_code"), all.x = T) %>% 
-  dplyr::select(codpartido, name_party, win) %>% 
-  arrange(desc(win)) 
-
-# list of N big parties (by total number of wins) 
-big_parties <- parties[1:20,]$codpartido
-# big_parties <- parties$codpartido
-
-# Function: Create RD dataset by party 
-RD_data <- function(x){
-alcaldes_rd <- alcaldes_merge_r2 %>%
-  filter(codpartido == x) %>%
-  group_by(ano, codmpio) %>%
-  mutate(party_2 = n()) %>%
-  filter(party_2 == 1) %>% 
-  mutate(win_t = ifelse(rank==1,1,0)) %>% 
-  merge(alcaldes_merge_t1,  by.x = c("ano", "codmpio","codpartido"), by.y = c("ano_lag", "codmpio", "codpartido"), 
-        suffixes = c("_t", "_t1"), all.x = T) %>%
-  mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
-  mutate(prop_votes_total_b_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
-  dplyr::select(codmpio, pobl_tot, coddepto, ano, codpartido, win_t, rank_t, votos_t, prop_votes_c2,
-                run_t1, rank_t1 , votos_t1, prop_votes_cand_t1, prop_votes_total_t1,prop_votes_total_b_t1) %>%
-  arrange(codmpio, ano) %>%
-  mutate(win_t1 = ifelse(is.na(rank_t1) == 1 | rank_t1 != 1, 0, 1)) 
-  }
-
-alcaldes_rd_a <- lapply(big_parties, RD_data) 
-alcaldes_rd_n <- alcaldes_rd_a %>% ldply() %>% arrange(codpartido, codmpio, ano)
-
-l <- alcaldes_rd_n 
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
-
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-           x = l$prop_votes_c2,
-           covs = cbind(as.factor(l$ano), l$pobl_tot, as.factor(l$coddepto)),
-           c = 0.5,
-           all = T)
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 15, kernel="triangular", p=3, ci=95, 
-         )
-  return(r)
-  }
-
-out <- c("prop_votes_total_t1","win_t1","prop_votes_total_b_t1","run_t1")
-lapply(out, l_f) 
-
-
-
-
-# RD and OLS regressions by year (restricted sample)
-
-years <- names(table(l$ano))
-l_y <- lapply(years, function(x){
-  l %>% filter(ano == x)
-}) 
-
-lapply(l_y, function(a){
-  rdrobust(y = a$prop_votes_total_t1,
-           x = a$prop_votes_c2,
-           covs = cbind(a$pobl_tot),
-           c = 0.5,
-           all = T,
-           vce = "hc1")
-})
-
-
 ###########################################################################################################
 ############################# RD: IMCUMBENCY EFFECT - ALL PARTIES #########################################
 ###########################################################################################################
@@ -223,6 +146,13 @@ lapply(coal,l_f)
 
 
 
+
+
+
+
+
+
+
 ###########################################################################################################
 ############################### RD: IMCUMBENCY EFFECT - ONE PARTY APPROACH ################################
 ###########################################################################################################
@@ -264,4 +194,81 @@ l_f <- function(o){
 
 out <- c("prop_votes_total_t1","win_t1","prop_votes_total_b_t1","run_t1")
 lapply(out, l_f) 
+
+
+###########################################################################################################
+############################# RD: IMCUMBENCY EFFECT - N PARTIES APPROACH ##################################
+###########################################################################################################
+
+# list of parties by total number of wins
+parties <- alcaldes_merge %>% filter(rank == 1) %>% filter(codpartido!= 98 & codpartido!= 99) %>% 
+  group_by(codpartido) %>% summarize(win = n()) %>% 
+  merge(party_code,  by.x = c("codpartido"), by.y = c("party_code"), all.x = T) %>% 
+  dplyr::select(codpartido, name_party, win) %>% 
+  arrange(desc(win)) 
+
+# list of N big parties (by total number of wins) 
+big_parties <- parties[1:20,]$codpartido
+# big_parties <- parties$codpartido
+
+# Function: Create RD dataset by party 
+RD_data <- function(x){
+  alcaldes_rd <- alcaldes_merge_r2 %>%
+    filter(codpartido == x) %>%
+    group_by(ano, codmpio) %>%
+    mutate(party_2 = n()) %>%
+    filter(party_2 == 1) %>% 
+    mutate(win_t = ifelse(rank==1,1,0)) %>% 
+    merge(alcaldes_merge_t1,  by.x = c("ano", "codmpio","codpartido"), by.y = c("ano_lag", "codmpio", "codpartido"), 
+          suffixes = c("_t", "_t1"), all.x = T) %>%
+    mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
+    mutate(prop_votes_total_b_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
+    dplyr::select(codmpio, pobl_tot, coddepto, ano, codpartido, win_t, rank_t, votos_t, prop_votes_c2,
+                  run_t1, rank_t1 , votos_t1, prop_votes_cand_t1, prop_votes_total_t1,prop_votes_total_b_t1) %>%
+    arrange(codmpio, ano) %>%
+    mutate(win_t1 = ifelse(is.na(rank_t1) == 1 | rank_t1 != 1, 0, 1)) 
+}
+
+alcaldes_rd_a <- lapply(big_parties, RD_data) 
+alcaldes_rd_n <- alcaldes_rd_a %>% ldply() %>% arrange(codpartido, codmpio, ano)
+
+l <- alcaldes_rd_n 
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+
+# Regressions for list of outcomes
+l_f <- function(o){
+  r <- rdrobust(y = l[,o],
+                x = l$prop_votes_c2,
+                covs = cbind(as.factor(l$ano), l$pobl_tot, as.factor(l$coddepto)),
+                c = 0.5,
+                all = T)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+         binselect="es", nbins= 15, kernel="triangular", p=3, ci=95, 
+  )
+  return(r)
+}
+
+out <- c("prop_votes_total_t1","win_t1","prop_votes_total_b_t1","run_t1")
+lapply(out, l_f) 
+
+
+
+
+# RD and OLS regressions by year (restricted sample)
+
+years <- names(table(l$ano))
+l_y <- lapply(years, function(x){
+  l %>% filter(ano == x)
+}) 
+
+lapply(l_y, function(a){
+  rdrobust(y = a$prop_votes_total_t1,
+           x = a$prop_votes_c2,
+           covs = cbind(a$pobl_tot),
+           c = 0.5,
+           all = T,
+           vce = "hc1")
+})
+
 
