@@ -118,11 +118,11 @@ l_f <- function(o){
 # outcomes
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
-out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
+# out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
 # out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
-# out <- c("log_vias","log_f_SGP","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_pc","log_f_SGP_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+ out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
+# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 lapply(out, l_f) 
@@ -196,11 +196,11 @@ l_f <- function(o){
 # outcomes
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
- out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
+# out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
 # out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
-# out <- c("log_vias","log_f_SGP","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_pc","log_f_SGP_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
+ out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 
@@ -283,8 +283,8 @@ l_f <- function(o){
 out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
 # out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
-# out <- c("log_vias","log_f_SGP","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_pc","log_f_SGP_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
+# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 lapply(out, l_f) 
@@ -364,8 +364,8 @@ l_f <- function(o){
  out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
 # out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
-# out <- c("log_vias","log_f_SGP","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_pc","log_f_SGP_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
+# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 lapply(out, l_f) 
