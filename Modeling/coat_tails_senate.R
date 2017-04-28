@@ -3,16 +3,17 @@
 ###########################################################################################################
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust")
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","broom","cluster", "rdrobust")
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
+results <- "Results/RD"
 
 ###########################################################################################################
 ############################################# LOAD DATA ###################################################
@@ -191,13 +192,13 @@ l_f <- function(o){
   return(r)
 }
 
-lapply(out, l_f) 
-
+r <-lapply(out, l_f) 
+saveRDS(r, str_c(results, "/coat_tails_senate1_coalition.rds"))
 
 
 ###########################################################################################################
 ##################################### COAT TAILS SENATE + COALITION: RD ###################################
-########################################  COALITION FINAL ROUND ###########################################
+#######################################  COALITION SECOND ROUND ###########################################
 ###########################################################################################################
 
 # coalition FINAL roundS
@@ -256,7 +257,9 @@ l_f <- function(o){
   return(r)
 }
 
-lapply(out, l_f) 
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "/coat_tails_senate2_coalition.rds"))
+
 
 
 
@@ -277,5 +280,74 @@ lapply(l_y, function(a){
            all = T,
            vce = "nn")
 })
+
+
+###########################################################################################################
+######################################## COAT TAILS HOUSE BY PARTY: RD ####################################
+###########################################################################################################
+
+
+#House representatives by party (previous house data bases were arranged by coalition of first or second round)
+senado <- readRDS(paste0(res,"senado_merge.rds")) 
+
+# Top 2 and drop municipality if at least one of the top2 is 98 or 99 
+alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(ano != 2015) %>%
+  filter(rank <= 2) %>%
+  merge(., coalitions_long, by.x = c("codpartido","ano", "codmpio") , by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>%
+  arrange(codmpio, ano, codpartido) %>%
+  filter(is.na(coalition_new) == F & coalition_new != 98 & coalition_new != 99) %>%
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>%
+  filter(nn == 2) %>%
+  dplyr::select(-c(n,nn)) %>%
+  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+
+
+# For a specific party (or group of parties), merge RD in t to outcomes in t+1
+# Merge elections by their party code (codpartido)
+
+alcaldes_rd <- alcaldes_merge_r2 %>%
+  # filter(coalition_new == 1) %>%
+  # group_by(ano, codmpio) %>%
+  # mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
+  # filter(party_2 == 1) %>%
+  # mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  merge(., senado,  by.x = c("year", "codmpio", "codpartido"), by.y = c("ano", "codmpio", "codpartido"), 
+        suffixes = c("_t", "_t1")) %>%
+  filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
+  arrange(codmpio, ano)
+
+############################
+# RD and OLS regressions 
+
+# All 
+l <- alcaldes_rd 
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+
+# outcomes
+out <- c("prop_votes_total_t1")
+
+# Regressions for list of outcomes
+l_f <- function(o){
+  r <- rdrobust(y = l[,o],
+                x = l$prop_votes_c2,
+                covs = cbind(l$pobl_tot),
+                c = 0.5,
+                all = T,
+                vce = "nn")
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+  )
+  return(r)
+}
+
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "/coat_tails_senate_party.rds"))
+
+
+
 
 

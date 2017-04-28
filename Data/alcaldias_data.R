@@ -11,6 +11,7 @@ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
   data <-"Data/CEDE/Microdatos/"
   coal <-"Data/CEDE/coaliciones/"
   res <-"Data/CEDE/Bases/"
+  results <- "Results/RD"
 
 ###########################################################################################################
 ############################ Winners and loosers since 1997  ##############################################
