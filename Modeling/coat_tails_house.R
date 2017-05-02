@@ -3,8 +3,9 @@
 ###########################################################################################################
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","broom","gtools","cluster", "rdrobust")
-lapply(packageList,require,character.only=TRUE)
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr",
+               "broom","gtools","cluster", "rdrobust", "openxlsx", "haven")
+lapply(packageList,library,character.only=TRUE)
 
 # Directory 
 setwd("~/Dropbox/BANREP/Elecciones/")
@@ -13,7 +14,7 @@ setwd("~/Dropbox/BANREP/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
-
+results <- "Results/RD"
 
 ###########################################################################################################
 ############################################# LOAD DATA ###################################################
@@ -188,12 +189,18 @@ l_f <- function(o){
                 all = T,
                 vce = "nn")
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
-  return(r)
+  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
+                       prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- mean(l$prop_votes_total_t1, na.rm = T)
+  return(list(r, mean))
 }
 
-lapply(out, l_f) 
+
+
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "/coat_tails_house1_coalition.rds"))
 
 
 
@@ -201,6 +208,7 @@ lapply(out, l_f)
 ###################################### COAT TAILS HOUSE + COALITION: RD ###################################
 ########################################  COALITION FINAL ROUND ###########################################
 ###########################################################################################################
+
 
 # coalition FINAL roundS
 coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
@@ -255,12 +263,18 @@ l_f <- function(o){
                 all = T,
                 vce = "nn")
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
-  return(r)
+  
+  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
+                       prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- mean(l$prop_votes_total_t1, na.rm = T)
+return(list(r, mean))
 }
 
-lapply(out, l_f) 
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "/coat_tails_house2_coalition.rds"))
+
 
 
 ############################
@@ -337,10 +351,17 @@ l_f <- function(o){
                 all = T,
                 vce = "nn")
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95 
   )
-  return(r)
+  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
+                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- mean(l$prop_votes_total_t1, na.rm = T)
+  return(list(r, mean))
 }
 
-lapply(out, l_f) 
+
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "/coat_tails_house1_party.rds"))
+
+
 

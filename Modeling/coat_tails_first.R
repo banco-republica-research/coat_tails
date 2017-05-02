@@ -90,11 +90,13 @@ l_f <- function(o){
                 all = T,
                 vce = "nn")
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
-  return(r)
+  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
+                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- mean(l[,out], na.rm = T)
+  return(list(r, mean))
 }
-
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_president1_coalition.rds"))
 
@@ -157,11 +159,13 @@ l_f <- function(o){
                 all = T,
                 vce = "nn")
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
-  return(r)
+  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
+                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- mean(l[,out], na.rm = T)
+  return(list(r, mean))
 }
-
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_president1_party.rds"))
 
