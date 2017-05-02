@@ -1,2 +1,2 @@
 # coat_tails
-Reverse coat tail effects in colombian elections (1988 - 2015)
+Reverse coat tail effects in Colombian elections (1988 - 2015)
