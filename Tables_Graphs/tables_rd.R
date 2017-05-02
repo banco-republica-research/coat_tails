@@ -15,39 +15,50 @@ results <- "Results/RD"
 ###########################################################################################################
 ###################################### FUNCTION TO EXTRACT INFO FROM RD'S #################################
 ###########################################################################################################
-rd_to_df <- function(list, dataframe){
-  rd <- lapply(list, "[", "tabl3.str") %>%
-    lapply(as.data.frame) %>%
-    lapply( "[", 3 , ) %>%
-    ldply() %>% mutate(N_l = unlist(lapply(list, "[", "N_l"))) %>%
-    mutate(N_r = unlist(lapply(list, "[", "N_r"))) %>%
-    mutate(N = N_l + N_r) %>%
-    mutate(bws = unlist(lapply(list, function(x) x$bws[1, 1])))
-  
-  defo_mean <- mapply(function(x, y){
-    y %>%
-      filter(abs(dist_disc) <= x$bws[1, 1] & treatment == 0) %>% 
-      dplyr::summarize(mean = mean(loss_sum))
-  }, x = list , y = dataframe, SIMPLIFY = F) %>% unlist()
-  
-  df <- rd %>% cbind(., defo_mean) %>% t() %>% 
-    as.data.frame() 
-  names(df) <- NULL
-  names(df) <- c("LineaNegra", "Doble_LN_PNN", "Doble_LN_Resg", "Triple")
-  
-  # %>% dplyr::rename(LineaNegra = Linea_Negra.mean,
-  #                                     Doble_LN_PNN = Proteccion_Doble_LN_&_PNN.mean, Doble_LN_Resg = Proteccion_Doble_LN_&_Resg.mean,
-  #                                     Triple = Triple_Proteccion_LN.mean)
-  row.names(df) <- c("Territorio","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws", "Media control")
+rd_to_df <- function(list){
+  rd <- lapply(list, function(x){
+    x$rd %>% .$tabl3.str}) %>%
+  lapply(as.data.frame) %>%
+  lapply( "[", 3 , ) %>% 
+  ldply() %>% mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
+  mutate(N_r = unlist(lapply(list, function(x) x$rd$N_h_r))) %>%
+  mutate(N = as.numeric(N_l) + as.numeric(N_r)) %>%
+  mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
+  mutate(mean_bw = unlist(lapply(list, function(x) x$mean)))
+
+  df <- rd %>% t() %>% as.data.frame()
+  row.names(df) <- c("Eleccion","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws", "Media control")
+  # colnames(df) <- df$Eleccion
   return(df)
 }
 
+###########################################################################################################
+################################################ LOAD RESULTS #############################################
+################################################## BY PANEL ############################################### 
+###########################################################################################################
+setwd(results)
+list_files <- list.files() %>%
+  .[str_detect(., "party")]
+party <- lapply(list_files, readRDS) %>%
+  lapply(., `[[`, 1) %>%
+  setNames(., list_files)
 
+list_files <- list.files() %>%
+  .[str_detect(., "1_coalition")]
+coalition_1 <- lapply(list_files, readRDS) %>%
+  lapply(., `[[`, 1) %>%
+  setNames(., list_files)
 
+list_files <- list.files() %>%
+  .[str_detect(., "2_coalition")]
+coalition_2 <- lapply(list_files, readRDS) %>%
+  lapply(., `[[`, 1) %>%
+  setNames(., list_files)
 
 
 ###########################################################################################################
 ################################################ LOAD RESULTS #############################################
+################################################# BY ELECTION ############################################# 
 ###########################################################################################################
 setwd(results)
 list_files <- list.files() %>%
@@ -67,6 +78,16 @@ list_files <- list.files() %>%
 house <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
+
+
+###########################################################################################################
+############################################  CREATE TABLES  ##############################################
+###########################################################################################################
+
+a <- rd_to_df(party) %>% .[c(2, 3, 4, 1)] %>% stargazer(., summary = FALSE)
+b <- rd_to_df(coalition_1) %>% .[c(2, 3, 1)] %>% stargazer(., summary = FALSE)
+c <- rd_to_df(coalition_2) %>% .[c(2, 3, 1)] %>% stargazer(., summary = FALSE)
+
 
 
 

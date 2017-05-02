@@ -97,7 +97,7 @@ l_f <- function(o){
   mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
                          prop_votes_c2 >= 0.5 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
-  return(list(r, mean))
+  return(list(rd = r, mean = mean))
 }
 
 r <- lapply(out, l_f) 
@@ -169,7 +169,7 @@ l_f <- function(o){
   mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
                          prop_votes_c2 >= 0.5 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
-  return(list(r, mean))
+  return(list(rd = r, mean = mean))
 }
 
 r <- lapply(out, l_f) 
