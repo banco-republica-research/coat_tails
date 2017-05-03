@@ -1,11 +1,11 @@
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "tidyr", "forcats", "stringr", "xlsx")
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "tidyr", "forcats", "stringr", "openxlsx")
 lapply(packageList,library,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
   data <-"Data/CEDE/Microdatos/"
@@ -123,7 +123,7 @@ saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
 ###########################################################################################################
 
 # Coalitions in the Consevador party for 2011: year of extreme division between the party  
-muni_cons_2011 <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "munp_conser_2011") %>%
+muni_cons_2011 <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheet = "munp_conser_2011") %>%
   mutate(year = 2011, party_code = 2) %>%
   select(muni_code = COD_MUN, municipio = MUNI, name = CANDIDATO, party_code, slant = CORRIENTE, coalition = COALICIÓN, year) %>% 
   mutate(coalition = ifelse(coalition == 99, 0,coalition))
@@ -132,9 +132,9 @@ saveRDS(muni_cons_2011,paste0(res,"coalitions_cons.rds"))
   
 #Other parties and movements identified by municipality and coalition
 ### A warning may be appear caused by different levels in the factor variables of coalition 
-other_parties_coal <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "98 y 99") %>%
-  select(party_code = code, muni_code = muni, position = posici_muni, year, X1998, X2002, X2006, X2010) %>%
-  gather(year_2, coalition, X1998:X2010) %>% mutate(year_2 = fct_recode(year_2,
+other_parties_coal <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheet = "98 y 99") %>%
+  select(party_code = code, muni_code = muni, position = posici_muni, year, `1998`, `2002`,`2006`, `2010`) %>%
+  gather(year_2, coalition, 5:8) %>% mutate(year_2 = fct_recode(year_2,
                                                                         "1998" = "X1998",
                                                                         "2002" = "X2002",
                                                                         "2006" = "X2006",
@@ -147,11 +147,11 @@ other_parties_coal <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetN
 saveRDS(other_parties_coal, paste0(res,"coalitions_other.rds"))
   
 # Coalition by party (First round): Hand-made based on oficial data, campaign reports and press 
-coalitions_primera <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "COALICION_1ra_VUELTA") %>%
+coalitions_primera <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheet = "COALICION_1ra_VUELTA") %>%
   filter(is.na(party_code)==0) %>%
   mutate_all(funs(as.character(.))) %>%
   rename(name_party = Nombre.Partido) %>%
-  gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
+  gather("year", "coalition",  3:7) %>% mutate(year = as.factor(year)) %>%
   mutate(year = fct_recode(year,
                            "1998" = "X1998",
                            "2002" = "X2002",
@@ -211,11 +211,11 @@ saveRDS(coalitions_long, paste0(res, "coalitions_primera_new.rds"))
 
 
 # Coalition by party (Second round): Hand-made based on oficial data, campaign reports and press 
-coalitions_segunda <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheetName = "COALICION_2da_VUELTA") %>%
+coalitions_segunda <- openxlsx::read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheet = "COALICION_2da_VUELTA") %>%
   filter(is.na(party_code)==0) %>%
   mutate_all(funs(as.character(.))) %>%
   rename(name_party = Nombre.Partido) %>%
-  gather("year", "coalition", starts_with("X")) %>% mutate(year = as.factor(year)) %>%
+  gather("year", "coalition", 3:6) %>% mutate(year = as.factor(year)) %>%
   mutate(year = fct_recode(year,
                            "1994" = "X1994",
                            "1998" = "X1998",
@@ -267,8 +267,9 @@ saveRDS(coalitions_long, paste0(res, "coalitions_segunda_new.rds"))
 
 
 ###########################################################################################################
-################################### COALITIONS NEXT LAST ROUND ############################################
+################################## COALITIONS NEXT FINAL ROUND ############################################
 ###########################################################################################################
+
 
 # Primera vuelta para Uribe
 
@@ -343,14 +344,6 @@ coalitions_long <- alcaldes_merge %>%
 table(coalitions_long$ano, coalitions_long$year)
 
 saveRDS(coalitions_long, paste0(res, "coalitions_current.rds"))
-
-
-
-
-
-
-
-
 
 ###########################################################################################################
 ################################### DIFFERENCES BETWEEN 1 AND 2 ###########################################

@@ -23,6 +23,8 @@ results <- "Results/RD"
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
 
+#NOT FINAL ELECTIONS ONLY SECOND ROUND
+
 # Load party codes and municipal covariates
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))

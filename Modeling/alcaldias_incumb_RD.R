@@ -7,12 +7,13 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
+results <- "Results/RD"
 
 ###########################################################################################################
 ############################################# LOAD DATA ###################################################
@@ -22,7 +23,6 @@ res <-"Data/CEDE/Bases/"
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
-coalitions <- readRDS(paste0(res,"coalitions.rds"))
 
 # Elections at t
 alcaldes_merge_r2 <- alcaldes_merge %>% 
@@ -56,6 +56,8 @@ alcaldes_merge_t1 <- alcaldes_merge %>%
             prop_votes_total = sum(prop_votes_total),
             rank = max(rank))
 
+
+
 # Test duplicates
 # table(duplicated(alcaldes_merge_collapse[,c("codmpio", "ano_lag", "codpartido")]))
 
@@ -65,7 +67,7 @@ alcaldes_merge_t1 <- alcaldes_merge %>%
 ###########################################################################################################
 
 alcaldes_rd_all <- alcaldes_merge_r2 %>%
-  mutate(win_t = ifelse(rank==1,1,0)) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   group_by(ano, codmpio, codpartido) %>%
   mutate(party_2 = n()) %>%
   filter(party_2 == 1) %>% 
@@ -90,46 +92,55 @@ l_f <- function(o){
                 c = 0.5,
                 all = T)
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 15, kernel="triangular", p=3, ci=95, 
+         binselect="es", nbins= 15, kernel="triangular", p=3, ci=95
   )
-  return(r)  
+  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
+                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- mean(l[,out], na.rm = T)
+  return(list(rd = r, mean = mean)) 
 }
 
-out <- c("prop_votes_total_t1","win_t1","prop_votes_total_b_t1","run_t1")
-lapply(out, l_f) 
+out <- c("prop_votes_total_t1")
+other <- c("win_t1","prop_votes_total_b_t1","run_t1")
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "/incumbency_party.rds"))
 
 
 ###########################################################################################################
 ############################# RD: IMCUMBENCY EFFECT - COALITION PARTIES ###################################
+############################################## FINAL COALITION ############################################
 ###########################################################################################################
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))
 
 alcaldes_rd_c <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank==1,1,0)) %>% 
   group_by(ano, codmpio, codpartido) %>%
   mutate(party_2 = n()) %>%
-  filter(party_2 == 1) %>% 
-  merge(., coalitions, by.x = c("codpartido","ano") , by.y = c("party_code", "year_lag_presidencial"), all.x = T) %>%
-  filter(coalition!=98 & coalition!=99) %>%
-  merge(alcaldes_merge_t1,  by.x = c("ano", "codmpio","codpartido"), by.y = c("ano_lag", "codmpio", "codpartido"), 
+  filter(party_2 == 1) %>%
+  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
+  # merge(., coalitions, by.x = c("codpartido","ano") , by.y = c("party_code", "year_lag_presidencial"), all.x = T) %>%
+  # filter(coalition!=98 & coalition!=99) %>%
+  merge(alcaldes_merge_t1,  by.x = c("ano", "codmpio","codpartido"), by.y = c("ano_lag", "codmpio", "codpartido"),
         suffixes = c("_t", "_t1"), all.x=T) %>%
-  mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
+  mutate(run_t1 = ifelse(is.na(prop_votes_total_t1), 0, 1)) %>%
   mutate(prop_votes_total_b_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
-  dplyr::select(codmpio, pobl_tot, coddepto, ano, codpartido, coalition, win_t, rank_t, votos_t, prop_votes_c2,
-                run_t1, rank_t1 , votos_t1, prop_votes_cand_t1, prop_votes_total_t1,prop_votes_total_b_t1) %>%
+  group_by(ano, codmpio, codep, municipio, cand, prop_votes_c2, prop_votos_total)
+  # dplyr::select(codmpio, pobl_tot, coddepto, ano, codpartido, coalition, win_t, rank_t, votos_t, prop_votes_c2,
+                # run_t1, rank_t1 , votos_t1, prop_votes_cand_t1, prop_votes_total_t1,prop_votes_total_b_t1) %>%
   arrange(codmpio, ano) %>%
   mutate(win_t1 = ifelse(is.na(rank_t1) == 1 | rank_t1 != 1, 0, 1)) 
 
-table(alcaldes_rd_c$coalition)
+table(alcaldes_rd_c$coalition_new)
 l <- alcaldes_rd_c 
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # RD: Vote share conditional on running
 l_f <- function(c){
-  lc <- l %>% filter(coalition==c)
+  lc <- l %>% filter(coalition_new == c)
   lc2 <- lc %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
   r <- rdrobust(y = lc$win_t1,
             x = lc$prop_votes_c2,
-            covs = cbind(as.factor(lc$codpartido), as.factor(lc$ano), lc$pobl_tot, as.factor(lc$coddepto)),
+            # covs = cbind(as.factor(lc$codpartido), as.factor(lc$ano), lc$pobl_tot, as.factor(lc$coddepto)),
             c = 0.5,
             all = T)
   rdplot(y=lc2$win_t1, x=lc2$prop_votes_c2, c = 0.5, 
