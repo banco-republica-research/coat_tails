@@ -510,13 +510,37 @@ senado_collapse <- senado_aggregate %>%
 saveRDS(senado_collapse ,paste0(res,"senate_coalition_merge.rds"))
 
 #########################################################################################################
-############################ MAYORS IN T + 1 BY COALITION - INCUMBENCY ##################################
+##################################### MAYORS IN T + 1 - INCUMBENCY ######################################
 #########################################################################################################
 
 # Elections at t+1 Create lagged year and collapse by party (or group of parties) for t+1 outcome  
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
+
+alcaldes_merge_t1 <- alcaldes_merge %>%
+  filter(cand == 1) %>%
+  mutate(ano_lag = as.factor(ano)) %>%
+  mutate(ano_lag = fct_recode(ano_lag,
+                              "1997" = "2000",
+                              "2000" = "2003",
+                              "2003" = "2007",
+                              "2007" = "2011",
+                              "2011" = "2015")) %>%
+  mutate(ano_lag = as.character(ano_lag)) %>%
+  rename(ano_t1 = ano) %>% 
+  group_by(codmpio, ano_lag, ano_t1, codpartido, parties, parties_ef) %>%
+  summarize(votos = sum(votos), 
+            prop_votes_cand = sum(prop_votes_cand),
+            prop_votes_total = sum(prop_votes_total),
+            rank = max(rank))
+
+saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1.rds"))
+
+
+#########################################################################################################
+############################ MAYORS IN T + 1 BY COALITION - INCUMBENCY ##################################
+#########################################################################################################
 
 coalitions_primera <- readRDS(paste0(res,"coalitions_primera_new.rds"))
 coalitions_segunda <- readRDS(paste0(res,"coalitions_segunda_new.rds"))
@@ -537,34 +561,17 @@ election_coalitions <- function(x, y){
     mutate(ano_lag = as.character(ano_lag)) %>%
     merge(., x, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
     rename(ano_t1 = ano) %>%
-    group_by(codmpio, ano_lag, ano_t1, coalition_new) %>%
+    group_by(codmpio, ano_lag, ano_t1, coalition_new, codpartido) %>%
     summarize(., votos = sum(votos),
               prop_votes_cand = sum(prop_votes_cand),
-              prop_votes_total = sum(prop_votes_total),
-              rank = max(rank))
+              prop_votes_total = sum(prop_votes_total)
+              # rank = max(rank)
+              )
   return(df_merge)
 } 
 
 alcaldes_merge_t1 <- lapply(list_coalitions, election_coalitions, y = alcaldes_merge)
-
-alcaldes_merge_t1 <- alcaldes_merge %>%
-  filter(cand == 1) %>%
-  mutate(ano_lag = as.factor(ano)) %>%
-  mutate(ano_lag = fct_recode(ano_lag,
-                              "1997" = "2000",
-                              "2000" = "2003",
-                              "2003" = "2007",
-                              "2007" = "2011",
-                              "2011" = "2015")) %>%
-  mutate(ano_lag = as.character(ano_lag)) %>%
-  merge(., coalitions_long, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
-  rename(ano_t1 = ano) %>% 
-  group_by(codmpio, ano_lag, ano_t1, coalition_new) %>%
-  summarize(votos = sum(votos), 
-            prop_votes_cand = sum(prop_votes_cand),
-            prop_votes_total = sum(prop_votes_total),
-            rank = max(rank))
-
+saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1_coalition.rds"))
 
 
 
