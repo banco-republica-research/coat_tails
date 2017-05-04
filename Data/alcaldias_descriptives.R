@@ -65,7 +65,7 @@ parties_win_lc <- parties_win %>%
   arrange(ano, party_lc) 
 
 ggplot(parties_win_lc, aes(x = ano, y = win_share, fill = party)) + geom_bar(stat = "identity") + 
-  labs(y= "Percentage of Winners", x = "Year") + scale_x_continuous(breaks = c(1988 ,1990, 1992, 1994, 1997, 2000, 2003, 2007, 2011, 2015)) + 
+  labs(y= "Percentage of Mayors", x = "Year") + scale_x_continuous(breaks = c(1988 ,1990, 1992, 1994, 1997, 2000, 2003, 2007, 2011, 2015)) + 
   theme_bw() + scale_fill_manual(values=c("grey","dodgerblue3","red3"), name = "", labels = c("New Parties","Conservative","Liberal")) + theme_bw() +  
   theme(legend.position="bottom", axis.line = element_line(colour = "black"),
         panel.grid.major = element_blank(),
