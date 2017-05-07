@@ -37,6 +37,7 @@ rd_to_df <- function(list){
 ################################################## BY PANEL ############################################### 
 ###########################################################################################################
 setwd(results)
+
 list_files <- list.files() %>%
   .[str_detect(., "party")]
 party <- lapply(list_files, readRDS) %>%
@@ -55,12 +56,18 @@ coalition_2 <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
+list_files <- list.files() %>%
+  .[str_detect(., "final")]
+final <- lapply(list_files, readRDS) %>%
+  lapply(., `[[`, 1) %>%
+  setNames(., list_files)
+
 
 ###########################################################################################################
 ################################################ LOAD RESULTS #############################################
 ################################################# BY ELECTION ############################################# 
 ###########################################################################################################
-setwd(results)
+
 list_files <- list.files() %>%
   .[str_detect(., "president")]
 president <- lapply(list_files, readRDS) %>%
@@ -84,10 +91,78 @@ house <- lapply(list_files, readRDS) %>%
 ############################################  CREATE TABLES  ##############################################
 ###########################################################################################################
 
-a <- rd_to_df(party) %>% .[c(2, 3, 4, 1)] %>% stargazer(., summary = FALSE)
-b <- rd_to_df(coalition_1) %>% .[c(2, 3, 1)] %>% stargazer(., summary = FALSE)
-c <- rd_to_df(coalition_2) %>% .[c(2, 3, 1)] %>% stargazer(., summary = FALSE)
+#Table 1 
+a <- rd_to_df(party) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE)
+#Table 2
+b <- rd_to_df(coalition_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE)
+c <- rd_to_df(coalition_2) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE)
+#Table 3: Robustness
+d <- rd_to_df(final) %>% .[c(3, 2, 1)] %>% stargazer(., summary = FALSE)
 
+
+###########################################################################################################
+###################################### FUNCTION TO EXTRACT INFO FROM RD'S #################################
+################################################# INVESTMENT ##############################################
+###########################################################################################################
+rd_to_df_2 <- function(list){
+  rd <- lapply(list, "[", "tabl3.str") %>%
+    lapply(as.data.frame) %>%
+    lapply( "[", 3 , ) %>%
+    ldply() %>% mutate(N_l = unlist(lapply(list, "[", "N_h_l"))) %>%
+    mutate(N_r = unlist(lapply(list, "[", "N_h_r"))) %>%
+    mutate(N = N_l + N_r) %>%
+    mutate(bws = unlist(lapply(list, function(x) x$bws[1, 1])))
+  
+  df <- rd %>% t() %>% as.data.frame()
+  row.names(df) <- c("Type","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws")
+  # colnames(df) <- df$Eleccion
+  return(df)
+}
+
+
+###########################################################################################################
+###################################### LOAD INVESTMENT RESULTS ############################################
+############################################# BY PANEL #################################################### 
+###########################################################################################################
+setwd(results)
+
+out_investment <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
+out_roads <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+outcomes <- c(out_investment, out_roads)
+
+list_files <- list.files() %>%
+  .[str_detect(., "before")]
+before <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+  # setNames(., list_files)
+
+list_files <- list.files() %>%
+  .[str_detect(., "after")]
+after <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE)
+  # lapply(., `[[`, 1) %>%
+  # setNames(., list_files)
+
+list_files <- list.files() %>%
+  .[str_detect(., "total")]
+total <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE)
+# lapply(., `[[`, 1) %>%
+# setNames(., list_files)
+
+
+###########################################################################################################
+############################################  CREATE TABLES  ##############################################
+###########################################################################################################
+
+#Table 3 (2000, 1000, 3000)
+a <- rd_to_df_2(before) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE)
+#Table 2
+b <- rd_to_df(coalition_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE)
+c <- rd_to_df(coalition_2) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE)
+#Table: Robustness
+d <- rd_to_df(final) %>% .[c(3, 2, 1)] %>% stargazer(., summary = FALSE)
 
 
 

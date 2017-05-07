@@ -104,8 +104,6 @@ l_f <- function(o){
   return(list(rd = r, mean = mean))
 }
 
-
-
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_house1_coalition.rds"))
 

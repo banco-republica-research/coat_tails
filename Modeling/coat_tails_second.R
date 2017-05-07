@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-#setwd("~/Dropbox/BANREP/Elecciones/")
- setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+ # setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -185,32 +185,3 @@ return(r)
 lapply(out, lm_f) 
 saveRDS(r, str_c(results, "/coat_tails_president2_party.rds"))
 
-
-
-
-
-
-###########################################################################################################
-##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
-############################################ miscellaneous ################################################
-###########################################################################################################
-
-############################
-# ggplot RD 
-g <- l %>%
-  mutate(bin = cut(prop_votes_c2, breaks = seq(0.3, 0.7, 0.001), include.lowest = T)) %>%
-  group_by(bin) %>%
-  summarize(mean_bin = mean(prop_votes_total_t1), sd_bin = sd(prop_votes_total_t1), n = length(codmpio)) %>%
-  .[complete.cases(.),] %>%
-  as.data.frame() %>%
-  mutate(treatment = ifelse(as.numeric(row.names(.)) >= 172, 1, 0), bins = row.names(.)) %>%
-  mutate(bins = mapvalues(.$bins, from = c(1:347), to = seq(0.329, 0.675, 0.001)))
-
-#RD Graph 
-p <- ggplot(g, aes(y = mean_bin, x = as.numeric(bins), colour = as.factor(treatment)))
-p <- p + geom_point(colour = "black", size = 1)
-p <- p + stat_smooth(data = alcaldes_rd, aes(x = prop_votes_c2, y = prop_votes_total_t1, 
-                                             colour = as.factor(win_t)), method = "loess", level = 0.9) 
-p <- p + scale_x_continuous(limits = c(0.45, 0.55))
-# p <- p + coord_cartesian(xlim = c(0.45, 0.55))
-p

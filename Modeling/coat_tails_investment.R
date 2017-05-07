@@ -7,14 +7,15 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 dnp <- "Data/DNP/Ejecuciones/"
 invias <- "Data/invias/"
+results <- "Results/RD"
 
 ###########################################################################################################
 ######################################## ELECTIONS DATA ###################################################
@@ -115,18 +116,19 @@ l_f <- function(o){
 }
 
 
+
 # outcomes
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
 # out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
-out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
+# out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
- out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
+out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
-lapply(out, l_f) 
-
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "/roads_before_current.rds"))
 
 ###########################################################################################################
 ##################################### INVESTMENT: TOTAL term ##############################################
@@ -204,10 +206,8 @@ l_f <- function(o){
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 
-lapply(out, l_f) 
-
-
-
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "/roads_total_current.rds"))
 
 
 ###########################################################################################################
@@ -280,15 +280,16 @@ l_f <- function(o){
 # outcomes
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
-out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
+# out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
 # out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
 # out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
-lapply(out, l_f) 
 
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "/roads_after_current.rds"))
 
 
 
@@ -361,14 +362,17 @@ l_f <- function(o){
 # outcomes
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
- out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
+ # out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
 # out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
 # out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
-lapply(out, l_f) 
+
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "/roads_after_next.rds"))
+
 
 
 
