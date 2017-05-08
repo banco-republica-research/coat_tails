@@ -61,7 +61,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn == 2) %>%
   dplyr::select(-c(n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -91,13 +91,20 @@ out <- c("prop_votes_total_t1")
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
                 x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot),
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95 
+  pdf(str_c(results, "/Graphs/Senate", "/RD_", o, "1_coalition", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Vote margin at t",
+         y.label = "Senate Vote share at t + 1",
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
+  dev.off()
   mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
                          prop_votes_c2 >= 0.5 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
@@ -129,7 +136,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn == 2) %>%
   dplyr::select(-c(n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -159,13 +166,20 @@ out <- c("prop_votes_total_t1")
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
                 x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot),
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+  pdf(str_c(results, "/Graphs/Senate", "/RD_", o, "final", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Vote margin at t",
+         y.label = "Senate Vote share at t + 1",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
+  dev.off()
   mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
                          prop_votes_c2 >= 0.5 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
@@ -216,7 +230,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn == 2) %>%
   dplyr::select(-c(n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -246,20 +260,25 @@ out <- c("prop_votes_total_t1")
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
                 x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot),
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+  pdf(str_c(results, "/Graphs/Senate", "/RD_", o, "2_coalition", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Vote margin at t",
+         y.label = "Senate Vote share at t + 1",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
+  dev.off()
   mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
                          prop_votes_c2 >= 0.5 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
   return(list(rd = r, mean = mean))
 }
-
-
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_senate2_coalition.rds"))
 
@@ -286,8 +305,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn == 2) %>%
   dplyr::select(-c(n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
-
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Merge elections by their party code (codpartido)
@@ -314,17 +332,23 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # outcomes
 out <- c("prop_votes_total_t1")
 
-# Regressions for list of outcomes
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
                 x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot),
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+  pdf(str_c(results, "/Graphs/Senate", "/RD_", o, "party", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Vote margin at t",
+         y.label = "Senate Vote share at t + 1",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
+  dev.off()
   mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
                          prop_votes_c2 >= 0.5 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
