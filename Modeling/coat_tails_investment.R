@@ -26,7 +26,12 @@ alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 
 # Load party codes and municipal covariates
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
-controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
+
+cede <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
+controls <- cede %>%
+  dplyr::select(coddepto, codmpio, municipio, ano, nbi) %>%
+  filter(ano == 1993) %>%
+  merge(., cede, by.x = c("codmpio"), by.y = c("codmpio"), all = T)
 
 # Load presidential 
 win_apellido <- c("PASTRANA", "URIBE", "SANTOS")
@@ -75,7 +80,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn==2) %>%
   dplyr::select(-c(codep,n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
   filter(coalition_new == 1) %>%
@@ -85,7 +90,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano_pl", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
+  dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, year, codpartido_t, win_t, 
                 votos_t, votos_t1, starts_with("prop")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
   merge(., ejecu_before,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
@@ -105,13 +110,19 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
                 x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot, as.factor(l$ano)),
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+  pdf(str_c("Graphs/RD_", o, "before", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+         # y.lim = c(1, 7),
+         title = " ",
+         x.label = "Vote margin at t",
+         y.label = "log(per capita Roads Investment)",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95 
   )
+  dev.off()
   return(r)
 }
 
@@ -127,8 +138,9 @@ l_f <- function(o){
 out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
+setwd(results)
 r <- lapply(out, l_f) 
-saveRDS(r, str_c(results, "/roads_before_current.rds"))
+saveRDS(r, "roads_before_current.rds")
 
 ###########################################################################################################
 ##################################### INVESTMENT: TOTAL term ##############################################
@@ -140,6 +152,7 @@ saveRDS(r, str_c(results, "/roads_before_current.rds"))
 # Not enough observations for 2015 maires either 
 
 # FINAL round CURRENT coalition
+setwd("~/Dropbox/BANREP/Elecciones/")
 coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
 table(coalitions_long$ano,coalitions_long$year)
 
@@ -156,7 +169,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn==2) %>%
   dplyr::select(-c(codep,n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
   filter(coalition_new == 1) %>%
@@ -166,7 +179,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano_pl", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
+  dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, year, codpartido_t, win_t, 
                 votos_t, votos_t1, starts_with("prop")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
   merge(., ejecu_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
@@ -185,15 +198,23 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
                 x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot),
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0.5,
                 all = T,
-                vce = "hc1")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+                vce = "nn")
+  pdf(str_c("Graphs/RD_", o, "total", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+         # y.lim = c(1, 7),
+         title = " ",
+         x.label = "Vote margin at t",
+         y.label = "log(per capita Roads Investment)",
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95 
   )
+  dev.off()
   return(r)
 }
+
+
 
 # outcomes
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
@@ -207,7 +228,7 @@ l_f <- function(o){
 
 
 r <- lapply(out, l_f) 
-saveRDS(r, str_c(results, "/roads_total_current.rds"))
+saveRDS(r, "roads_total_current.rds")
 
 
 ###########################################################################################################
@@ -220,6 +241,7 @@ saveRDS(r, str_c(results, "/roads_total_current.rds"))
 # Not enough observations for 2015 maires either 
 
 # FINAL round CURRENT coalition
+setwd("~/Dropbox/BANREP/Elecciones/")
 coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
 table(coalitions_long$ano,coalitions_long$year)
 
@@ -236,7 +258,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn==2) %>%
   dplyr::select(-c(codep,n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
   filter(coalition_new == 1) %>%
@@ -246,7 +268,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano_pl", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
+  dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, year, codpartido_t, win_t, 
                 votos_t, votos_t1, starts_with("prop")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
   merge(., ejecu_after,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
@@ -266,13 +288,19 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
                 x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot, as.factor(l$ano)),
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+  pdf(str_c("Graphs/RD_", o, "after", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+         # y.lim = c(1, 7),
+         title = " ",
+         x.label = "Vote margin at t",
+         y.label = "log(per capita Investment)",
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95 
   )
+  dev.off()
   return(r)
 }
 
@@ -281,15 +309,15 @@ l_f <- function(o){
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
 # out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
-# out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
+out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
 # out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 
 r <- lapply(out, l_f) 
-saveRDS(r, str_c(results, "/roads_after_current.rds"))
+saveRDS(r, "investment_after_current.rds")
 
 
 
@@ -301,6 +329,7 @@ saveRDS(r, str_c(results, "/roads_after_current.rds"))
 ###########################################################################################################
 
 # FINAL round NEXT coalition
+setwd("~/Dropbox/BANREP/Elecciones/")
 coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))  
 
 # top2 and drop municipality if at least one of the top2 is 98 or 99 
@@ -315,7 +344,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn==2) %>%
   dplyr::select(-c(codep,n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -328,7 +357,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano_p", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
+  dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, year, codpartido_t, win_t, 
                 votos_t, votos_t1, starts_with("prop")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
   merge(., ejecu_after,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
@@ -349,13 +378,19 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
                 x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot, as.factor(l$ano)),
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0.5,
                 all = T,
-                vce = "hc1")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95, 
+                vce = "nn")
+  pdf(str_c("Graphs/RD_", o, "after_next", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+         # y.lim = c(1, 7),
+         title = " ",
+         x.label = "Vote margin at t",
+         y.label = "log(per capita Investment)",
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95 
   )
+  dev.off()
   return(r)
 }
 
@@ -363,21 +398,15 @@ l_f <- function(o){
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
  # out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
-# out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
+out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
 # out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 
 r <- lapply(out, l_f) 
-saveRDS(r, str_c(results, "/roads_after_next.rds"))
-
-
-
-
-
-
+saveRDS(r, "investment_after_next.rds")
 
 ###########################################################################################################
 ######################################## Reverse Coattails ################################################

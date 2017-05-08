@@ -33,8 +33,12 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
 
 # Load party codes and municipal covariates
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
-controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
 
+cede <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
+controls <- cede %>%
+  dplyr::select(coddepto, codmpio, municipio, ano, nbi) %>%
+  filter(ano == 1993) %>%
+  merge(., cede, by.x = c("codmpio"), by.y = c("codmpio"), all = T)
 
 ###########################################################################################################
 ##################################### COAT TAILS SENATE + COALITION: RD ###################################

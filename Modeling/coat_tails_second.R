@@ -27,7 +27,13 @@ coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% dplyr::
 
 # Load party codes and municipal covariates
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
-controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
+
+cede <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
+controls <- cede %>%
+  dplyr::select(coddepto, codmpio, municipio, ano, nbi) %>%
+  filter(ano == 1993) %>%
+  merge(., cede, by.x = c("codmpio"), by.y = c("codmpio"), all = T)
+
 
 # top2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
@@ -40,7 +46,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn==2) %>%
   dplyr::select(-c(codep,n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto", "ano", "codmpio")], by = c("codmpio", "ano"), all.x = T) 
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
 dim(alcaldes_merge_r2)
 
@@ -68,8 +74,8 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
-                votos_t, votos_t1, starts_with("prop")) %>% 
+  # dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido_t, win_t, 
+                # votos_t, votos_t1, starts_with("prop")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>%
   arrange(codmpio, ano)
 
@@ -89,18 +95,26 @@ out <- c("prop_votes_total_t1")
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
                 x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot),
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+  pdf(str_c(results, "/Graphs/Second_round", "/RD_", o, "2_coalition", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Vote margin at t",
+         y.label = "Presidential Vote share at t + 1",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
+  dev.off()
   mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
                          prop_votes_c2 >= 0.5 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
   return(list(rd = r, mean = mean))
 }
+
 
 r <- lapply(out, l_f) 
 
@@ -140,8 +154,8 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., president,  by.x = c("year", "codmpio", "codpartido"), by.y = c("ano", "codmpio", "codpartido"), 
         suffixes = c("_t", "_t1")) %>%
-  dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido, win_t, 
-                votos_t, votos_t1, starts_with("prop")) %>% 
+  # dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido, win_t, 
+                # votos_t, votos_t1, starts_with("prop")) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>%
   arrange(codmpio, ano)
 
@@ -161,19 +175,25 @@ out <- c("prop_votes_total_t1")
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
                 x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot),
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5, 
+  pdf(str_c(results, "/Graphs/Second_round", "/RD_", o, "2_party", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Vote margin at t",
+         y.label = "Presidential Vote share at t + 1",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
+  dev.off()
   mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
                          prop_votes_c2 >= 0.5 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
   return(list(rd = r, mean = mean))
 }
-
 r <- lapply(out, l_f) 
 
 # linear
