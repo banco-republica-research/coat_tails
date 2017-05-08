@@ -220,7 +220,7 @@ out <- c("prop_votes_total_t1")
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
                 x = l$prop_votes_c2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                # covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0.5,
                 all = T,
                 vce = "nn")

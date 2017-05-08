@@ -1,5 +1,5 @@
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","broom","cluster", "rdrobust")
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","stargazer","tidyr","broom","cluster", "rdrobust")
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
