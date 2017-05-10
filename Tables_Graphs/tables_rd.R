@@ -94,10 +94,12 @@ house <- lapply(list_files, readRDS) %>%
 #Table 1 
 a <- rd_to_df(party) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE)
 #Table 2
+
 b <- rd_to_df(coalition_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE)
-c <- rd_to_df(coalition_2) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE)
+c <- rd_to_df(final)
+d <- rd_to_df(coalition_2) %>% cbind(., c) %>% .[c(7, 5, 6, 2)] %>% stargazer(., summary = FALSE)
 #Table 3: Robustness
-d <- rd_to_df(final) %>% .[c(3, 2, 1)] %>% stargazer(., summary = FALSE)
+
 
 
 ###########################################################################################################
@@ -138,18 +140,16 @@ before <- lapply(list_files, readRDS) %>%
   # setNames(., list_files)
 
 list_files <- list.files() %>%
-  .[str_detect(., "after")]
-after <- lapply(list_files, readRDS) %>%
-  unlist(recursive = FALSE)
-  # lapply(., `[[`, 1) %>%
-  # setNames(., list_files)
+  .[str_detect(., "after_current")]
+after_current <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes) 
 
 list_files <- list.files() %>%
-  .[str_detect(., "total")]
-total <- lapply(list_files, readRDS) %>%
-  unlist(recursive = FALSE)
-# lapply(., `[[`, 1) %>%
-# setNames(., list_files)
+  .[str_detect(., "after_next")]
+after_next <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
 
 
 ###########################################################################################################
@@ -158,9 +158,10 @@ total <- lapply(list_files, readRDS) %>%
 
 #Table 3 (2000, 1000, 3000)
 a <- rd_to_df_2(before) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE)
-#Table 2
-b <- rd_to_df(coalition_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE)
-c <- rd_to_df(coalition_2) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE)
+
+#Table 4
+b <- rd_to_df_2(after_current) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE)
+c <- rd_to_df_2(after_next) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE)
 #Table: Robustness
 d <- rd_to_df(final) %>% .[c(3, 2, 1)] %>% stargazer(., summary = FALSE)
 

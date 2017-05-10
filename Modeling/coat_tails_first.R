@@ -83,7 +83,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 # Second rounds only
 l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
+dens_1 <- rdd::DCdensity(l$prop_votes_c2, cutpoint = 0.5, verbose = TRUE, plot = TRUE, bw = 0.1, ext.out = T)
 # outcomes
 out <- c("prop_votes_total_t1")
 
@@ -158,7 +158,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 # Second rounds only
 l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
+dens_party <- rdd::DCdensity(l$prop_votes_c2, cutpoint = 0.5, verbose = TRUE, plot = TRUE, bw = 0.1, ext.out = T)
 # outcomes
 out <- c("prop_votes_total_t1")
 
@@ -252,3 +252,7 @@ RD_data <- function(x){
 # Foreach all parties create RD dataset and then append 
 alcaldes_rd_a <- lapply(unique(alcaldes_rd_1$coalition_party), RD_data) 
 alcaldes_rd_n <- alcaldes_rd_a %>% ldply() %>% arrange(codpartido, codmpio, ano)
+
+
+
+

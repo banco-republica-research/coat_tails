@@ -87,7 +87,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 l <- alcaldes_rd 
 # %>% filter(ano > 1997)  # Solo Santos
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
+dens_2 <- rdd::DCdensity(l$prop_votes_c2, cutpoint = 0.5, verbose = TRUE, plot = TRUE, bw = 0.1, ext.out = T)
 # outcomes
 out <- c("prop_votes_total_t1")
 

@@ -114,9 +114,9 @@ l_f <- function(o){
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  pdf(str_c("Graphs/RD_", o, "before", ".pdf"), height=6, width=12)
+  pdf(str_c(results, "/Graphs/Investment", "RD_", o, "before", ".pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
-         # y.lim = c(1, 7),
+         y.lim = c(0, 5 ),
          title = " ",
          x.label = "Vote margin at t",
          y.label = "log(per capita Roads Investment)",
@@ -132,13 +132,13 @@ l_f <- function(o){
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
 # out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
-# out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
+out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
 # out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
-setwd(results)
+
 r <- lapply(out, l_f) 
 saveRDS(r, "roads_before_current.rds")
 
@@ -152,7 +152,6 @@ saveRDS(r, "roads_before_current.rds")
 # Not enough observations for 2015 maires either 
 
 # FINAL round CURRENT coalition
-setwd("~/Dropbox/BANREP/Elecciones/")
 coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
 table(coalitions_long$ano,coalitions_long$year)
 
@@ -202,9 +201,9 @@ l_f <- function(o){
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  pdf(str_c("Graphs/RD_", o, "total", ".pdf"), height=6, width=12)
+  pdf(str_c(results, "Graphs/Investment", "RD_", o, "total", ".pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
-         # y.lim = c(1, 7),
+         y.lim = c(0, 5),
          title = " ",
          x.label = "Vote margin at t",
          y.label = "log(per capita Roads Investment)",
@@ -241,7 +240,6 @@ saveRDS(r, "roads_total_current.rds")
 # Not enough observations for 2015 maires either 
 
 # FINAL round CURRENT coalition
-setwd("~/Dropbox/BANREP/Elecciones/")
 coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
 table(coalitions_long$ano,coalitions_long$year)
 
@@ -292,12 +290,12 @@ l_f <- function(o){
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  pdf(str_c("Graphs/RD_", o, "after", ".pdf"), height=6, width=12)
+  pdf(str_c(results, "/Graphs/Investment", "RD_", o, "after", ".pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
          # y.lim = c(1, 7),
          title = " ",
          x.label = "Vote margin at t",
-         y.label = "log(per capita Investment)",
+         y.label = "log(per capita Roads Investment)",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95 
   )
   dev.off()
@@ -309,15 +307,15 @@ l_f <- function(o){
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
 # out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
-out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
+# out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
 # out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 
 r <- lapply(out, l_f) 
-saveRDS(r, "investment_after_current.rds")
+saveRDS(r, str_c(results, "/roads_after_current.rds"))
 
 
 
@@ -329,7 +327,6 @@ saveRDS(r, "investment_after_current.rds")
 ###########################################################################################################
 
 # FINAL round NEXT coalition
-setwd("~/Dropbox/BANREP/Elecciones/")
 coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))  
 
 # top2 and drop municipality if at least one of the top2 is 98 or 99 
@@ -382,12 +379,12 @@ l_f <- function(o){
                 c = 0.5,
                 all = T,
                 vce = "nn")
-  pdf(str_c("Graphs/RD_", o, "after_next", ".pdf"), height=6, width=12)
+  pdf(str_c(results, "/Graphs/Investment", "RD_", o, "total", ".pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
          # y.lim = c(1, 7),
          title = " ",
          x.label = "Vote margin at t",
-         y.label = "log(per capita Investment)",
+         y.label = "log(per capita Roads Investment)",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95 
   )
   dev.off()
@@ -398,15 +395,16 @@ l_f <- function(o){
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
  # out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
-out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
+# out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
 # out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 
 r <- lapply(out, l_f) 
-saveRDS(r, "investment_after_next.rds")
+saveRDS(r, str_c(results, "/roads_after_next.rds"))
+
 
 ###########################################################################################################
 ######################################## Reverse Coattails ################################################
