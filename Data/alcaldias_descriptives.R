@@ -4,8 +4,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -25,15 +25,24 @@ party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 
 # Winning parties 1997-2015
 alcaldes_merge_new <- alcaldes_merge %>% filter(rank == 1) %>% 
-  dplyr::select(ano, codmpio, municipio, primer_apellido, nombre,codpartido, votos, prop_votes_total) 
+  dplyr::select(ano, codmpio, codep, municipio, primer_apellido, nombre,codpartido, votos, prop_votes_total) 
 
 # Append old and new 
 alcaldes_win <- rbind(alcaldes_merge_old, alcaldes_merge_new) %>% arrange(codmpio, ano)
 table(alcaldes_win$codpartido,alcaldes_win$ano)
 
+#Filter data.frame for Caribe region majors
+cede <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta")) %>%
+  filter(ano == 2016) %>% dplyr::select(coddepto, codmpio)
+
+alcaldes_win_caribe <- alcaldes_win %>%
+  merge(., cede, by.x = c("codmpio"), by.y = c("codmpio"), all.x = T) %>%
+  filter(coddepto %in% c(44, 47, 8, 13, 20, 70, 23))
+
 # Density vote share by year (interactive!)
-d <- ggplot(alcaldes_win, aes(prop_votes_total, colour = factor(ano))) + geom_density() + 
-  labs(color="Año", y= "Densidad", x = "votes winner") + theme_bw()
+d <- ggplot(alcaldes_win, aes(prop_votes_total, colour = factor(ano))) + geom_density()
+d <- d + geom_density(data = alcaldes_win_caribe, aes(prop_votes_total, colour = factor(ano)), linetype = "dashed")
+d <- d + labs(color="Año", y= "Densidad", x = "votes winner") + theme_bw()
 ggplotly(d)
 
 # Party win by year

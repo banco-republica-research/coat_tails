@@ -64,7 +64,7 @@ mapply(function(x, type){
   ggsave(str_c(results, "/Graphs/Density_tests/", "RD_", type, ".pdf"), width=30, height=20, units="cm")
 }, x = density_tests, type = c("primera", "segunda", "final", "current"))
 
-dcdensity_ggplot(alcaldes_merge$prop_votes_c2, cutpoint = 0.5, plot = T, verbose = T)
+a <- dcdensity_ggplot(alcaldes_merge$prop_votes_c2, cutpoint = 0.5, plot = T, ext.out  = T)
 
 
 

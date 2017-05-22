@@ -36,10 +36,13 @@ gobernadores[[5]] <- gobernadores[[5]] %>%
 non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
                          "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
                          "Votos no marcados","RETIRADO (A)", "TARJETAS NO MARCADOS")
+invalid_places <- c(NaN, 96, 97, 99) 
+
 
 gobernadores_aggregate <- gobernadores %>%
   lapply(., function(x){
     arrange(x, codmpio, ano) %>%
+      filter(!codmpio %in% invalid_places) %>% #Remove votes from consulates, embassies and totals 
       mutate(non_candidate = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
       group_by(codmpio, ano) %>%
       mutate(prop_votes_total = votos / sum(votos)) %>%
@@ -124,8 +127,8 @@ p <- ggplot(gobernadores_long_pe, aes(parties_ef, colour = factor(ano))) + geom_
 ggplotly(p)
 
 # Number of parties and political competition 
+s <- ggplot(gobernadores_difference , aes(parties, difference)) + geom_point(aes(colour = factor(ano), size=votes_tot)) 
 
-s <- ggplot(alcaldes_difference, aes(parties, difference)) + geom_point(aes(colour = factor(ano), size=votes_tot)) 
 ggplotly(s)
 
 # + geom_smooth(method = "lm", se=FALSE, color="black", formula = y ~ x) 
