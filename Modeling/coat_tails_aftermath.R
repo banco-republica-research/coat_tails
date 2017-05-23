@@ -15,7 +15,12 @@ data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 dnp <- "Data/DNP/Desempeno/"
 pgn <- "Data/PGN/"
-results <- "Results/RD"
+violencia <- "Data/Violencia/"
+agro <- "Data/Agro/"
+edu <- "Data/Educacion/"
+noaa <- "Data/NOAA/"
+
+results <- "Results/RD/"
 
 ###########################################################################################################
 ######################################## ELECTIONS DATA ###################################################
@@ -45,8 +50,13 @@ president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
 # Load outcomes
 desempeno <- read_dta(paste0(dnp,"desempeno_last.dta"))
 pgn <- read_dta(paste0(pgn,"PGN_all.dta"))
-
-
+hom <- read_dta(paste0(violencia,"homicidios_all.dta"))
+agro <- read_dta(paste0(agro,"agro_all.dta"))
+cobertura <- read_dta(paste0(edu,"cobertura_all.dta"))
+icfes <- read_dta(paste0(edu,"icfes_all.dta"))
+teen <- read_dta(paste0(edu,"nac_all.dta"))
+nightlights <- read_dta(paste0(noaa,"nightlights_all.dta"))
+  
 ###########################################################################################################
 ################################### desempeño: LAST year ##################################################
 ######################################## PGN: all #########################################################
@@ -88,6 +98,12 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
   merge(., desempeno,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., pgn,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., hom,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., agro,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., cobertura,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., icfes,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., teen,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., nightlights,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano)
 
 
@@ -108,7 +124,6 @@ l_f <- function(o){
                 vce = "nn")
   pdf(str_c(results, "/Graphs/After/RD_", o, ".pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
-         y.lim = c(0, 5 ),
          title = " ",
          x.label = "Vote margin at t",
          y.label = "Outcome",
@@ -117,7 +132,7 @@ l_f <- function(o){
   dev.off()
   mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
                          prop_votes_c2 >= 0.5 - r$bws[1])
-  mean <- mean(l[,out], na.rm = T)
+  mean <- mean(l[,o], na.rm = T)
   
   dens <- rddensity(X = l$prop_votes_c2, h = r$bws[1], c = 0.5) 
   dens <- dens$test$p_jk
@@ -125,9 +140,18 @@ l_f <- function(o){
 }
 
 
-
 # outcomes
-out <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty")
+ 
 
+out <- c("cob_pri", "cob_sec", "matematicas_s","lenguaje_s","nac_19_10_p", "hom_tasa")
 r <- lapply(out, l_f) 
-saveRDS(r, "aftermath.rds")
+saveRDS(r, str_c(results, "aftermath_publicgoods.rds"))
+
+out <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty")
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "aftermath_institutions.rds"))
+
+out <- c("log_ba_tot_vr_pc", "log_ba_peq_vr_pc","log_light_pix","log_light_dm")
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "aftermath_growths.rds"))
+
