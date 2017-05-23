@@ -24,7 +24,8 @@ rd_to_df <- function(list){
   mutate(N_r = unlist(lapply(list, function(x) x$rd$N_h_r))) %>%
   mutate(N = as.numeric(N_l) + as.numeric(N_r)) %>%
   mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
-  mutate(mean_bw = unlist(lapply(list, function(x) x$mean)))
+  mutate(mean_bw = unlist(lapply(list, function(x) x$mean))) %>%
+  mutate(dens_pvalue = unlist(lapply(list, function(x) x$dens))) 
 
   df <- rd %>% t() %>% as.data.frame()
   row.names(df) <- c("Eleccion","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws", "Media control")
@@ -113,7 +114,9 @@ rd_to_df_2 <- function(list){
     ldply() %>% mutate(N_l = unlist(lapply(list, "[", "N_h_l"))) %>%
     mutate(N_r = unlist(lapply(list, "[", "N_h_r"))) %>%
     mutate(N = N_l + N_r) %>%
-    mutate(bws = unlist(lapply(list, function(x) x$bws[1, 1])))
+    mutate(bws = unlist(lapply(list, function(x) x$bws[1, 1]))) %>%
+    mutate(dens_pvalue = unlist(lapply(list, function(x) x$dens))) 
+    
   
   df <- rd %>% t() %>% as.data.frame()
   row.names(df) <- c("Type","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws")
