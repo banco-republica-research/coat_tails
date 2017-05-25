@@ -4,14 +4,15 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 final <- "Results/Descriptives/"
 doc <- "Document/Figures/"
+pres <- "Presentation/Material/"
 
 ###########################################################################################################
 ############################### WINNING PARTIES 1997-2015 #################################################
@@ -25,7 +26,7 @@ party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 
 # Winning parties 1997-2015
 alcaldes_merge_new <- alcaldes_merge %>% filter(rank == 1) %>% 
-  dplyr::select(ano, codmpio, codep, municipio, primer_apellido, nombre,codpartido, votos, prop_votes_total) 
+  dplyr::select(ano, codmpio, municipio, primer_apellido, nombre,codpartido, votos, prop_votes_total) 
 
 # Append old and new 
 alcaldes_win <- rbind(alcaldes_merge_old, alcaldes_merge_new) %>% arrange(codmpio, ano)
@@ -75,7 +76,7 @@ parties_win_lc <- parties_win %>%
 
 ggplot(parties_win_lc, aes(x = ano, y = win_share, fill = party)) + geom_bar(stat = "identity") + 
   labs(y= "Percentage of Mayors", x = "Year") + scale_x_continuous(breaks = c(1988 ,1990, 1992, 1994, 1997, 2000, 2003, 2007, 2011, 2015)) + 
-  theme_bw() + scale_fill_manual(values=c("grey","dodgerblue3","red3"), name = "", labels = c("New Parties","Conservative","Liberal")) + theme_bw() +  
+  theme_bw() + scale_fill_manual(values=c("#ece7f2","#2b8cbe","#de2d26"), name = "", labels = c("New Parties","Conservative","Liberal")) + theme_bw() +  
   theme(legend.position="bottom", axis.line = element_line(colour = "black"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -84,6 +85,7 @@ ggplot(parties_win_lc, aes(x = ano, y = win_share, fill = party)) + geom_bar(sta
 
 ggsave(path=final,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
 ggsave(path=doc,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
+ggsave(path=pres,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
 
 
 
