@@ -25,10 +25,10 @@ rd_to_df <- function(list){
   mutate(N = as.numeric(N_l) + as.numeric(N_r)) %>%
   mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
   mutate(mean_bw = unlist(lapply(list, function(x) x$mean))) %>%
-  mutate(dens_pvalue = unlist(lapply(list, function(x) x$dens))) 
+  mutate(dens_pvalue = unlist(lapply(list, function(x) x$d))) 
 
   df <- rd %>% t() %>% as.data.frame()
-  row.names(df) <- c("Eleccion","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws", "Media control")
+  row.names(df) <- c("Eleccion","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws", "Media control", "p-value_dens")
   # colnames(df) <- df$Eleccion
   return(df)
 }
@@ -87,7 +87,6 @@ house <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
-
 ###########################################################################################################
 ############################################  CREATE TABLES  ##############################################
 ###########################################################################################################
@@ -99,7 +98,34 @@ a <- rd_to_df(party) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE)
 b <- rd_to_df(coalition_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE)
 c <- rd_to_df(final)
 d <- rd_to_df(coalition_2) %>% cbind(., c) %>% .[c(7, 5, 6, 2)] %>% stargazer(., summary = FALSE)
+
 #Table 3: Robustness
+
+
+###########################################################################################################
+################################################ LOAD RESULTS #############################################
+################################################# AFTERMATH ############################################### 
+###########################################################################################################
+out_growth <- c("log_ba_tot_vr_pc", "log_ba_peq_vr_pc","log_light_pix","log_light_dm")
+out_institutions <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty")
+out_publicgoods <- c("cob_pri", "cob_sec", "matematicas_s","lenguaje_s","nac_19_10_p", "hom_tasa")
+outcomes <- c(out_growth, out_institutions, out_publicgoods)
+out_l <- list(out_growth, out_institutions, out_publicgoods) %>%
+  sapply(length)
+
+list_files <- list.files() %>%
+  .[str_detect(., "aftermath")]
+aftermath <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+###########################################################################################################
+############################################  CREATE TABLES  ##############################################
+###########################################################################################################
+
+a <- rd_to_df(aftermath) %>% .[, 1:4]  %>% stargazer(., summary = FALSE)
+b <- rd_to_df(aftermath) %>% .[, 5:10]  %>% stargazer(., summary = FALSE)
+c <- rd_to_df(aftermath) %>% .[, 11:length(.)]  %>% stargazer(., summary = FALSE)
 
 
 

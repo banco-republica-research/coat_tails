@@ -5,6 +5,10 @@ rm(list=ls())
 packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","ggplot2","tidyr","broom","cluster", "rdrobust", "rdd")
 lapply(packageList,require,character.only=TRUE)
 
+setwd("~/GitHub/coat_tails/Tables_Graphs/")
+source("ggplot_density.R")
+
+
 # Directory 
 setwd("~/Dropbox/BANREP/Elecciones/")
 # setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
@@ -41,30 +45,65 @@ density_tests <- lapply(coalitions_list, function(x){
     dplyr::select(-c(codep,n,nn))
 }) %>%
   lapply(function(x){
-    dens <- DCdensity(x$prop_votes_c2, cutpoint = 0.5, verbose = TRUE, plot = TRUE, bw = 0.1, ext.out = T)
+    dens <- dcdensity_ggplot(x$prop_votes_c2, cutpoint = 0.5, verbose = TRUE, plot = TRUE, bw = 0.1, ext.out = T)
     return(dens)
   })
 
 
 mapply(function(x, type){
-  d <- x$data %>%
-    mutate(post = ifelse(cellmp > 0.5, 1, 0))
-  
-  g <- ggplot(d, aes(y = cellval, x = cellmp, colour = as.factor(post))) 
-  g <- g + stat_smooth(method = "auto", se = F, span = 0.23, colour = "black")
-  g <- g + geom_ribbon(stat='smooth', method = "auto", span = 0.23, se = TRUE, linetype = "dashed",
-                       fill = NA, colour = "grey40")
-  g <- g + geom_point(colour = "black", size = 1)
-  g <- g + scale_y_continuous(limits = c(0, 6))
+  a.l <- x$data[[1]]
+  a.r <- x$data[[2]]
+
+  g <- ggplot() + geom_point(data = a.l, aes(x = cellmp, y = cellval), size = 0.6)
+  g <- g + geom_point(data = a.r, aes(x = cellmp, y = cellval), size = 0.6)
+  g <- g + geom_line(data = a.l, aes(x = cellmp, y = est))
+  g <- g + geom_line(data = a.r, aes(x = cellmp, y = est))
+  g <- g + scale_x_continuous(limits = c(0, 1))
+  g <- g + scale_y_continuous(limits = c(0, 5))
+  g <- g + geom_line(data = a.l, aes(x = cellmp, y = lwr), linetype = 2, colour = "grey40")
+  g <- g + geom_line(data = a.l, aes(x = cellmp, y = upr), linetype = 2, colour = "grey40")
+  g <- g + geom_line(data = a.r, aes(x = cellmp, y = lwr), linetype = 2, colour = "grey40")
+  g <- g + geom_line(data = a.r, aes(x = cellmp, y = upr), linetype = 2, colour = "grey40")
+  g <- g + geom_vline(xintercept = 0.5, colour="gray", linetype = 1)
+  g <- g + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                              panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
   g <- g + labs(x = "Vote share at t", y = "Density")
-  g <- g + geom_vline(xintercept = 0.5, colour="grey", linetype = "longdash")
-  g <- g + guides(colour = FALSE)
-  g <- g + theme_bw()
+  g <- g + theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14))
   g
+  
   ggsave(str_c(results, "/Graphs/Density_tests/", "RD_", type, ".pdf"), width=30, height=20, units="cm")
 }, x = density_tests, type = c("primera", "segunda", "final", "current"))
 
+
+#Graph for only party (no coalition) 
 a <- dcdensity_ggplot(alcaldes_merge$prop_votes_c2, cutpoint = 0.5, plot = T, ext.out  = T)
+a.l <- a$data[[1]]
+a.r <- a$data[[2]]
+
+g <- ggplot() + geom_point(data = a.l, aes(x = cellmp, y = cellval), size = 0.6)
+g <- g + geom_point(data = a.r, aes(x = cellmp, y = cellval), size = 0.6)
+g <- g + geom_line(data = a.l, aes(x = cellmp, y = est))
+g <- g + geom_line(data = a.r, aes(x = cellmp, y = est))
+g <- g + scale_x_continuous(limits = c(0, 1))
+g <- g + scale_y_continuous(limits = c(0, 2))
+g <- g + geom_line(data = a.l, aes(x = cellmp, y = lwr), linetype = 2, colour = "grey40")
+g <- g + geom_line(data = a.l, aes(x = cellmp, y = upr), linetype = 2, colour = "grey40")
+g <- g + geom_line(data = a.r, aes(x = cellmp, y = lwr), linetype = 2, colour = "grey40")
+g <- g + geom_line(data = a.r, aes(x = cellmp, y = upr), linetype = 2, colour = "grey40")
+g <- g + geom_vline(xintercept = 0.5, colour="gray", linetype = 1)
+g <- g + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                            panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+g <- g + labs(x = "Vote share at t", y = "Density")
+g <- g + theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14))
+g
+ggsave(str_c(results, "/Graphs/Density_tests/", "RD_party", ".pdf"), width=30, height=20, units="cm")
+
+
+
+
+
+
+
 
 
 
