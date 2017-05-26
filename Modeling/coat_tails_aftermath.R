@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -94,7 +94,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano_pl", "codmpio", "coalition"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, year, codpartido_t, win_t, 
-                votos_t, votos_t1, starts_with("prop")) %>% 
+                votos_t, votos_t1, starts_with("prop"), margin_prop_2) %>% 
   filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
   merge(., desempeno,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., pgn,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
@@ -117,13 +117,13 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # Regressions for list of outcomes
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
-                x = l$prop_votes_c2,
+                x = l$margin_prop_2,
                 covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0.5,
+                c = 0,
                 all = T,
                 vce = "nn")
   pdf(str_c(results, "/Graphs/After/RD_", o, ".pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
          title = " ",
          x.label = "Vote margin at t",
          y.label = "Outcome",
@@ -134,7 +134,7 @@ l_f <- function(o){
                          prop_votes_c2 >= 0.5 - r$bws[1])
   mean <- mean(l[,o], na.rm = T)
   
-  dens <- rddensity(X = l$prop_votes_c2, h = r$bws[1], c = 0.5) 
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
   return(list(rd = r, mean = mean, d = dens))
 }

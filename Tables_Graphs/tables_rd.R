@@ -18,18 +18,18 @@ results <- "Results/RD"
 rd_to_df <- function(list){
   rd <- lapply(list, function(x){
     x$rd %>% .$tabl3.str}) %>%
-  lapply(as.data.frame) %>%
-  lapply( "[", 3 , ) %>% 
+  lapply(as.data.frame)  %>%
+  lapply( "[", 3 , ) %>%
   ldply() %>% mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
   mutate(N_r = unlist(lapply(list, function(x) x$rd$N_h_r))) %>%
   mutate(N = as.numeric(N_l) + as.numeric(N_r)) %>%
   mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
-  mutate(mean_bw = unlist(lapply(list, function(x) x$mean))) %>%
-  mutate(dens_pvalue = unlist(lapply(list, function(x) x$d))) 
+  mutate(mean_bw = unlist(lapply(list, function(x) x$mean)))%>%
+  mutate(dens_pvalue = unlist(lapply(list, function(x) x$d)))
 
   df <- rd %>% t() %>% as.data.frame()
   row.names(df) <- c("Eleccion","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws", "Media control", "p-value_dens")
-  # colnames(df) <- df$Eleccion
+  colnames(df) <- df$Eleccion
   return(df)
 }
 
@@ -63,6 +63,14 @@ final <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
+list_files <- list.files() %>%
+  .[str_detect(., "current")] %>%
+  .[str_detect(., "coat_tails")]
+current <- lapply(list_files, readRDS) %>%
+  lapply(., `[[`, 1) %>%
+  setNames(., list_files)
+
+
 
 ###########################################################################################################
 ################################################ LOAD RESULTS #############################################
@@ -87,6 +95,8 @@ house <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
+
+
 ###########################################################################################################
 ############################################  CREATE TABLES  ##############################################
 ###########################################################################################################
@@ -98,6 +108,9 @@ a <- rd_to_df(party) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE)
 b <- rd_to_df(coalition_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE)
 c <- rd_to_df(final)
 d <- rd_to_df(coalition_2) %>% cbind(., c) %>% .[c(7, 5, 6, 2)] %>% stargazer(., summary = FALSE)
+
+#Table 3
+e <- rd_to_df(current) %>% .[c(1, 4, 2, 3)] %>% stargazer(., summary = FALSE)
 
 #Table 3: Robustness
 
@@ -133,23 +146,23 @@ c <- rd_to_df(aftermath) %>% .[, 11:length(.)]  %>% stargazer(., summary = FALSE
 ###################################### FUNCTION TO EXTRACT INFO FROM RD'S #################################
 ################################################# INVESTMENT ##############################################
 ###########################################################################################################
-rd_to_df_2 <- function(list){
-  rd <- lapply(list, "[", "tabl3.str") %>%
-    lapply(as.data.frame) %>%
+rd_to_df_2 <-  function(list){
+  rd <- lapply(list, function(x){
+    x$rd %>% .$tabl3.str}) %>%
+    lapply(as.data.frame)  %>%
     lapply( "[", 3 , ) %>%
-    ldply() %>% mutate(N_l = unlist(lapply(list, "[", "N_h_l"))) %>%
-    mutate(N_r = unlist(lapply(list, "[", "N_h_r"))) %>%
-    mutate(N = N_l + N_r) %>%
-    mutate(bws = unlist(lapply(list, function(x) x$bws[1, 1]))) %>%
-    mutate(dens_pvalue = unlist(lapply(list, function(x) x$dens))) 
-    
+    ldply() %>% mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
+    mutate(N_r = unlist(lapply(list, function(x) x$rd$N_h_r))) %>%
+    mutate(N = as.numeric(N_l) + as.numeric(N_r)) %>%
+    mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
+    # mutate(mean_bw = unlist(lapply(list, function(x) x$mean)))%>%
+    mutate(dens_pvalue = unlist(lapply(list, function(x) x$d))) 
   
   df <- rd %>% t() %>% as.data.frame()
-  row.names(df) <- c("Type","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws")
+  row.names(df) <- c("Type","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws", "p-value_dens")
   # colnames(df) <- df$Eleccion
   return(df)
 }
-
 
 ###########################################################################################################
 ###################################### LOAD INVESTMENT RESULTS ############################################

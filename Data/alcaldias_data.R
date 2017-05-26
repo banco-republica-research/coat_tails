@@ -89,13 +89,17 @@ alcaldes_aggregate <- alcaldes %>%
     mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
     mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
     group_by(codmpio, ano) %>%
+    arrange(desc(votos)) %>%
     mutate(rank = row_number(desc(votos))) %>% 
     mutate(prop_votes_total = votos / sum(votos)) %>%
     mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>%
     mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
-    mutate(votos_r2 = ifelse(rank <= 2, votos,0)) %>% 
+    mutate(votos_r2 = ifelse(rank <= 2, votos ,0)) %>% 
     mutate(prop_votes_c2 = votos / sum(votos_r2)) %>% 
+    # mutate(diff = votos - lag(votos, default=first(votos))) %>%
+    # mutate(margin_prop = diff / sum(votos_r2)) %>%
     mutate(parties = sum(cand)) %>%
+    mutate(margin_prop_2 = 2*(prop_votes_c2) -1) %>%
     mutate(party_ef = ifelse(prop_votes_cand > 0.1, 1,0)) %>%
     mutate(parties_ef = sum(party_ef)) %>% 
     filter(is.na(prop_votes_total)==0) 
@@ -109,11 +113,20 @@ alcaldes_aggregate <- alcaldes %>%
 alcaldes_merge <- alcaldes_aggregate %>%
   ldply() %>%  
   dplyr::select(c(ano, codmpio, codep, municipio, parties, parties_ef, rank, primer_apellido, nombre, codpartido, cand, votos, votos_cand, votos_r2,
-  prop_votes_total, prop_votes_cand, prop_votes_c2)) %>%
+  prop_votes_total, prop_votes_cand, prop_votes_c2, margin_prop_2)) %>%
   arrange(codmpio, ano, rank) %>%
   mutate(ano = as.integer(ano))
 
-# filter(is.na(codpartido)== 0 & codpartido != "NaN") %>%
+
+#Prueba
+alcaldes_merge_prueba <- alcaldes_merge %>%
+  filter(rank <= 2) %>%
+  group_by(rank) %>%
+  summarise(min_prop = min(prop_votes_c2, na.rm = T),
+            max_prop = max(prop_votes_c2, na.rm = T),
+            mean_prop = mean(prop_votes_c2, na.rm = T))
+
+
 
 saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
 

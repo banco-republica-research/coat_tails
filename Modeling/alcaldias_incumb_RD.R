@@ -85,24 +85,28 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # Regressions for list of outcomes
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
-                x = l$prop_votes_c2,
+                x = l$margin_prop_2,
                 covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0.5,
+                c = 0,
                 all = T,
                 vce = "nn")
   pdf(str_c(results, "/Graphs/Incumbency", "/RD_", o, "party", ".pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
-         # y.lim = c(1, 7),
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
          title = " ",
          x.label = "Vote margin at t",
-         y.label = "Vote share at t + 1",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95 
+         y.label = "Presidential Vote share at t + 1",
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
   dev.off()
-  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
-                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
-  return(list(rd = r, mean = mean))
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
 }
 
 
@@ -150,28 +154,32 @@ table(alcaldes_rd_c$coalition_new)
 l <- alcaldes_rd_c
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 out <- c("prop_votes_total_t1")
+
 # Regressions for list of outcomes
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
-                x = l$prop_votes_c2,
+                x = l$margin_prop_2,
                 covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0.5,
+                c = 0,
                 all = T,
                 vce = "nn")
   pdf(str_c(results, "/Graphs/Incumbency", "/RD_", o, "1_coalition", ".pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
-         y.lim = c(0.2, 0.8),
-         x.lim = c(0.45, 0.55),
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
          title = " ",
          x.label = "Vote margin at t",
-         y.label = "Vote share at t + 1",
+         y.label = "Presidential Vote share at t + 1",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
   dev.off()
-  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
-                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
-  return(list(rd = r, mean = mean))
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
 }
 
 r <- lapply(out, l_f)
@@ -219,25 +227,28 @@ out <- c("prop_votes_total_t1")
 # Regressions for list of outcomes
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
-                x = l$prop_votes_c2,
-                # covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0.5,
+                x = l$margin_prop_2,
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                c = 0,
                 all = T,
                 vce = "nn")
   pdf(str_c(results, "/Graphs/Incumbency", "/RD_", o, "2_coalition", ".pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
-         y.lim = c(0.2, 0.8),
-         x.lim = c(0.45, 0.55),
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
          title = " ",
          x.label = "Vote margin at t",
-         y.label = "Vote share at t + 1",
+         y.label = "Presidential Vote share at t + 1",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
   dev.off()
-  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
-                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
-  return(list(rd = r, mean = mean))
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
 }
 
 r <- lapply(out, l_f)
@@ -286,26 +297,30 @@ out <- c("prop_votes_total_t1")
 # Regressions for list of outcomes
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
-                x = l$prop_votes_c2,
+                x = l$margin_prop_2,
                 covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0.5,
+                c = 0,
                 all = T,
                 vce = "nn")
   pdf(str_c(results, "/Graphs/Incumbency", "/RD_", o, "final", ".pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
-         y.lim = c(0.2, 0.8),
-         x.lim = c(0.45, 0.55),
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
          title = " ",
          x.label = "Vote margin at t",
-         y.label = "Vote share at t + 1",
+         y.label = "Presidential Vote share at t + 1",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
   dev.off()
-  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
-                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
-  return(list(rd = r, mean = mean))
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
 }
+
 
 r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/incumbency_final_coalition.rds"))

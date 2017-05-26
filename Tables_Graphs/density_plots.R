@@ -45,7 +45,7 @@ density_tests <- lapply(coalitions_list, function(x){
     dplyr::select(-c(codep,n,nn))
 }) %>%
   lapply(function(x){
-    dens <- dcdensity_ggplot(x$prop_votes_c2, cutpoint = 0.5, verbose = TRUE, plot = TRUE, bw = 0.1, ext.out = T)
+    dens <- dcdensity_ggplot(x$margin_prop_2, cutpoint = 0, verbose = TRUE, plot = TRUE, bw = 0.1, ext.out = T)
     return(dens)
   })
 
@@ -58,16 +58,16 @@ mapply(function(x, type){
   g <- g + geom_point(data = a.r, aes(x = cellmp, y = cellval), size = 0.6)
   g <- g + geom_line(data = a.l, aes(x = cellmp, y = est))
   g <- g + geom_line(data = a.r, aes(x = cellmp, y = est))
-  g <- g + scale_x_continuous(limits = c(0, 1))
+  g <- g + scale_x_continuous(limits = c(-1, 1))
   g <- g + scale_y_continuous(limits = c(0, 5))
   g <- g + geom_line(data = a.l, aes(x = cellmp, y = lwr), linetype = 2, colour = "grey40")
   g <- g + geom_line(data = a.l, aes(x = cellmp, y = upr), linetype = 2, colour = "grey40")
   g <- g + geom_line(data = a.r, aes(x = cellmp, y = lwr), linetype = 2, colour = "grey40")
   g <- g + geom_line(data = a.r, aes(x = cellmp, y = upr), linetype = 2, colour = "grey40")
-  g <- g + geom_vline(xintercept = 0.5, colour="gray", linetype = 1)
+  g <- g + geom_vline(xintercept = 0, colour="gray", linetype = 1)
   g <- g + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                               panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-  g <- g + labs(x = "Vote share at t", y = "Density")
+  g <- g + labs(x = "Vote margin at t", y = "Density")
   g <- g + theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14))
   g
   
@@ -76,7 +76,7 @@ mapply(function(x, type){
 
 
 #Graph for only party (no coalition) 
-a <- dcdensity_ggplot(alcaldes_merge$prop_votes_c2, cutpoint = 0.5, plot = T, ext.out  = T)
+a <- dcdensity_ggplot(alcaldes_merge$margin_prop_2, cutpoint = 0.5, plot = T, ext.out  = T)
 a.l <- a$data[[1]]
 a.r <- a$data[[2]]
 
@@ -84,13 +84,13 @@ g <- ggplot() + geom_point(data = a.l, aes(x = cellmp, y = cellval), size = 0.6)
 g <- g + geom_point(data = a.r, aes(x = cellmp, y = cellval), size = 0.6)
 g <- g + geom_line(data = a.l, aes(x = cellmp, y = est))
 g <- g + geom_line(data = a.r, aes(x = cellmp, y = est))
-g <- g + scale_x_continuous(limits = c(0, 1))
+g <- g + scale_x_continuous(limits = c(-1, 1))
 g <- g + scale_y_continuous(limits = c(0, 2))
 g <- g + geom_line(data = a.l, aes(x = cellmp, y = lwr), linetype = 2, colour = "grey40")
 g <- g + geom_line(data = a.l, aes(x = cellmp, y = upr), linetype = 2, colour = "grey40")
 g <- g + geom_line(data = a.r, aes(x = cellmp, y = lwr), linetype = 2, colour = "grey40")
 g <- g + geom_line(data = a.r, aes(x = cellmp, y = upr), linetype = 2, colour = "grey40")
-g <- g + geom_vline(xintercept = 0.5, colour="gray", linetype = 1)
+g <- g + geom_vline(xintercept = 0, colour="gray", linetype = 1)
 g <- g + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                             panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 g <- g + labs(x = "Vote share at t", y = "Density")

@@ -52,7 +52,7 @@ dim(alcaldes_merge_r2)
 win_apellido <- c("PASTRANA", "URIBE", "SANTOS")
 win_nom <- c("ANDRES", "ALVARO", "JUAN MANUEL")
 
-president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
+president <- readRDS(paste0(res, "presidentes_primera_merge.rds")) %>%
   mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0))
 
 
@@ -83,20 +83,20 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 # Second rounds only
 l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-dens_1 <- rdd::DCdensity(l$prop_votes_c2, cutpoint = 0.5, verbose = TRUE, plot = TRUE, bw = 0.1, ext.out = T)
+
 # outcomes
 out <- c("prop_votes_total_t1")
 
 # Regressions for list of outcomes
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
-                x = l$prop_votes_c2,
+                x = l$margin_prop_2,
                 covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0.5,
+                c = 0,
                 all = T,
                 vce = "nn")
   pdf(str_c(results, "/Graphs/First_round", "/RD_", o, "1_coalition", ".pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
          # y.lim = c(0.2, 0.8),
          # x.lim = c(0.45, 0.55),
          title = " ",
@@ -105,35 +105,35 @@ l_f <- function(o){
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
   dev.off()
-  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
-                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
   
-  dens <- rddensity(X = l$prop_votes_c2, h = r$bws[1], c = 0.5) 
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
   return(list(rd = r, mean = mean, d = dens))
 }
 
-r <- lapply(out, l_f) 
+r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/coat_tails_president1_coalition.rds"))
 
 
-############################
-# RD and OLS regressions by year 
-
-years <- names(table(l$ano))
-l_y <- lapply(years, function(x){
-  alcaldes_rd %>% filter(ano == x)
-}) 
-
-lapply(l_y, function(a){
-  rdrobust(y = a$prop_votes_total_t1,
-           x = a$prop_votes_c2,
-           covs = cbind(a$pobl_tot),
-           c = 0.5,
-           all = T,
-           vce = "nn")
-})
+# ############################
+# # RD and OLS regressions by year 
+# 
+# years <- names(table(l$ano))
+# l_y <- lapply(years, function(x){
+#   alcaldes_rd %>% filter(ano == x)
+# }) 
+# 
+# lapply(l_y, function(a){
+#   rdrobust(y = a$prop_votes_total_t1,
+#            x = a$prop_votes_c2,
+#            covs = cbind(a$pobl_tot),
+#            c = 0.5,
+#            all = T,
+#            vce = "nn")
+# })
 
 
 ###########################################################################################################
@@ -168,13 +168,13 @@ out <- c("prop_votes_total_t1")
 # Regressions for list of outcomes
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
-                x = l$prop_votes_c2,
+                x = l$margin_prop_2,
                 covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0.5,
+                c = 0,
                 all = T,
                 vce = "nn")
-  pdf(str_c(results, "/Graphs/First_round", "/RD_", o, "1_coalition", ".pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+  pdf(str_c(results, "/Graphs/First_round", "/RD_", o, "party", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
          # y.lim = c(0.2, 0.8),
          # x.lim = c(0.45, 0.55),
          title = " ",
@@ -183,11 +183,11 @@ l_f <- function(o){
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
   dev.off()
-  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
-                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
   
-  dens <- rddensity(X = l$prop_votes_c2, h = r$bws[1], c = 0.5) 
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
   return(list(rd = r, mean = mean, d = dens))
 }
@@ -201,17 +201,8 @@ saveRDS(r, str_c(results, "/coat_tails_president1_party.rds"))
 ############################################### CURRENT  ##################################################
 ###########################################################################################################
 # Load maire and coalition data
-alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
 
-# Load party codes and municipal covariates
-party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
-
-cede <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
-controls <- cede %>%
-  dplyr::select(coddepto, codmpio, municipio, ano, nbi) %>%
-  filter(ano == 1993) %>%
-  merge(., cede, by.x = c("codmpio"), by.y = c("codmpio"), all = T)
 
 
 # top2 and drop municipality if at least one of the top2 is 98 or 99 
@@ -258,13 +249,13 @@ out <- c("prop_votes_total_t1")
 # Regressions for list of outcomes
 l_f <- function(o){
   r <- rdrobust(y = l[,o],
-                x = l$prop_votes_c2,
+                x = l$margin_prop_2,
                 covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0.5,
+                c = 0,
                 all = T,
                 vce = "nn")
-  pdf(str_c(results, "/Graphs/First_round", "/RD_", o, "1_coalition", ".pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$prop_votes_c2, c = 0.5,
+  pdf(str_c(results, "/Graphs/First_round", "/RD_", o, "current_coalition", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
          # y.lim = c(0.2, 0.8),
          # x.lim = c(0.45, 0.55),
          title = " ",
@@ -273,18 +264,18 @@ l_f <- function(o){
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
   dev.off()
-  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
-                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                       margin_prop_2 >= 0 - r$bws[1])
   mean <- mean(l[,out], na.rm = T)
   
-  dens <- rddensity(X = l$prop_votes_c2, h = r$bws[1], c = 0.5) 
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
   return(list(rd = r, mean = mean, d = dens))
 }
 
 r <- lapply(out, l_f) 
 
-saveRDS(r, str_c(results, "/coat_tails_president1_coalition.rds"))
+saveRDS(r, str_c(results, "/coat_tails_president1_current.rds"))
 
 
 ############################
