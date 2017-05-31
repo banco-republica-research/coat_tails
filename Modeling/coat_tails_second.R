@@ -7,13 +7,13 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
- # setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+#setwd("~/Dropbox/BANREP/Elecciones/")
+ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
-results <- "Results/RD"
+results <- "Results/RD/"
 
 ###########################################################################################################
 ######################################## ELECTIONS DATA ###################################################
@@ -99,13 +99,13 @@ l_f <- function(o){
                 c = 0,
                 all = T,
                 vce = "nn")
-  pdf(str_c(results, "/Graphs/Second_round", "/RD_", o, "1_coalition", ".pdf"), height=6, width=12)
+  pdf(str_c(results, "/Graphs/Second_round", "/RD_pressec_second.pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         # y.lim = c(0.2, 0.8),
+         y.lim = c(0.3, 0.8),
          # x.lim = c(0.45, 0.55),
          title = " ",
-         x.label = "Vote margin at t",
-         y.label = "Presidential Vote share at t + 1",
+         x.label = "Victory Margin",
+         y.label = "Vote share (subsequent Election)",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
   dev.off()
@@ -121,27 +121,8 @@ l_f <- function(o){
 r <- lapply(out, l_f)
 
 
-saveRDS(r, str_c(results, "/coat_tails_president2_coalition.rds"))
+saveRDS(r, str_c(results, "/coat_tails_pressec_2_coalition.rds"))
 
-
-############################
-# RD and OLS regressions by year 
-# 
-# years <- names(table(l$ano))
-# l_y <- lapply(years, function(x){
-#   alcaldes_rd %>% filter(ano == x)
-# }) 
-# 
-# lapply(l_y, function(a){
-#   rdrobust(y = a$prop_votes_total_t1,
-#            x = a$prop_votes_c2,
-#            covs = cbind(a$pobl_tot),
-#            c = 0.5,
-#            all = T,
-#            vce = "nn")
-# })
-# 
-# 
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
@@ -183,13 +164,13 @@ l_f <- function(o){
                 c = 0,
                 all = T,
                 vce = "nn")
-  pdf(str_c(results, "/Graphs/Second_round", "/RD_", o, "party", ".pdf"), height=6, width=12)
+  pdf(str_c(results, "/Graphs/Second_round", "/RD_pressec_party.pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
          # y.lim = c(0.2, 0.8),
          # x.lim = c(0.45, 0.55),
          title = " ",
-         x.label = "Vote margin at t",
-         y.label = "Presidential Vote share at t + 1",
+         x.label = "Victory Margin",
+         y.label = "Vote share (subsequent Election)",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
   dev.off()
@@ -209,7 +190,7 @@ r <- lapply(out, l_f)
 # summary(lm(l[,o] ~ prop_votes_c2 + pobl_tot, l))
 # return(r)
 # }
-saveRDS(r, str_c(results, "/coat_tails_president2_party.rds"))
+saveRDS(r, str_c(results, "/coat_tails_pressec_party.rds"))
 
 
 ###########################################################################################################
@@ -278,13 +259,13 @@ l_f <- function(o){
                 c = 0,
                 all = T,
                 vce = "nn")
-  pdf(str_c(results, "/Graphs/Second_round", "/RD_", o, "current_coalition", ".pdf"), height=6, width=12)
+  pdf(str_c(results, "/Graphs/Second_round", "/RD_pressec_current.pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
          # y.lim = c(0.2, 0.8),
          # x.lim = c(0.45, 0.55),
          title = " ",
-         x.label = "Vote margin at t",
-         y.label = "Presidential Vote share at t + 1",
+         x.label = "Victory Margin",
+         y.label = "Vote share (subsequent Election)",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
   dev.off()
@@ -299,6 +280,6 @@ l_f <- function(o){
 
 r <- lapply(out, l_f)
 
-saveRDS(r, str_c(results, "/coat_tails_president2_current.rds"))
+saveRDS(r, str_c(results, "/coat_tails_pressec_current_coalition.rds"))
 
 

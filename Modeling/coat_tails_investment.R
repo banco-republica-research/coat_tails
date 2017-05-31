@@ -3,12 +3,12 @@
 ###########################################################################################################
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust")
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust","rddensity")
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -115,12 +115,12 @@ l_f <- function(o, type){
                 c = 0,
                 all = T,
                 vce = "nn")
-  pdf(str_c(results, "/Graphs/Investment", "/RD_", o, type, "before", ".pdf"), height=6, width=12)
+  pdf(str_c(results, "/Graphs/Investment", "/RD_", type, "_",o, "_before", ".pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
          # y.lim = c(0.2, 0.8),
          # x.lim = c(0.45, 0.55),
          title = " ",
-         x.label = "Vote margin at t",
+         x.label = "Victory Margin",
          y.label = "log(per capita investment)",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
@@ -142,10 +142,11 @@ l_f <- function(o, type){
 # out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
 # out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 
+out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 r <- lapply(out, l_f, type = "roads") 
 saveRDS(r, str_c(results, "/roads_before_current.rds"))
 
@@ -204,6 +205,32 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 l <- alcaldes_rd %>% filter(ano!=2011)
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
+# Regressions for list of outcomes
+l_f <- function(o, type){
+  r <- rdrobust(y = l[,o],
+                x = l$margin_prop_2,
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                c = 0,
+                all = T,
+                vce = "nn")
+  pdf(str_c(results, "/Graphs/Investment", "/RD_", type, "_",o, "_total", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Victory Margin",
+         y.label = "log(per capita investment)",
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
+  )
+  dev.off()
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
+  mean <- mean(l[,out], na.rm = T)
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
+}
 # outcomes
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
@@ -211,10 +238,11 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
 # out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
- out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 
+out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 r <- lapply(out, l_f,  type = "roads") 
 saveRDS(r, str_c(results, "/roads_total_current.rds"))
 
@@ -274,6 +302,34 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 l <- alcaldes_rd 
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
+
+# Regressions for list of outcomes
+l_f <- function(o, type){
+  r <- rdrobust(y = l[,o],
+                x = l$margin_prop_2,
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                c = 0,
+                all = T,
+                vce = "nn")
+  pdf(str_c(results, "/Graphs/Investment", "/RD_", type, "_",o, "_after_current", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Victory Margin",
+         y.label = "log(per capita investment)",
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
+  )
+  dev.off()
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
+  mean <- mean(l[,out], na.rm = T)
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
+}
+
 # outcomes
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
@@ -281,13 +337,13 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
 # out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 
+out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 r <- lapply(out, l_f, type = "roads") 
 saveRDS(r, str_c(results, "/roads_after_current.rds"))
-
 
 out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 r <- lapply(out, l_f, type = "investment") 
@@ -346,24 +402,62 @@ l <- alcaldes_rd
 # %>% filter(ano != 2011)
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
+# Regressions for list of outcomes
+l_f <- function(o, type){
+  r <- rdrobust(y = l[,o],
+                x = l$margin_prop_2,
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                c = 0,
+                all = T,
+                vce = "nn")
+  pdf(str_c(results, "/Graphs/Investment", "/RD_", type, "_",o, "_after_next", ".pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Victory Margin",
+         y.label = "log(per capita investment)",
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
+  )
+  dev.off()
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
+  mean <- mean(l[,out], na.rm = T)
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
+}
+
 
 # outcomes
 # out <- c("log_A","log_A1000","log_A2000","log_A3000","log_A3010")
 # out <- c("log_B","log_B1000","log_B1010","log_B1020","log_B1030")
- # out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
+# out <- c("log_D","log_D1000", "log_D2000", "log_D3000")
 # out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out <- c("log_E","log_E1000","log_E2000")
 # out <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+# out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out <- c("log_vias_ter","log_vias_ter_pc")
 
 
+out <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 r <- lapply(out, l_f, type = "roads") 
 saveRDS(r, str_c(results, "/roads_after_next.rds"))
 
 out <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 r <- lapply(out, l_f, type = "investment") 
 saveRDS(r, str_c(results, "/investment_after_next.rds"))
+
+
+
+
+
+
+
+
+
+
 
 
 ###########################################################################################################

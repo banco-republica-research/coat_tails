@@ -1,20 +1,22 @@
+
 rm(list=ls())
 packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","stargazer","tidyr","broom","cluster", "rdrobust")
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
-results <- "Results/RD"
+results <- "Results/RD/"
 
 
 ###########################################################################################################
 ###################################### FUNCTION TO EXTRACT INFO FROM RD'S #################################
 ###########################################################################################################
+
 rd_to_df <- function(list){
   rd <- lapply(list, function(x){
     x$rd %>% .$tabl3.str}) %>%
@@ -37,6 +39,7 @@ rd_to_df <- function(list){
 ################################################ LOAD RESULTS #############################################
 ################################################## BY PANEL ############################################### 
 ###########################################################################################################
+
 setwd(results)
 
 list_files <- list.files() %>%
@@ -58,40 +61,14 @@ coalition_2 <- lapply(list_files, readRDS) %>%
   setNames(., list_files)
 
 list_files <- list.files() %>%
-  .[str_detect(., "final")]
+  .[str_detect(., "final_coalition")]
 final <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
 list_files <- list.files() %>%
-  .[str_detect(., "current")] %>%
-  .[str_detect(., "coat_tails")]
+  .[str_detect(., "current_coalition")] 
 current <- lapply(list_files, readRDS) %>%
-  lapply(., `[[`, 1) %>%
-  setNames(., list_files)
-
-
-
-###########################################################################################################
-################################################ LOAD RESULTS #############################################
-################################################# BY ELECTION ############################################# 
-###########################################################################################################
-
-list_files <- list.files() %>%
-  .[str_detect(., "president")]
-president <- lapply(list_files, readRDS) %>%
-  lapply(., `[[`, 1) %>%
-  setNames(., list_files)
-
-list_files <- list.files() %>%
-  .[str_detect(., "senate")]
-senate <- lapply(list_files, readRDS) %>%
-  lapply(., `[[`, 1) %>%
-  setNames(., list_files)
-
-list_files <- list.files() %>%
-  .[str_detect(., "house")]
-house <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
@@ -102,43 +79,15 @@ house <- lapply(list_files, readRDS) %>%
 ###########################################################################################################
 
 #Table 1 
-a <- rd_to_df(party) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE)
-#Table 2
+a <- rd_to_df(party) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE, out= "Tables/elec_party.tex")
 
-b <- rd_to_df(coalition_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE)
+#Table 2
+b <- rd_to_df(coalition_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec_coalition_1.tex")
 c <- rd_to_df(final)
-d <- rd_to_df(coalition_2) %>% cbind(., c) %>% .[c(7, 5, 6, 2)] %>% stargazer(., summary = FALSE)
+d <- rd_to_df(coalition_2) %>% cbind(., c) %>% .[c(7, 5, 6, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec_coalition_2.tex")
 
 #Table 3
-e <- rd_to_df(current) %>% .[c(1, 4, 2, 3)] %>% stargazer(., summary = FALSE)
-
-#Table 3: Robustness
-
-
-###########################################################################################################
-################################################ LOAD RESULTS #############################################
-################################################# AFTERMATH ############################################### 
-###########################################################################################################
-out_growth <- c("log_ba_tot_vr_pc", "log_ba_peq_vr_pc","log_light_pix","log_light_dm")
-out_institutions <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty")
-out_publicgoods <- c("cob_pri", "cob_sec", "matematicas_s","lenguaje_s","nac_19_10_p", "hom_tasa")
-outcomes <- c(out_growth, out_institutions, out_publicgoods)
-out_l <- list(out_growth, out_institutions, out_publicgoods) %>%
-  sapply(length)
-
-list_files <- list.files() %>%
-  .[str_detect(., "aftermath")]
-aftermath <- lapply(list_files, readRDS) %>%
-  unlist(recursive = FALSE) %>%
-  setNames(., outcomes)
-
-###########################################################################################################
-############################################  CREATE TABLES  ##############################################
-###########################################################################################################
-
-a <- rd_to_df(aftermath) %>% .[, 1:4]  %>% stargazer(., summary = FALSE)
-b <- rd_to_df(aftermath) %>% .[, 5:10]  %>% stargazer(., summary = FALSE)
-c <- rd_to_df(aftermath) %>% .[, 11:length(.)]  %>% stargazer(., summary = FALSE)
+e <- rd_to_df(current) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE, out= "Tables/elec_current.tex")
 
 
 
@@ -146,6 +95,7 @@ c <- rd_to_df(aftermath) %>% .[, 11:length(.)]  %>% stargazer(., summary = FALSE
 ###################################### FUNCTION TO EXTRACT INFO FROM RD'S #################################
 ################################################# INVESTMENT ##############################################
 ###########################################################################################################
+
 rd_to_df_2 <-  function(list){
   rd <- lapply(list, function(x){
     x$rd %>% .$tabl3.str}) %>%
@@ -193,19 +143,52 @@ after_next <- lapply(list_files, readRDS)%>%
   unlist(recursive = FALSE) %>%
   setNames(., outcomes)
 
+list_files <- list.files() %>%
+  .[str_detect(., "total_current")]
+total <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
 
 ###########################################################################################################
 ############################################  CREATE TABLES  ##############################################
 ###########################################################################################################
 
 #Table 3 (2000, 1000, 3000)
-a <- rd_to_df_2(before) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE)
+a <- rd_to_df_2(before) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_current.tex")
 
 #Table 4
-b <- rd_to_df_2(after_current) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE)
-c <- rd_to_df_2(after_next) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE)
+b <- rd_to_df_2(after_current) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_after_current.tex")
+c <- rd_to_df_2(after_next) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_after_next.tex")
 #Table: Robustness
-d <- rd_to_df(final) %>% .[c(3, 2, 1)] %>% stargazer(., summary = FALSE)
+d <- rd_to_df_2(total) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_current.tex")
 
 
+
+
+###########################################################################################################
+################################################ LOAD RESULTS #############################################
+################################################# AFTERMATH ############################################### 
+###########################################################################################################
+
+out_growth <- c("log_ba_tot_vr_pc", "log_ba_peq_vr_pc","log_light_pix","log_light_dm")
+out_institutions <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty")
+out_publicgoods <- c("cob_pri", "cob_sec", "matematicas_s","lenguaje_s","nac_19_10_p", "hom_tasa")
+outcomes <- c(out_growth, out_institutions, out_publicgoods)
+out_l <- list(out_growth, out_institutions, out_publicgoods) %>%
+  sapply(length)
+
+list_files <- list.files() %>%
+  .[str_detect(., "aftermath")]
+aftermath <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+###########################################################################################################
+############################################  CREATE TABLES  ##############################################
+###########################################################################################################
+
+a <- rd_to_df(aftermath) %>% .[, 1:4]  %>% stargazer(., summary = FALSE, out= "Tables/aftermath_a.tex")
+b <- rd_to_df(aftermath) %>% .[, 5:10]  %>% stargazer(., summary = FALSE, out= "Tables/aftermath_b.tex")
+c <- rd_to_df(aftermath) %>% .[, 11:length(.)]  %>% stargazer(., summary = FALSE, out= "Tables/aftermath_c.tex")
 

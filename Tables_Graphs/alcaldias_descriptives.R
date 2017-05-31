@@ -1,3 +1,6 @@
+###########################################################################################################
+################################# DESCRIPTIVE ELECTIONS ###################################################
+###########################################################################################################
 
 rm(list=ls())
 packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust")
@@ -87,7 +90,56 @@ ggsave(path=final,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
 ggsave(path=doc,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
 ggsave(path=pres,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
 
+########################
 
+# Number of elections in sample 
+elections <- alcaldes_merge %>% filter(cand==1) %>% mutate(n=1) %>% group_by(ano, codmpio) %>% summarize(cand = sum(n))  %>% 
+  ungroup() %>% mutate(n=1) %>% summarize(n = sum(n), cand = sum(cand))
+
+# Parties 
+dim(table(alcaldes_merge$codpartido)) 
+parties <- alcaldes_merge %>% filter(cand==1) %>% filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0) %>% mutate(n=1) %>%  group_by(codpartido) %>% summarize(part = sum(n))  
+
+# Parties by year
+parties_y <- alcaldes_merge %>% filter(cand==1) %>% filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0) %>% mutate(n=1) %>%  group_by(codpartido, ano) %>% summarize(part = sum(n))  %>% 
+  mutate(y = 1) %>% group_by(ano) %>% summarize(y = sum(y))
+
+# Parties with more than 1 year 
+parties_s <- alcaldes_merge %>% filter(cand==1) %>% filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0) %>% mutate(n=1) %>%  group_by(codpartido, ano) %>% summarize(part = sum(n))  %>% 
+  mutate(y = 1) %>% group_by(codpartido) %>% summarize(y = sum(y)) %>% 
+  mutate(yy = 1) %>% group_by(y) %>% summarize(yy = sum(yy))
+
+
+
+# Vote share of first 2 
+vs2 <- alcaldes_merge %>% filter(!is.finite(prop_votes_cand)==F) %>% filter(rank<=2)  %>% 
+  group_by(ano, codmpio) %>% summarize(vs2 = sum(prop_votes_cand)) 
+
+
+qplot(vs2$vs2,geom="histogram",binwidth = 0.1, col=I("black"), fill=I("grey")) + 
+  labs(y= "Elections", x = "Victory Margin") + scale_x_continuous(breaks = seq(-1,1,by=0.1)) +
+  theme_bw() +  
+  theme(legend.position="bottom", axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+vs2 %>% group_by() %>% summarize(vs2_m = mean(vs2), vs2_sd = sd(vs2))
+
+# victory margin
+vm <- alcaldes_merge %>% filter(rank<=2) 
+
+qplot(vm$margin_prop_2,geom="histogram",binwidth = 0.1, col=I("black"), fill=I("grey")) + 
+  labs(y= "Elections", x = "Victory Margin") + scale_x_continuous(breaks = seq(-1,1,by=0.1)) +
+  theme_bw() +  
+  theme(legend.position="bottom", axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+  
 
 
 ###########################################################################################################

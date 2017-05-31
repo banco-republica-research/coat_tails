@@ -5,13 +5,14 @@ rm(list=ls())
 packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","ggplot2","tidyr","broom","cluster", "rdrobust", "rdd")
 lapply(packageList,require,character.only=TRUE)
 
-setwd("~/GitHub/coat_tails/Tables_Graphs/")
+# setwd("~/GitHub/coat_tails/Tables_Graphs/")
+setwd("C:/Users/lbonilme/GitHub/coat_tails/Tables_Graphs/")
 source("ggplot_density.R")
 
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -67,16 +68,17 @@ mapply(function(x, type){
   g <- g + geom_vline(xintercept = 0, colour="gray", linetype = 1)
   g <- g + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                               panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-  g <- g + labs(x = "Vote margin at t", y = "Density")
+  g <- g + labs(x = "Victory Margin", y = "Density")
   g <- g + theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14))
   g
   
-  ggsave(str_c(results, "/Graphs/Density_tests/", "RD_", type, ".pdf"), width=30, height=20, units="cm")
+  ggsave(str_c(results, "/Graphs/Density_tests/", "mani_", type, ".pdf"), width=30, height=20, units="cm")
 }, x = density_tests, type = c("primera", "segunda", "final", "current"))
 
 
 #Graph for only party (no coalition) 
-a <- dcdensity_ggplot(alcaldes_merge$margin_prop_2, cutpoint = 0.5, plot = T, ext.out  = T)
+alcaldes_merge_r2 <- alcaldes_merge %>% filter(rank<=2) %>% filter(cand==1) %>% filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0)
+a <- dcdensity_ggplot(alcaldes_merge_r2$margin_prop_2, cutpoint = 0.5, plot = T, ext.out  = T)
 a.l <- a$data[[1]]
 a.r <- a$data[[2]]
 
@@ -93,10 +95,10 @@ g <- g + geom_line(data = a.r, aes(x = cellmp, y = upr), linetype = 2, colour = 
 g <- g + geom_vline(xintercept = 0, colour="gray", linetype = 1)
 g <- g + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                             panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-g <- g + labs(x = "Vote share at t", y = "Density")
+g <- g + labs(x = "Victory Margin", y = "Density")
 g <- g + theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14))
 g
-ggsave(str_c(results, "/Graphs/Density_tests/", "RD_party", ".pdf"), width=30, height=20, units="cm")
+ggsave(str_c(results, "/Graphs/Density_tests/", "mani_party", ".pdf"), width=30, height=20, units="cm")
 
 
 
