@@ -90,7 +90,20 @@ ggsave(path=final,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
 ggsave(path=doc,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
 ggsave(path=pres,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
 
-########################
+###########################################################################################################
+############################### Parties and candidates ####################################################
+###########################################################################################################
+
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
+
+alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(rank <= 2) %>% 
+  arrange(codmpio, ano, codpartido) %>%
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>%
+  filter(nn == 2) %>%
+  dplyr::select(-c(n,nn)) 
 
 # Number of elections in sample 
 elections <- alcaldes_merge %>% filter(cand==1) %>% mutate(n=1) %>% group_by(ano, codmpio) %>% summarize(cand = sum(n))  %>% 
@@ -110,9 +123,8 @@ parties_s <- alcaldes_merge %>% filter(cand==1) %>% filter(codpartido!=98 & codp
   mutate(yy = 1) %>% group_by(y) %>% summarize(yy = sum(yy))
 
 
-
 # Vote share of first 2 
-vs2 <- alcaldes_merge %>% filter(!is.finite(prop_votes_cand)==F) %>% filter(rank<=2)  %>% 
+vs2 <- alcaldes_merge_r2 %>% filter(!is.finite(prop_votes_cand)==F) %>% 
   group_by(ano, codmpio) %>% summarize(vs2 = sum(prop_votes_cand)) 
 
 
@@ -129,7 +141,22 @@ qplot(vs2$vs2,geom="histogram",binwidth = 0.1, col=I("black"), fill=I("grey")) +
 vs2 %>% group_by() %>% summarize(vs2_m = mean(vs2), vs2_sd = sd(vs2))
 
 # victory margin
-vm <- alcaldes_merge %>% filter(rank<=2) 
+vm <- alcaldes_merge %>% 
+  filter(ano != 2015) %>%
+  filter(rank <= 2) %>% 
+  arrange(codmpio, ano, codpartido) %>%
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>%
+  filter(nn == 2) %>%
+  dplyr::select(-c(n,nn))
+
+vm <- vm %>% 
+  mutate(comp1 = ifelse((margin_prop_2>=-0.1 & margin_prop_2<=0.1), 1,0)) %>% 
+  mutate(comp2 = ifelse((margin_prop_2>=-0.2 & margin_prop_2<=0.2), 1,0))
+table(vm$comp1)
+table(vm$comp2)
+
 
 qplot(vm$margin_prop_2,geom="histogram",binwidth = 0.1, col=I("black"), fill=I("grey")) + 
   labs(y= "Elections", x = "Victory Margin") + scale_x_continuous(breaks = seq(-1,1,by=0.1)) +
@@ -140,7 +167,6 @@ qplot(vm$margin_prop_2,geom="histogram",binwidth = 0.1, col=I("black"), fill=I("
         panel.border = element_blank(),
         panel.background = element_blank()) 
   
-
 
 ###########################################################################################################
 ################################ COMPETITION AND NO PARTIES ###############################################

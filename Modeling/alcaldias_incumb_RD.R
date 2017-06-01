@@ -3,7 +3,7 @@
 ###########################################################################################################
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust")
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust","rddensity", "knitr")
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
@@ -66,7 +66,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
 ###########################################################################################################
 
 alcaldes_rd_all <- alcaldes_merge_r2 %>%
-  # mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   group_by(ano, codmpio, codpartido) %>%
   mutate(party_2 = n()) %>%
   filter(party_2 == 1) %>% 
@@ -80,7 +80,12 @@ alcaldes_rd_all <- alcaldes_merge_r2 %>%
   # mutate(win_t1 = ifelse(is.na(rank_t1) == 1 | rank_t1 != 1, 0, 1)) 
 
 l <- alcaldes_rd_all 
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+l2 <- l %>% filter(margin_prop_2 <= 0.2 & margin_prop_2 >= -0.2)
+l1 <- l %>% filter(margin_prop_2 <= 0.1 & margin_prop_2 >= -0.1)
+
+party_des <- cbind(t(table(l$win_t)),t(table(l2$win_t)),t(table(l1$win_t)))
+party_des
+
 
 # Regressions for list of outcomes
 l_f <- function(o){
@@ -95,8 +100,8 @@ l_f <- function(o){
          # y.lim = c(0.2, 0.8),
          # x.lim = c(0.45, 0.55),
          title = " ",
-         x.label = "Vote margin at t",
-         y.label = "Presidential Vote share at t + 1",
+         x.label = "Victory Margin",
+         y.label = "Vote share (subsequent Election)",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
   )
   dev.off()
@@ -143,7 +148,7 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   group_by(ano, codmpio) %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
   filter(party_2 == 1) %>%
-  # mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., primera,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_t1", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
@@ -152,7 +157,13 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
 table(alcaldes_rd_c$coalition_new)
 
 l <- alcaldes_rd_c
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+l2 <- l %>% filter(margin_prop_2 <= 0.2 & margin_prop_2 >= -0.2)
+l1 <- l %>% filter(margin_prop_2 <= 0.1 & margin_prop_2 >= -0.1)
+
+first_des <- cbind(t(table(l$win_t)),t(table(l2$win_t)),t(table(l1$win_t))) 
+first_des
+
+
 out <- c("prop_votes_total_t1")
 
 # Regressions for list of outcomes
@@ -213,7 +224,7 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   group_by(ano, codmpio) %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
   filter(party_2 == 1) %>%
-  # mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., segunda,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_t1", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
@@ -222,7 +233,13 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
 table(alcaldes_rd_c$coalition_new)
 
 l <- alcaldes_rd_c
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+l2 <- l %>% filter(margin_prop_2 <= 0.2 & margin_prop_2 >= -0.2)
+l1 <- l %>% filter(margin_prop_2 <= 0.1 & margin_prop_2 >= -0.1)
+
+second_des <- cbind(t(table(l$win_t)),t(table(l2$win_t)),t(table(l1$win_t))) 
+second_des
+
+
 out <- c("prop_votes_total_t1")
 # Regressions for list of outcomes
 l_f <- function(o){
@@ -282,7 +299,7 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   group_by(ano, codmpio) %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
   filter(party_2 == 1) %>%
-  # mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., final,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_t1", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
@@ -291,7 +308,13 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
 table(alcaldes_rd_c$coalition_new)
 
 l <- alcaldes_rd_c
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+l2 <- l %>% filter(margin_prop_2 <= 0.2 & margin_prop_2 >= -0.2)
+l1 <- l %>% filter(margin_prop_2 <= 0.1 & margin_prop_2 >= -0.1)
+
+final_des <- cbind(t(table(l$win_t)),t(table(l2$win_t)),t(table(l1$win_t)))
+final_des
+
+
 out <- c("prop_votes_total_t1")
 
 # Regressions for list of outcomes
@@ -326,8 +349,6 @@ r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/incumbency_final_coalition.rds"))
 
 
-
-
 ###########################################################################################################
 ############################# RD: IMCUMBENCY EFFECT - COALITION PARTIES ###################################
 ############################################ CURRENT COALITION ############################################
@@ -356,7 +377,7 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   group_by(ano, codmpio) %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
   filter(party_2 == 1) %>%
-  # mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., final,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_t1", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
@@ -365,7 +386,13 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
 table(alcaldes_rd_c$coalition_new)
 
 l <- alcaldes_rd_c
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+l2 <- l %>% filter(margin_prop_2 <= 0.2 & margin_prop_2 >= -0.2)
+l1 <- l %>% filter(margin_prop_2 <= 0.1 & margin_prop_2 >= -0.1)
+
+current_des <- cbind(t(table(l$win_t)),t(table(l2$win_t)),t(table(l1$win_t)))
+current_des
+
 out <- c("prop_votes_total_t1")
 
 # Regressions for list of outcomes
@@ -398,6 +425,21 @@ l_f <- function(o){
 
 r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/incumbency_current_coalition.rds"))
+
+
+
+###########################################################################################################
+####################################### RD: TOTAL OBSERVATIONS ############################################
+###########################################################################################################
+
+
+des <- rbind(party_des, current_des, first_des,final_des)
+des
+kable(des, format = "latex")
+
+
+
+
 
 
 

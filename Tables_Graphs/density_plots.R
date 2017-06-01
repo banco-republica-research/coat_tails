@@ -79,6 +79,7 @@ mapply(function(x, type){
 #Graph for only party (no coalition) 
 alcaldes_merge_r2 <- alcaldes_merge %>% filter(rank<=2) %>% filter(cand==1) %>% filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0)
 a <- dcdensity_ggplot(alcaldes_merge_r2$margin_prop_2, cutpoint = 0.5, plot = T, ext.out  = T)
+a
 a.l <- a$data[[1]]
 a.r <- a$data[[2]]
 
@@ -87,7 +88,6 @@ g <- g + geom_point(data = a.r, aes(x = cellmp, y = cellval), size = 0.6)
 g <- g + geom_line(data = a.l, aes(x = cellmp, y = est))
 g <- g + geom_line(data = a.r, aes(x = cellmp, y = est))
 g <- g + scale_x_continuous(limits = c(-1, 1))
-g <- g + scale_y_continuous(limits = c(0, 2))
 g <- g + geom_line(data = a.l, aes(x = cellmp, y = lwr), linetype = 2, colour = "grey40")
 g <- g + geom_line(data = a.l, aes(x = cellmp, y = upr), linetype = 2, colour = "grey40")
 g <- g + geom_line(data = a.r, aes(x = cellmp, y = lwr), linetype = 2, colour = "grey40")

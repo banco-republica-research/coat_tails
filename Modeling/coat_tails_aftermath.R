@@ -54,7 +54,8 @@ hom <- read_dta(paste0(violencia,"homicidios_all.dta"))
 agro <- read_dta(paste0(agro,"agro_all.dta"))
 cobertura <- read_dta(paste0(edu,"cobertura_all.dta"))
 icfes <- read_dta(paste0(edu,"icfes_all.dta"))
-teen <- read_dta(paste0(edu,"nac_all.dta"))
+teen <- read_dta(paste0(edu,"fert_all.dta"))
+mort <- read_dta(paste0(edu,"tasa_mort_all.dta"))
 nightlights <- read_dta(paste0(noaa,"nightlights_all.dta"))
   
 ###########################################################################################################
@@ -103,6 +104,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   merge(., cobertura,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., icfes,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., teen,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., mort,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., nightlights,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano)
 
@@ -125,8 +127,8 @@ l_f <- function(o){
   pdf(str_c(results, "/Graphs/After/RD_", o, ".pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
          title = " ",
-         x.label = "Vote margin at t",
-         y.label = "Outcome",
+         x.label = "Victory Margin",
+         y.label = "Vote share (subsequent Election)",
          binselect="es", nbins= 14, kernel="triangular", p=3, ci=95 
   )
   dev.off()
@@ -143,7 +145,7 @@ l_f <- function(o){
 # outcomes
  
 
-out <- c("cob_pri", "cob_sec", "matematicas_s","lenguaje_s","nac_19_10_p", "hom_tasa")
+out <- c("cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p", "tasa_m", "hom_tasa")
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "aftermath_publicgoods.rds"))
 
