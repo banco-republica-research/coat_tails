@@ -270,7 +270,7 @@ l_f <- function(o){
          title = " ",
          x.label = "Victory Margin",
          y.label = "Vote share (subsequent Election)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
+         binselect="es", nbins= 10, kernel="triangular", p=3, ci=95
   )
   dev.off()
   mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &

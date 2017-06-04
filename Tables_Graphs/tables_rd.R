@@ -125,8 +125,8 @@ out_roads <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_n
 outcomes <- c(out_investment, out_roads)
 
 list_files <- list.files() %>%
-  .[str_detect(., "before")]
-before <- lapply(list_files, readRDS) %>%
+  .[str_detect(., "before_current")]
+before_current <- lapply(list_files, readRDS) %>%
   unlist(recursive = FALSE) %>%
   setNames(., outcomes)
   # setNames(., list_files)
@@ -138,30 +138,55 @@ after_current <- lapply(list_files, readRDS) %>%
   setNames(., outcomes) 
 
 list_files <- list.files() %>%
-  .[str_detect(., "after_next")]
-after_next <- lapply(list_files, readRDS)%>%
-  unlist(recursive = FALSE) %>%
-  setNames(., outcomes)
-
-list_files <- list.files() %>%
   .[str_detect(., "total_current")]
 total <- lapply(list_files, readRDS)%>%
   unlist(recursive = FALSE) %>%
   setNames(., outcomes)
 
 
+list_files <- list.files() %>%
+  .[str_detect(., "before_next")]
+before_next <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+# setNames(., list_files)
+
+list_files <- list.files() %>%
+  .[str_detect(., "after_next")]
+after_next <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+
+list_files <- list.files() %>%
+  .[str_detect(., "before_s2011_next")]
+before_s2011_next <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+# setNames(., list_files)
+
+list_files <- list.files() %>%
+  .[str_detect(., "after_s2011_next")]
+after_s2011_next <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
 ###########################################################################################################
 ############################################  CREATE TABLES  ##############################################
 ###########################################################################################################
 
 #Table 3 (2000, 1000, 3000)
-a <- rd_to_df_2(before) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_current.tex")
-
-#Table 4
+a <- rd_to_df_2(before_current) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_current.tex")
 b <- rd_to_df_2(after_current) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_after_current.tex")
-c <- rd_to_df_2(after_next) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_after_next.tex")
+
+c1 <- rd_to_df_2(before_next) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_next.tex")
+d1 <- rd_to_df_2(after_next) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_after_next.tex")
+
+c2 <- rd_to_df_2(before_s2011_next) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_s2011_next.tex")
+d2 <- rd_to_df_2(after_s2011_next) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_after_s2011_next.tex")
+
 #Table: Robustness
-d <- rd_to_df_2(total) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_current.tex")
+e <- rd_to_df_2(total) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_current.tex")
 
 
 
@@ -171,9 +196,11 @@ d <- rd_to_df_2(total) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FAL
 ################################################# AFTERMATH ############################################### 
 ###########################################################################################################
 
-out_growth <- c("log_ba_tot_vr_pc", "log_ba_peq_vr_pc","log_light_pix","log_light_dm")
+setwd(results)
+
+out_growth <- c("log_light_pix","log_light_dm","log_ba_tot_vr_pc", "log_ba_peq_vr_pc")
 out_institutions <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty")
-out_publicgoods <- c("cob_pri", "cob_sec", "matematicas_s","lenguaje_s","nac_19_10_p", "hom_tasa")
+out_publicgoods <- c("tasa_m", "cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p","hom_tasa")
 outcomes <- c(out_growth, out_institutions, out_publicgoods)
 out_l <- list(out_growth, out_institutions, out_publicgoods) %>%
   sapply(length)
@@ -181,7 +208,7 @@ out_l <- list(out_growth, out_institutions, out_publicgoods) %>%
 list_files <- list.files() %>%
   .[str_detect(., "aftermath")]
 aftermath <- lapply(list_files, readRDS) %>%
-  unlist(recursive = FALSE) %>%
+  unlist(recursive = FALSE) %>%  
   setNames(., outcomes)
 
 ###########################################################################################################

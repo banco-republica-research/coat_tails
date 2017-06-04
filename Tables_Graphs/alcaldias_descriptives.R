@@ -94,7 +94,8 @@ ggsave(path=pres,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
 ############################### Parties and candidates ####################################################
 ###########################################################################################################
 
-alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds")) 
+%>% filter(ano != 2015) 
 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(rank <= 2) %>% 

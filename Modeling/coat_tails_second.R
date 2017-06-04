@@ -84,7 +84,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 # RD and OLS regressions 
 
 # Second rounds only
-l <- alcaldes_rd 
+l <- alcaldes_rd  
 # %>% filter(ano > 1997)  # Solo Santos
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 dens_2 <- rdd::DCdensity(l$prop_votes_c2, cutpoint = 0.5, verbose = TRUE, plot = TRUE, bw = 0.1, ext.out = T)
@@ -106,7 +106,7 @@ l_f <- function(o){
          title = " ",
          x.label = "Victory Margin",
          y.label = "Vote share (subsequent Election)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
+         binselect="es", nbins= 10, kernel="triangular", p=3, ci=95
   )
   dev.off()
   mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
