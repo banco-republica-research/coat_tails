@@ -20,7 +20,7 @@ res <-"Data/CEDE/Bases/"
 results <- "Results/RD"
 
 ###########################################################################################################
-######################################## ELECTIONS DATA ###################################################
+#################################### NATIONAL ELECTIONS ###################################################
 ###########################################################################################################
 
 # Load maire and coalition data
@@ -75,10 +75,13 @@ mapply(function(x, type){
   ggsave(str_c(results, "/Graphs/Density_tests/", "mani_", type, ".pdf"), width=30, height=20, units="cm")
 }, x = density_tests, type = c("primera", "segunda", "final", "current"))
 
+###########################################################################################################
+############################################ INCUMBENCY ###################################################
+###########################################################################################################
 
 #Graph for only party (no coalition) 
 alcaldes_merge_r2 <- alcaldes_merge %>% filter(rank<=2) %>% filter(cand==1) %>% filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0)
-a <- dcdensity_ggplot(alcaldes_merge_r2$margin_prop_2, cutpoint = 0.5, plot = T, ext.out  = T)
+a <- dcdensity_ggplot(alcaldes_merge_r2$margin_prop_2, cutpoint = 0, plot = T, ext.out  = T)
 a
 a.l <- a$data[[1]]
 a.r <- a$data[[2]]

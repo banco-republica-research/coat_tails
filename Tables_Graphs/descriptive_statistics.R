@@ -3,7 +3,7 @@
 ###########################################################################################################
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust","rddensity")
+packageList<-c("foreign","plyr","dplyr","stargazer")
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
@@ -43,7 +43,8 @@ hom <- read_dta(paste0(violencia,"homicidios_all.dta"))
 agro <- read_dta(paste0(agro,"agro_all.dta"))
 cobertura <- read_dta(paste0(edu,"cobertura_all.dta"))
 icfes <- read_dta(paste0(edu,"icfes_all.dta"))
-teen <- read_dta(paste0(edu,"nac_all.dta"))
+teen <- read_dta(paste0(edu,"fert_all.dta"))
+mort <- read_dta(paste0(edu,"tasa_mort_all.dta"))
 nightlights <- read_dta(paste0(noaa,"nightlights_all.dta"))
 
 # Load maire data
@@ -58,7 +59,7 @@ president_1 <- readRDS(paste0(res, "presidentes_primera_merge.rds"))
 president_2 <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) 
 
 ###########################################################################################################
-######################################## ELECTIONS DATA ###################################################
+########################################  VARIABLES #######################################################
 ###########################################################################################################
 
 # Dataset: incumbency regression 
@@ -83,19 +84,32 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   merge(., cobertura,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., icfes,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., teen,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., mort,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., nightlights,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T)
   
 # Descriptive statistics: Characteristics and outcomes
 
-des <- alcaldes_merge_r2 %>% dplyr::select(pobl_tot.x, altura,discapital, disbogota, nbi.x ,)
-  
+des <- alcaldes_merge_r2 %>% dplyr::select(pobl_tot.x, altura,discapital, disbogota, nbi.x, D2000_pc, D1000_pc, D3000_pc, f_SGPp_pc,f_regalias_pc, f_trans_nac_pc, tasa_m, cob_pri, cob_sec, matematicas_s,lenguaje_s,fert_19_10_p,hom_tasa, desemp_fisc,desemp_int, alcalde, alcalde_guilty, top, top_guilty, light_pix,light_dm,ba_tot_vr_pc, ba_peq_vr_pc)
+
 setwd(results)
-stargazer(des, summary.stat = c("mean", "sd"), type = "latex", out= "descriptives.tex")
+stargazer(des, summary.stat = c("mean", "sd", "median", "min", "max"), type = "latex", digits = 2, out= "descriptives.tex")
 
-# Close elections 
-des_2 <- des %>% filter(margin_prop_2>=-0.2 & margin_prop_2<=0.2)
-stargazer(des_2, summary.stat = c("mean", "sd"), type = "latex", out= "descriptives_02.tex")
+###########################################################################################################
+######################################### ELECTIONS #######################################################
+###########################################################################################################
 
-des_1 <- des %>% filter(margin_prop_2>=-0.1 & margin_prop_2<=0.1)
-stargazer(des_1, summary.stat = c("mean", "sd"), type = "latex", out= "descriptives_01.tex")
+
+
+
+
+des_ele <- alcaldes_merge_r2 %>% filter(cand==1) %>% filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0) %>% 
+  filter(rank==1) %>% dplyr::select(prop_votes_cand, margin_prop_2) 
+stargazer(des_ele, summary.stat = c("mean", "sd", "median", "min", "max"), type = "latex", digits = 2)
+
+des_ele2 <- alcaldes_merge_r2 %>% filter(!is.finite(prop_votes_cand)==F) %>% filter(prop_votes_cand <= 1) %>% 
+  group_by(ano, codmpio) %>% summarize(vs2 = sum(prop_votes_cand)) %>% filter(vs2 <= 1) %>% 
+  dplyr::select(vs2) 
+
+summary(des_ele2)
+stargazer(des_ele2, summary.stat = c("mean", "sd", "median", "min", "max"), type = "latex", digits = 2)
 

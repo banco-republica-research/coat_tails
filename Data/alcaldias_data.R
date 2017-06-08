@@ -4,8 +4,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "tidyr", "forcats",
 lapply(packageList,library,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
   data <-"Data/CEDE/Microdatos/"
@@ -13,6 +13,9 @@ setwd("~/Dropbox/BANREP/Elecciones/")
   res <-"Data/CEDE/Bases/"
   results <- "Results/RD"
 
+# Paper gender  
+women <- "D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones_Mujeres/Data/CEDE/Bases/"  
+  
 ###########################################################################################################
 ############################ Winners and loosers since 1997  ##############################################
 ###########################################################################################################
@@ -127,8 +130,11 @@ alcaldes_merge_prueba <- alcaldes_merge %>%
             mean_prop = mean(prop_votes_c2, na.rm = T))
 
 
-
 saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
+
+# Save for elections women
+# saveRDS(alcaldes_merge,paste0(women,"alcaldes_merge.rds"))
+write_dta(alcaldes_merge,paste0(women,"alcaldes_merge.dta"))
 
 
 ###########################################################################################################
