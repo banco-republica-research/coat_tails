@@ -46,6 +46,11 @@ lapply(seq_along(alcaldes_t1_coalition),
        }
   )
 
+
+###########################################################################################################
+############################# RD: IMCUMBENCY EFFECT - ALL PARTIES #########################################
+###########################################################################################################
+
 # Elections at t
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
@@ -59,12 +64,6 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   dplyr::select(-c(n,nn)) %>%
   merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
-
-
-###########################################################################################################
-############################# RD: IMCUMBENCY EFFECT - ALL PARTIES #########################################
-###########################################################################################################
-
 alcaldes_rd_all <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   group_by(ano, codmpio, codpartido) %>%
@@ -73,7 +72,7 @@ alcaldes_rd_all <- alcaldes_merge_r2 %>%
   merge(alcaldes_t1,  by.x = c("ano", "codmpio","codpartido"), by.y = c("ano_lag", "codmpio", "codpartido"), 
         suffixes = c("_t", "_t1"), all.x=T) %>%
   mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
-  mutate(prop_votes_total_b_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
+  mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
   # dplyr::select(codmpio,pobl_tot, coddepto,  ano, codpartido, win_t, rank_t, votos_t, prop_votes_c2,
                 # run_t1, rank_t1 , votos_t1, prop_votes_cand_t1, prop_votes_total_t1,prop_votes_total_b_t1) %>%
   arrange(codmpio, ano)
@@ -116,7 +115,7 @@ l_f <- function(o){
 
 
 out <- c("prop_votes_total_t1")
-other <- c("win_t1","prop_votes_total_b_t1","run_t1")
+# other <- c("win_t1","prop_votes_total_b_t1","run_t1")
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/incumbency_party.rds"))
 
@@ -149,7 +148,7 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
   filter(party_2 == 1) %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., primera,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_t1", "codmpio", "coalition_new"), 
+  merge(., primera,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_lag", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
@@ -225,7 +224,7 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
   filter(party_2 == 1) %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., segunda,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_t1", "codmpio", "coalition_new"), 
+  merge(., segunda,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_lag", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
@@ -300,7 +299,7 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
   filter(party_2 == 1) %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., final,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_t1", "codmpio", "coalition_new"), 
+  merge(., final,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_lag", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
@@ -378,7 +377,7 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
   filter(party_2 == 1) %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., final,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_t1", "codmpio", "coalition_new"), 
+  merge(., final,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_lag", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
   filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
@@ -433,7 +432,7 @@ saveRDS(r, str_c(results, "/incumbency_current_coalition.rds"))
 ###########################################################################################################
 
 
-des <- rbind(party_des, current_des, first_des,final_des)
+des <- rbind(first_des,final_des, current_des, party_des)
 des
 kable(des, format = "latex")
 

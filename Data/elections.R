@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+#setwd("~/Dropbox/BANREP/Elecciones/")
+ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -580,6 +580,7 @@ controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"
 
 alcaldes_merge_t1 <- alcaldes_merge %>%
   filter(cand == 1) %>%
+  filter(ano!=1997) %>% 
   mutate(ano_lag = as.factor(ano)) %>%
   mutate(ano_lag = fct_recode(ano_lag,
                               "1997" = "2000",
@@ -593,7 +594,7 @@ alcaldes_merge_t1 <- alcaldes_merge %>%
   summarize(votos = sum(votos), 
             prop_votes_cand = sum(prop_votes_cand),
             prop_votes_total = sum(prop_votes_total),
-            rank = max(rank))
+            rank = min(rank))
 
 saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1.rds"))
 
@@ -611,6 +612,7 @@ list_coalitions <- list(coalitions_primera, coalitions_segunda, coalitions_final
 election_coalitions <- function(x, y){
     df_merge <- y %>%
     filter(.,cand == 1) %>%
+    filter(ano!=1997) %>% 
     mutate(ano_lag = as.factor(ano)) %>%
     mutate(ano_lag = fct_recode(ano_lag,
                                 "1997" = "2000",
@@ -624,9 +626,7 @@ election_coalitions <- function(x, y){
     group_by(codmpio, ano_lag, ano_t1, coalition_new, codpartido) %>%
     summarize(., votos = sum(votos),
               prop_votes_cand = sum(prop_votes_cand),
-              prop_votes_total = sum(prop_votes_total)
-              # rank = max(rank)
-              )
+              prop_votes_total = sum(prop_votes_total))
   return(df_merge)
 } 
 

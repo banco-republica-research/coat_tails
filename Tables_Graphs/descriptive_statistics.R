@@ -103,13 +103,14 @@ stargazer(des, summary.stat = c("mean", "sd", "median", "min", "max"), type = "l
 
 
 des_ele <- alcaldes_merge_r2 %>% filter(cand==1) %>% filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0) %>% 
-  filter(rank==1) %>% dplyr::select(prop_votes_cand, margin_prop_2) 
+  filter(rank==1) %>% dplyr::select(prop_votes_total, margin_prop_2) 
 stargazer(des_ele, summary.stat = c("mean", "sd", "median", "min", "max"), type = "latex", digits = 2)
 
-des_ele2 <- alcaldes_merge_r2 %>% filter(!is.finite(prop_votes_cand)==F) %>% filter(prop_votes_cand <= 1) %>% 
-  group_by(ano, codmpio) %>% summarize(vs2 = sum(prop_votes_cand)) %>% filter(vs2 <= 1) %>% 
+des_ele2 <- alcaldes_merge_r2 %>% filter(!is.finite(prop_votes_total)==F) %>% filter(prop_votes_total <= 1) %>% 
+  group_by(ano, codmpio) %>% summarize(vs2 = sum(prop_votes_total)) %>% filter(vs2 <= 1) %>% ungroup() %>%
   dplyr::select(vs2) 
 
-summary(des_ele2)
 stargazer(des_ele2, summary.stat = c("mean", "sd", "median", "min", "max"), type = "latex", digits = 2)
+summary(des_ele2)
+sd(des_ele2$vs2)
 
