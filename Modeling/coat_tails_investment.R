@@ -71,6 +71,7 @@ table(coalitions_long$ano,coalitions_long$year)
 # Drop elections where party is both 1 and 2 in t
 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(cand==1) %>%
   filter(rank <= 2) %>% 
   merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
@@ -172,6 +173,7 @@ table(coalitions_long$ano,coalitions_long$year)
 # Drop elections where party is both 1 and 2 in t
 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(cand==1) %>%
   filter(rank <= 2) %>% 
   merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
@@ -260,6 +262,7 @@ table(coalitions_long$ano,coalitions_long$year)
 # Drop elections where party is both 1 and 2 in t
 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(cand==1) %>%
   filter(rank <= 2) %>% 
   merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
@@ -343,6 +346,7 @@ coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))
 # top2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>%
   filter(ano != 2015) %>%
+  filter(cand==1) %>%
   filter(rank <= 2) %>% 
   merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
@@ -460,6 +464,7 @@ coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))
 # top2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>%
   filter(ano != 2015) %>%
+  filter(cand==1) %>%
   filter(rank <= 2) %>% 
   merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%

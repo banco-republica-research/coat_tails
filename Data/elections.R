@@ -351,7 +351,7 @@ saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_merge.rds"
 
 # load final stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
-
+table(coalitions_long$ano, coalitions_long$year)
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%

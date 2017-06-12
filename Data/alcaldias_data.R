@@ -14,7 +14,7 @@ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
   results <- "Results/RD"
 
 # Paper gender  
-women <- "D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones_Mujeres/Data/CEDE/Bases/"  
+women <- "D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones_Mujeres/Data/Elections/"  
   
 ###########################################################################################################
 ############################ Winners and loosers since 1997  ##############################################
@@ -311,6 +311,7 @@ saveRDS(coalitions_long, paste0(res, "coalitions_new.rds"))
 # First:leads
 coalitions_primera <- readRDS(paste0(res,"coalitions_primera.rds")) %>% 
   mutate(year_lead = fct_recode(year, 
+  "1997" = "1994",
   "2000" = "1998",
   "2003" = "2002",
   "2007" = "2006",
@@ -341,6 +342,7 @@ coalitions <- coalitions_primera %>%
   filter(year==2002 | year== 2006) %>%
   rbind(.,coalitions_segunda)
 
+table(coalitions$year, coalitions$year_lead)
 
 #######################
 # Long format (by codmun) 
@@ -363,6 +365,13 @@ coalitions_long <- alcaldes_merge %>%
 table(coalitions_long$ano, coalitions_long$year)
 
 saveRDS(coalitions_long, paste0(res, "coalitions_current.rds"))
+
+
+
+
+
+
+
 
 ###########################################################################################################
 ################################### DIFFERENCES BETWEEN 1 AND 2 ###########################################

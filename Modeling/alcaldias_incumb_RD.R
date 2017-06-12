@@ -55,6 +55,7 @@ lapply(seq_along(alcaldes_t1_coalition),
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
+  filter(cand==1) %>%
   filter(rank <= 2) %>% 
   arrange(codmpio, ano, codpartido) %>%
   mutate(ano = as.character(ano)) %>%
@@ -94,7 +95,7 @@ l_f <- function(o){
                 c = 0,
                 all = T,
                 vce = "nn")
-  pdf(str_c(results, "/Graphs/Incumbency", "/RD_", o, "party", ".pdf"), height=6, width=12)
+  pdf(str_c(results, "/Graphs/Incumbency/RD_incumbency_party.pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
          # y.lim = c(0.2, 0.8),
          # x.lim = c(0.45, 0.55),
@@ -130,6 +131,7 @@ coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% dplyr::
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
+  filter(cand==1) %>%
   filter(rank <= 2) %>% 
   merge(., coalitions_long, by.x = c("codpartido","ano", "codmpio") , by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
@@ -150,7 +152,10 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., primera,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_lag", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
+  mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
+  mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
+  #filter(is.na(prop_votes_total_t1) == F) %>%
+  filter(is.na(prop_votes_c2) == F | prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
 
 table(alcaldes_rd_c$coalition_new)
@@ -206,6 +211,7 @@ coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% dplyr::
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
+  filter(cand==1) %>%
   filter(rank <= 2) %>% 
   merge(., coalitions_long, by.x = c("codpartido","ano", "codmpio") , by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
@@ -226,7 +232,10 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., segunda,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_lag", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
+  mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
+  mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
+  #filter(is.na(prop_votes_total_t1) == F) %>%
+  filter(is.na(prop_votes_c2) == F | prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
 
 table(alcaldes_rd_c$coalition_new)
@@ -281,6 +290,7 @@ coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% dplyr::select(c
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
+  filter(cand==1) %>%
   filter(rank <= 2) %>% 
   merge(., coalitions_long, by.x = c("codpartido","ano", "codmpio") , by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
@@ -301,7 +311,10 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., final,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_lag", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
+  mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
+  mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
+  #filter(is.na(prop_votes_total_t1) == F) %>%
+  filter(is.na(prop_votes_c2) == F | prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
 
 table(alcaldes_rd_c$coalition_new)
@@ -326,7 +339,7 @@ l_f <- function(o){
                 vce = "nn")
   pdf(str_c(results, "/Graphs/Incumbency", "/RD_incumbency_final.pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         y.lim = c(0.2, 0.6),
+         y.lim = c(0.0, 0.4),
          # x.lim = c(0.45, 0.55),
          title = " ",
          x.label = "Victory Margin",
@@ -354,11 +367,14 @@ saveRDS(r, str_c(results, "/incumbency_final_coalition.rds"))
 ###########################################################################################################
 
 coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
+table(coalitions_long$ano, coalitions_long$year)
+
 
 # Elections at t
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>%  
   filter(ano != 2015) %>%
+  filter(cand==1) %>%
   filter(rank <= 2) %>% 
   merge(., coalitions_long, by.x = c("codpartido","ano", "codmpio") , by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
@@ -370,6 +386,9 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   dplyr::select(-c(n,nn)) %>%
   merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
+# Election t+1 
+table(alcaldes_merge_r2$ano, alcaldes_merge_r2$year)
+table(final$ano_lag, final$ano_t1)
 
 alcaldes_rd_c <- alcaldes_merge_r2 %>%
   filter(coalition_new == 1) %>%
@@ -379,7 +398,10 @@ alcaldes_rd_c <- alcaldes_merge_r2 %>%
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   merge(., final,  by.x = c("ano", "codmpio", "coalition_new"), by.y = c("ano_lag", "codmpio", "coalition_new"), 
         suffixes = c("_t", "_t1"), all.x = T) %>%
-  filter(is.na(prop_votes_total_t1) == F & is.na(prop_votes_c2) == F, prop_votes_c2 != 0.5) %>%
+  mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
+  mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
+  #filter(is.na(prop_votes_total_t1) == F) %>%
+  filter(is.na(prop_votes_c2) == F | prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
 
 table(alcaldes_rd_c$coalition_new)
