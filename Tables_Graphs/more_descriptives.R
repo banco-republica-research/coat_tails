@@ -95,7 +95,6 @@ ggsave(path=pres,"alcaldia_win_party.pdf", width = 8, height = 5, dpi = 300)
 ###########################################################################################################
 
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds")) 
-%>% filter(ano != 2015) 
 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(rank <= 2) %>% 
@@ -105,24 +104,6 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn == 2) %>%
   dplyr::select(-c(n,nn)) 
-
-# Number of elections in sample 
-elections <- alcaldes_merge %>% filter(cand==1) %>% mutate(n=1) %>% group_by(ano, codmpio) %>% summarize(cand = sum(n))  %>% 
-  ungroup() %>% mutate(n=1) %>% summarize(n = sum(n), cand = sum(cand))
-
-# Parties 
-dim(table(alcaldes_merge$codpartido)) 
-parties <- alcaldes_merge %>% filter(cand==1) %>% filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0) %>% mutate(n=1) %>%  group_by(codpartido) %>% summarize(part = sum(n))  
-
-# Parties by year
-parties_y <- alcaldes_merge %>% filter(cand==1) %>% filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0) %>% mutate(n=1) %>%  group_by(codpartido, ano) %>% summarize(part = sum(n))  %>% 
-  mutate(y = 1) %>% group_by(ano) %>% summarize(y = sum(y))
-
-# Parties with more than 1 year 
-parties_s <- alcaldes_merge %>% filter(cand==1) %>% filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0) %>% mutate(n=1) %>%  group_by(codpartido, ano) %>% summarize(part = sum(n))  %>% 
-  mutate(y = 1) %>% group_by(codpartido) %>% summarize(y = sum(y)) %>% 
-  mutate(yy = 1) %>% group_by(y) %>% summarize(yy = sum(yy))
-
 
 # Vote share of first 2 
 vs2 <- alcaldes_merge_r2 %>% filter(!is.finite(prop_votes_cand)==F) %>% 

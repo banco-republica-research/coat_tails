@@ -68,7 +68,10 @@ nightlights <- read_dta(paste0(noaa,"nightlights_all.dta"))
 # Not enough observations for 2015 maires either 
 
 # FINAL round CURRENT coalition
-coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
+coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% 
+  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  %>%
+  unique(.)
+
 table(coalitions_long$ano,coalitions_long$year)
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
@@ -143,17 +146,18 @@ l_f <- function(o){
 
 
 # outcomes
- 
 
 out <- c("cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p", "tasa_m", "hom_tasa")
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "aftermath_publicgoods.rds"))
+r
+
+out <- c("log_ba_tot_vr", "log_ba_peq_vr","log_light_pix","log_light_dm")
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "aftermath_growths.rds"))
+r
 
 out <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty")
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "aftermath_institutions.rds"))
-
-out <- c("log_ba_tot_vr_pc", "log_ba_peq_vr_pc","log_light_pix","log_light_dm")
-r <- lapply(out, l_f) 
-saveRDS(r, str_c(results, "aftermath_growths.rds"))
-
+r

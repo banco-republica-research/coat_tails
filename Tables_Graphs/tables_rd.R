@@ -78,15 +78,14 @@ current <- lapply(list_files, readRDS) %>%
 ############################################  CREATE TABLES  ##############################################
 ###########################################################################################################
 
-#Table 1 
+# Party 
 a <- rd_to_df(party) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE, out= "Tables/elec_party.tex")
 
-#Table 2
+
+# Coalitions
 b <- rd_to_df(coalition_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec_coalition_1.tex")
 c <- rd_to_df(final)
 d <- rd_to_df(coalition_2) %>% cbind(., c) %>% .[c(7, 5, 6, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec_coalition_2.tex")
-
-#Table 3
 e <- rd_to_df(current) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE, out= "Tables/elec_current.tex")
 
 
@@ -120,16 +119,26 @@ rd_to_df_2 <-  function(list){
 ###########################################################################################################
 setwd(results)
 
-out_investment <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
-out_roads <- c("log_vias_pc","log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
+out_investment <- c("log_D","log_D2000", "log_D1000", "log_D3000")
+out_roads <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
 outcomes <- c(out_investment, out_roads)
+
+list_files <- list.files() %>%
+  .[str_detect(., "total_current")]
+total <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+
+
+
 
 list_files <- list.files() %>%
   .[str_detect(., "before_current")]
 before_current <- lapply(list_files, readRDS) %>%
   unlist(recursive = FALSE) %>%
   setNames(., outcomes)
-  # setNames(., list_files)
+# setNames(., list_files)
 
 list_files <- list.files() %>%
   .[str_detect(., "after_current")]
@@ -137,11 +146,6 @@ after_current <- lapply(list_files, readRDS) %>%
   unlist(recursive = FALSE) %>%
   setNames(., outcomes) 
 
-list_files <- list.files() %>%
-  .[str_detect(., "total_current")]
-total <- lapply(list_files, readRDS)%>%
-  unlist(recursive = FALSE) %>%
-  setNames(., outcomes)
 
 
 list_files <- list.files() %>%
@@ -198,7 +202,7 @@ e <- rd_to_df_2(total) %>% .[c(3, 2, 4, 6, 7, 8)] %>% stargazer(., summary = FAL
 
 setwd(results)
 
-out_growth <- c("log_light_pix","log_light_dm","log_ba_tot_vr_pc", "log_ba_peq_vr_pc")
+out_growth <- c("log_light_pix","log_light_dm","log_ba_tot_vr", "log_ba_peq_vr")
 out_institutions <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty")
 out_publicgoods <- c("tasa_m", "cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p","hom_tasa")
 outcomes <- c(out_growth, out_institutions, out_publicgoods)

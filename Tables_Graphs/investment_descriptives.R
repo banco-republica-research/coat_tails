@@ -53,4 +53,60 @@ ggsave(path=doc,"investment_source.pdf", width = 8, height = 5, dpi = 300)
 ggsave(path=pres,"investment_source.pdf", width = 8, height = 5, dpi = 300)
 
 
+###########################################################################################################
+#################################### Roads funding 1993-2014 ##############################################
+###########################################################################################################
 
+# Load ejecuciones
+vias <- read_dta(paste0(dnp,"Vias_SICEP.dta")) %>% filter(ano>=1996 & ano <= 2014)
+
+# Con todos
+vias_source <- vias %>% dplyr::select(codmpio, ano, f_propios, f_SGPp, f_regalias, f_trans_nac, f_trans_dep, f_credito, f_otras) %>% 
+  mutate(otras = f_trans_dep + f_otras) %>% 
+  dplyr::select(-c(f_trans_dep, f_otras)) %>% 
+  group_by(ano) %>% summarise(Local =sum(f_propios, na.rm = TRUE), SGP = sum(f_SGPp, na.rm = TRUE), Royalties = sum(f_regalias, na.rm = TRUE), Cofinanced =sum(f_trans_nac, na.rm = TRUE), Credit =sum(f_credito, na.rm = TRUE), Other =sum(otras, na.rm = TRUE)) %>% 
+  gather(source,value, Local:Other)
+
+ggplot(data = vias_source, aes(x = ano, y = value, fill = factor(source, levels=c("Other","Credit","Cofinanced","Royalties","SGP","Local")))) + geom_bar(stat = "identity") + 
+  labs(y= "Investment (Million pesos 2014)", x = "Year") + scale_x_continuous(breaks = c(1996, 1998, 2000, 2002, 2004, 2006, 2008,2010, 2012, 2014)) + 
+  theme_bw() + scale_fill_manual(values=c("blue","red","#a1d99b","#2b8cbe","#a6bddb","#ece7f2"), name = "", labels = c("Other","Credit","Cofinanced","Royalties","SGP","Local Taxes")) + theme_bw() +  
+  theme(legend.position="bottom", axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+# Share of transfers
+vias_source_tot <- vias %>% dplyr::select(codmpio, ano, f_propios, f_SGPp, f_regalias, f_trans_nac, f_trans_dep, f_credito, f_otras) %>% 
+  mutate(otras = f_trans_dep + f_otras) %>% 
+  dplyr::select(-c(f_trans_dep, f_otras)) %>% 
+  group_by() %>% summarise(Local =sum(f_propios, na.rm = TRUE), SGP = sum(f_SGPp, na.rm = TRUE), Royalties = sum(f_regalias, na.rm = TRUE), Cofinanced =sum(f_trans_nac, na.rm = TRUE), Credit =sum(f_credito, na.rm = TRUE), Other =sum(otras, na.rm = TRUE)) %>% 
+  gather(source,value, Local:Other) %>% 
+  mutate(share = value / sum(value)) 
+
+trans <- c("Cofinanced", "Royalties","SGP")
+trans_tot <- vias_source_tot %>% filter(source %in% trans) %>%
+    mutate(share = sum(share)) %>%
+    mutate(share_2 = value / sum(value)) 
+
+
+
+# Solo transferencias
+
+trans <- c("Cofinanced", "Royalties","SGP")
+vias_source_2 <- vias_source %>% filter(source %in% trans)
+
+  
+ggplot(data = vias_source_2, aes(x = ano, y = value, fill = factor(source, levels=c("Cofinanced","Royalties","SGP")))) + geom_bar(stat = "identity") + 
+  labs(y= "Investment (Million pesos 2014)", x = "Year") + scale_x_continuous(breaks = c(1996, 1998, 2000, 2002, 2004, 2006, 2008,2010, 2012, 2014)) + 
+  theme_bw() + scale_fill_manual(values=c("#2b8cbe","#a6bddb","#ece7f2"), name = "", labels = c("Cofinancing","Royalties","SGP")) + theme_bw() +  
+  theme(legend.position="bottom", axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+ggsave(path=final,"roads_source.pdf", width = 8, height = 5, dpi = 300)
+ggsave(path=doc,"roads_source.pdf", width = 8, height = 5, dpi = 300)
+ggsave(path=pres,"roads_source.pdf", width = 8, height = 5, dpi = 300)

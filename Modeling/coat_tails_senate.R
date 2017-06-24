@@ -14,6 +14,7 @@ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 results <- "Results/RD"
+doc <- "Document/Figures/"
 
 ###########################################################################################################
 ############################################# LOAD DATA ###################################################
@@ -63,13 +64,13 @@ senado <- readRDS(paste0(res,"senado_merge.rds"))
 # Merge elections by their party code (codpartido)
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
-  # filter(coalition_new == 1) %>%
-  # group_by(ano, codmpio) %>%
-  # mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
-  # filter(party_2 == 1) %>%
-  # mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  group_by(ano, codmpio, codpartido) %>%
+  mutate(party_2 = n()) %>%
+  filter(party_2 == 1) %>% 
   merge(., senado,  by.x = c("year", "codmpio", "codpartido"), by.y = c("ano", "codmpio", "codpartido"), 
         suffixes = c("_t", "_t1")) %>%
+  filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0) %>%
   mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
   mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
   #filter(is.na(prop_votes_total_t1) == F) %>%
@@ -107,7 +108,7 @@ l_f <- function(o){
   dev.off()
   mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
                          margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,out], na.rm = T)
+  mean <- mean(l[,o], na.rm = T)
   
   dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
@@ -117,6 +118,7 @@ l_f <- function(o){
 
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_senate_party.rds"))
+r 
 
 ###########################################################################################################
 ##################################### COAT TAILS SENATE + COALITION: RD ###################################
@@ -124,10 +126,12 @@ saveRDS(r, str_c(results, "/coat_tails_senate_party.rds"))
 ###########################################################################################################
 
 # coalition FIRST roundS
-coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
-senado_coalition <- readRDS(paste0(res,"senate_coalition_primera_merge.rds"))
+coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% 
+  dplyr::select(codpartido,ano,year, codmpio,coalition_new) %>%
+  unique(.)
 table(coalitions_long$ano,coalitions_long$year)
-table(representantes_coalition$ano)
+
+senado_coalition <- readRDS(paste0(res,"senate_coalition_primera_merge.rds"))
 
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
@@ -191,7 +195,7 @@ l_f <- function(o){
   dev.off()
   mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
                          margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,out], na.rm = T)
+  mean <- mean(l[,o], na.rm = T)
   
   dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
@@ -200,7 +204,7 @@ l_f <- function(o){
 
 r <-lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_senate_1_coalition.rds"))
-
+r
 
 
 ###########################################################################################################
@@ -209,10 +213,12 @@ saveRDS(r, str_c(results, "/coat_tails_senate_1_coalition.rds"))
 ###########################################################################################################
 
 # coalition FINAL roundS
-coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
-senado_coalition <- readRDS(paste0(res,"senate_coalition_segunda_merge.rds"))
+coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% 
+  dplyr::select(codpartido,ano,year, codmpio, coalition_new) %>%
+  unique(.)
 table(coalitions_long$ano,coalitions_long$year)
-table(representantes_coalition$ano)
+
+senado_coalition <- readRDS(paste0(res,"senate_coalition_segunda_merge.rds"))
 
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
@@ -242,8 +248,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
         suffixes = c("_t", "_t1"), all.x = T) %>%
   mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
   mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
-  #filter(is.na(prop_votes_total_t1) == F) %>%
-  filter(is.na(prop_votes_c2) == F | prop_votes_c2 != 0.5) %>%
+  filter(is.na(prop_votes_c2) == F) %>%
   arrange(codmpio, ano)
 
 ############################
@@ -276,7 +281,7 @@ l_f <- function(o){
   dev.off()
   mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
                          margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,out], na.rm = T)
+  mean <- mean(l[,o], na.rm = T)
   
   dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
@@ -285,6 +290,7 @@ l_f <- function(o){
 
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_senate_2_coalition.rds"))
+r
 
 
 
@@ -294,7 +300,10 @@ saveRDS(r, str_c(results, "/coat_tails_senate_2_coalition.rds"))
 ###########################################################################################################
 
 # coalition FINAL roundS
-coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) 
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% 
+  dplyr::select(codpartido,ano,year, codmpio, coalition_new) %>%
+  unique(.)
+
 senado_coalition <- readRDS(paste0(res,"senate_coalition_merge.rds"))
 table(coalitions_long$ano,coalitions_long$year)
 table(senado_coalition$ano)
@@ -327,8 +336,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
         suffixes = c("_t", "_t1"), all.x = T) %>%
   mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
   mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
-  #filter(is.na(prop_votes_total_t1) == F) %>%
-  filter(is.na(prop_votes_c2) == F | prop_votes_c2 != 0.5) %>%
+  filter(is.na(prop_votes_c2) == F) %>%
   arrange(codmpio, ano)
 
 ############################
@@ -351,7 +359,7 @@ l_f <- function(o){
                 vce = "nn")
   pdf(str_c(results, "/Graphs/Senate", "/RD_senate_final.pdf"), height=6, width=12)
   rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         y.lim = c(0.0, 0.4),
+         # y.lim = c(0.0, 0.4),
          # x.lim = c(0.45, 0.55),
          title = " ",
          x.label = "Victory Margin",
@@ -361,7 +369,7 @@ l_f <- function(o){
   dev.off()
   mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
                          margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,out], na.rm = T)
+  mean <- mean(l[,o], na.rm = T)
   
   dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
@@ -370,24 +378,41 @@ l_f <- function(o){
 
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_senate_final_coalition.rds"))
+r
 
-
-
+# Figure doc
+pdf(str_c(doc, "/RD_senate_final.pdf"), height=6, width=12)
+rdplot(y=l2$prop_votes_total_t1, x=l2$margin_prop_2, c = 0,
+       y.lim = c(0.0, 0.4),
+       # x.lim = c(0.45, 0.55),
+       title = " ",
+       x.label = "Victory Margin",
+       y.label = "Vote share (subsequent Election)",
+       binselect="es", nbins= 10, kernel="triangular", p=3, ci=95
+)
+dev.off()
 
 ###########################################################################################################
 ###################################### COAT TAILS HOUSE + COALITION: RD ###################################
-###########################################  CURRENT COALITION ############################################
+#######################################  CURRENT and FINAL COALITION ######################################
 ###########################################################################################################
 
 # coalition FIRST round
-coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
-table(coalitions_long$ano,coalitions_long$year)
+coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
+  dplyr::select(codpartido,ano, codmpio, coalition_new,year_final) %>%
+  unique(.)
+table(coalitions_long$ano,coalitions_long$year_final)
 
-# Top 2 and drop municipality if at least one of the top2 is 98 or 99 
-alcaldes_merge_r2 <- alcaldes_merge %>% 
+# Elections t+1
+representantes_coalition <- readRDS(paste0(res,"senate_coalition_current_final_merge.rds"))
+table(representantes_coalition$ano)
+
+
+# Top 2 and drop municipality if at least one of the top2 is 98 or 99
+alcaldes_merge_r2 <- alcaldes_merge %>%
   filter(ano != 2015) %>%
   filter(cand==1) %>%
-  filter(rank <= 2) %>% 
+  filter(rank <= 2) %>%
   merge(., coalitions_long, by.x = c("codpartido","ano", "codmpio") , by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
   filter(is.na(coalition_new) == F & coalition_new != 98 & coalition_new != 99) %>%
@@ -396,15 +421,8 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   mutate(n = 1, nn = sum(n)) %>%
   filter(nn == 2) %>%
   dplyr::select(-c(n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T)
 
-
-# Elections t+1
-representantes_coalition <- readRDS(paste0(res,"senate_coalition_current_merge.rds"))%>% 
-  mutate(year_lag = as.numeric(as.character(ano))-4) %>%
-  rename(year_t1 = ano)
-
-table(representantes_coalition$year_lag, representantes_coalition$year_t1)
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -414,20 +432,19 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   group_by(ano, codmpio) %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition
   filter(party_2 == 1) %>%
-  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., representantes_coalition,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("year_lag", "codmpio", "coalition_new"), 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>%
+  merge(., representantes_coalition,  by.x = c("year_final", "codmpio", "coalition_new"), by.y = c("ano", "codmpio", "coalition_new"),
         suffixes = c("_t", "_t1"), all.x = T) %>%
   mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
   mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
-  #filter(is.na(prop_votes_total_t1) == F) %>%
-  filter(is.na(prop_votes_c2) == F | prop_votes_c2 != 0.5) %>%
+  filter(is.na(prop_votes_c2) == F) %>%
   arrange(codmpio, ano)
 
 ############################
-# RD and OLS regressions 
+# RD and OLS regressions
 
-# All 
-l <- alcaldes_rd 
+# All
+l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 
@@ -454,15 +471,16 @@ l_f <- function(o){
   dev.off()
   mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
                          margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,out], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  mean <- mean(l[,o], na.rm = T)
+
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0)
   dens <- dens$test$p_jk
   return(list(rd = r, mean = mean, d = dens))
 }
 
 r <- lapply(out, l_f)
-saveRDS(r, str_c(results, "/coat_tails_senate_current_coalition.rds"))
+saveRDS(r, str_c(results, "/coat_tails_senate_current_final_coalition.rds"))
+r
 
 
 

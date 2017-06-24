@@ -1,5 +1,5 @@
 ###########################################################################################################
-#################################### DATA ELECTIONS  ######################################################
+#################################### DATA NATIONAL ELECTIONS ##############################################
 ###########################################################################################################
 
 rm(list=ls())
@@ -46,19 +46,19 @@ candidates <- presidentes_primera %>% ldply() %>%
   mutate(codpartido = ifelse(primer_apellido == "GAVIRIA", 194, codpartido)) %>%
   mutate(codpartido = as.factor(codpartido)) %>%
   mutate(codpartido = fct_recode(codpartido,
-                                  "194" = "47",
-                                  "165" = "164"
-                                  ))
+                                 "194" = "47",
+                                 "165" = "164"
+  ))
 
 saveRDS(candidates ,paste0(res, "candidates_primera_vuelta.rds"))
-
 
 
 ###########################################################################################################
 ################################ FIRST ROUND PRESIDENTIAL ELECTIONS  ######################################
 ###########################################################################################################
 #Aggregate totals for each year and clean non-candidate data
-non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
+
+non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS", "TARJETAS N0 MARCADAS",
                          "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
                          "Votos no marcados","COMITE PROMOTOR VOTO EN BLANCO","RETIRADO (A)", "TARJETAS NO MARCADOS")
 
@@ -95,18 +95,18 @@ names(presidentes_primera[[3]]) <- names(presidentes_primera[[2]])
 #Aggregate totals for each year and clean non-candidate data
 
 presidentes_aggregate_primera <- presidentes_primera %>%
-      lapply(., function(x){
-        arrange(x, codmpio, ano) %>%
-          filter(is.na(votos)==0) %>% 
-          filter(!codmpio %in% invalid_places) %>% #Remove votes from consulates, embassies and totals 
-          mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
-          mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
-          group_by(codmpio, ano) %>%
-          mutate(prop_votes_total = votos / sum(votos)) %>%
-          mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>%
-          mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
-          filter(is.na(prop_votes_total)==0)
-      })
+  lapply(., function(x){
+    arrange(x, codmpio, ano) %>%
+      filter(is.na(votos)==0) %>% 
+      filter(!codmpio %in% invalid_places) %>% #Remove votes from consulates, embassies and totals 
+      mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes, 1, 0)) %>% 
+      mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
+      group_by(codmpio, ano) %>%
+      mutate(prop_votes_total = votos / sum(votos)) %>%
+      mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>%
+      mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
+      filter(is.na(prop_votes_total)==0)
+  })
 
 #Arrange data in a long format
 presidentes_merge_primera <- presidentes_aggregate_primera %>%
@@ -132,7 +132,6 @@ saveRDS(presidentes_merge_primera,paste0(res,"presidentes_primera_merge.rds"))
 ################################ SECOND ROUND PRESIDENTIAL ELECTIONS  #####################################
 ###########################################################################################################
 
-
 # Get presidents election data (Winners and loosers since 1997). 
 
 list_files <- list.files(path = data) %>%
@@ -141,10 +140,10 @@ list_files <- list.files(path = data) %>%
   lapply(list.files) %>% lapply(function(x){x[str_detect(x, "Pres")]}) %>% 
   lapply(function(x){ 
     if(length(x) > 1){
-    x[str_detect(x, "Segunda")]
-  } else {
-    x
-  }
+      x[str_detect(x, "Segunda")]
+    } else {
+      x
+    }
   }) %>%
   str_c(data, c("1998", "2002", "2006", "2010", "2014"),"/", ., sep = "")
 
@@ -200,7 +199,7 @@ representantes <- lapply(list_files, read_dta) %>%
 
 #Aggregate totals for each year and clean non-candidate data
 
-non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
+non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS", "TARJETAS N0 MARCADAS",
                          "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
                          "Votos no marcados","COMITE PROMOTOR VOTO EN BLANCO","RETIRADO (A)", "TARJETAS NO MARCADOS")
 non_candidate_votes_p <- c(996,997,998)
@@ -227,22 +226,22 @@ representantes_aggregate <- representantes %>%
       filter(is.na(prop_votes_total)==0) 
   })
 
-
-#########################################################################################################
-################################# HOUSE OF REPRESENTATIVES - COALITIONS #################################
-#########################################################################################################
+saveRDS(representantes_aggregate,paste0(res,"representantes_aggregate.rds"))
 
 
 ##########################################  (Group by party)   ##########################################
 #Collapse candidates by party (remember that the number of delegates depends on the district magnitude)
 
+# Load Electoral results
+representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
+
 representantes_collapse <- representantes_aggregate %>%
   lapply(., function(x){
     filter(x, cand == 1) %>%
-    group_by(ano, codep, codmpio, codpartido) %>%
-    summarise_at(vars(matches("vot")), sum) %>%
-    group_by(ano, codep, codmpio) %>%
-    mutate(rank = row_number(desc(votos)))
+      group_by(ano, codep, codmpio, codpartido) %>%
+      summarise_at(vars(matches("vot")), sum) %>%
+      group_by(ano, codep, codmpio) %>%
+      mutate(rank = row_number(desc(votos)))
   })
 
 representantes_merge <- representantes_collapse %>%
@@ -264,8 +263,13 @@ saveRDS(representantes_merge,paste0(res,"representantes_merge.rds"))
 ##########################################  (Group by FIRST ROUND coalition)   ############################################
 # Collapse candidates by coalition (identified mannually)
 
+# Load Electoral results
+representantes_merge <- readRDS(paste0(res,"representantes_merge.rds"))
+representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
+
 # load first stage coalition
-coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
+coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% 
+  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
@@ -292,8 +296,13 @@ saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_primera_me
 ##########################################  (Group by SECOND ROUND coalition)   ############################################
 # Collapse candidates by coalition (identified mannually)
 
+# Load Electoral results
+representantes_merge <- readRDS(paste0(res,"representantes_merge.rds"))
+representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
+
 # load first stage coalition
-coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
+coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% 
+  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
@@ -321,8 +330,13 @@ saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_segunda_me
 ##########################################  (Group by FINAL ROUND coalition)   ############################################
 # Collapse candidates by coalition (identified mannually)
 
+# Load Electoral results
+representantes_merge <- readRDS(paste0(res,"representantes_merge.rds"))
+representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
+
 # load final stage coalition
-coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) 
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% 
+  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
@@ -346,12 +360,17 @@ representantes_collapse <- representantes_aggregate %>%
 
 saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_merge.rds"))
 
-##########################################  (Group by CURRENT coalition)   ############################################
+
+##########################################  (Group by CURRENT and FINAL coalition)   ############################################
 # Collapse candidates by coalition (identified mannually)
 
+# Load Electoral results
+representantes_merge <- readRDS(paste0(res,"representantes_merge.rds"))
+representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
+
 # load final stage coalition
-coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
-table(coalitions_long$ano, coalitions_long$year)
+coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final)  
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
@@ -373,8 +392,7 @@ representantes_collapse <- representantes_aggregate %>%
   group_by(ano, codep, codmpio) %>%
   mutate(rank = row_number(desc(votos)))
 
-saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_current_merge.rds"))
-
+saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_current_final_merge.rds"))
 
 
 ###########################################################################################################
@@ -396,7 +414,7 @@ senado[[5]]$partido <- NULL
 
 #Aggregate totals for each year and clean non-candidate data
 
-non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS",
+non_candidate_votes <- c("VOTOS EN BLANCO", "VOTOS NULOS", "TARJETAS NO MARCADAS", "TARJETAS N0 MARCADAS", 
                          "Votos en blanco", "Votos nulos", "Tarjetas no marcadas",
                          "Votos no marcados","COMITE PROMOTOR VOTO EN BLANCO","RETIRADO (A)", "TARJETAS NO MARCADOS")
 non_candidate_votes_p <- c(996,997,998)
@@ -423,7 +441,14 @@ senado_aggregate <- senado %>%
       filter(is.na(prop_votes_total)==0) 
   })
 
+saveRDS(representantes_aggregate,paste0(res,"senado_aggregate.rds"))
+
+
+##########################################  (Group by party)   ##########################################
 #Collapse candidates by party (remember that the number of delegates depends on the district magnitude)
+
+# Load Electoral results
+senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
 
 senado_collapse <- senado_aggregate %>%
   lapply(., function(x){
@@ -449,15 +474,17 @@ senado_merge <- senado_collapse %>%
 
 saveRDS(senado_merge,paste0(res,"senado_merge.rds"))
 
-#########################################################################################################
-########################################## SENATE - COALITIONS ##########################################
-#########################################################################################################
 
 ##########################################  (Group by FIRST ROUND coalition)   ############################################
 # Collapse candidates by coalition (identified mannually)
 
+# Load Electoral results
+senado_merge <- readRDS(paste0(res,"senado_merge.rds"))
+senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
+
 # load first stage coalition
-coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
+coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% 
+  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
 
 senado_collapse <- senado_aggregate %>%
   ldply() %>%
@@ -485,8 +512,13 @@ saveRDS(senado_collapse ,paste0(res,"senate_coalition_primera_merge.rds"))
 ##########################################  (Group by SECOND ROUND coalition)   ############################################
 # Collapse candidates by coalition (identified mannually)
 
+# Load Electoral results
+senado_merge <- readRDS(paste0(res,"senado_merge.rds"))
+senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
+
 # load first stage coalition
-coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
+coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% 
+  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
 
 senado_collapse <- senado_aggregate %>%
   ldply() %>%
@@ -513,6 +545,10 @@ saveRDS(senado_collapse ,paste0(res,"senate_coalition_segunda_merge.rds"))
 
 ##########################################  (Group by FINAL ROUND coalition)   ############################################
 # Collapse candidates by coalition (identified mannually)
+
+# Load Electoral results
+senado_merge <- readRDS(paste0(res,"senado_merge.rds"))
+senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
 
 # load final stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) 
@@ -541,11 +577,19 @@ saveRDS(senado_collapse ,paste0(res,"senate_coalition_merge.rds"))
 
 
 
-##########################################  (Group by CURRENT coalition)   ############################################
+##########################################  (Group by CURRENT and FINAL coalition)   ############################################
 # Collapse candidates by coalition (identified mannually)
 
-# load final stage coalition
-coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  
+# Load Electoral results
+senado_merge <- readRDS(paste0(res,"senado_merge.rds"))
+senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
+
+# load current stage coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final)  
+
+table(senado_merge$ano)
+table(coalitions_long$ano, coalitions_long$year_final)
 
 senado_collapse <- senado_aggregate %>%
   ldply() %>%
@@ -567,71 +611,5 @@ senado_collapse <- senado_aggregate %>%
   group_by(ano, codep, codmpio) %>%
   mutate(rank = row_number(desc(votos)))
 
-saveRDS(senado_collapse ,paste0(res,"senate_coalition_current_merge.rds"))
-
-#########################################################################################################
-##################################### MAYORS IN T + 1 - INCUMBENCY ######################################
-#########################################################################################################
-
-# Elections at t+1 Create lagged year and collapse by party (or group of parties) for t+1 outcome  
-alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
-party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
-controls <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
-
-alcaldes_merge_t1 <- alcaldes_merge %>%
-  filter(cand == 1) %>%
-  filter(ano!=1997) %>% 
-  mutate(ano_lag = as.factor(ano)) %>%
-  mutate(ano_lag = fct_recode(ano_lag,
-                              "1997" = "2000",
-                              "2000" = "2003",
-                              "2003" = "2007",
-                              "2007" = "2011",
-                              "2011" = "2015")) %>%
-  mutate(ano_lag = as.character(ano_lag)) %>%
-  rename(ano_t1 = ano) %>% 
-  group_by(codmpio, ano_lag, ano_t1, codpartido, parties, parties_ef) %>%
-  summarize(votos = sum(votos), 
-            prop_votes_cand = sum(prop_votes_cand),
-            prop_votes_total = sum(prop_votes_total),
-            rank = min(rank))
-
-saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1.rds"))
-
-
-#########################################################################################################
-############################ MAYORS IN T + 1 BY COALITION - INCUMBENCY ##################################
-#########################################################################################################
-
-coalitions_primera <- readRDS(paste0(res,"coalitions_primera_new.rds"))
-coalitions_segunda <- readRDS(paste0(res,"coalitions_segunda_new.rds"))
-coalitions_final <- readRDS(paste0(res,"coalitions_new.rds"))
-
-list_coalitions <- list(coalitions_primera, coalitions_segunda, coalitions_final)
-
-election_coalitions <- function(x, y){
-    df_merge <- y %>%
-    filter(.,cand == 1) %>%
-    filter(ano!=1997) %>% 
-    mutate(ano_lag = as.factor(ano)) %>%
-    mutate(ano_lag = fct_recode(ano_lag,
-                                "1997" = "2000",
-                                "2000" = "2003",
-                                "2003" = "2007",
-                                "2007" = "2011",
-                                "2011" = "2015")) %>%
-    mutate(ano_lag = as.character(ano_lag)) %>%
-    merge(., x, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
-    rename(ano_t1 = ano) %>%
-    group_by(codmpio, ano_lag, ano_t1, coalition_new, codpartido) %>%
-    summarize(., votos = sum(votos),
-              prop_votes_cand = sum(prop_votes_cand),
-              prop_votes_total = sum(prop_votes_total))
-  return(df_merge)
-} 
-
-alcaldes_merge_t1 <- lapply(list_coalitions, election_coalitions, y = alcaldes_merge)
-saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1_coalition.rds"))
-
-
+saveRDS(senado_collapse ,paste0(res,"senate_coalition_current_final_merge.rds"))
 
