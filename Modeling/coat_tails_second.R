@@ -36,17 +36,28 @@ controls <- cede %>%
 
 
 # Load presidential for t+1
+# Only Parties with candidate in second round! 
+
 win_apellido <- c("PASTRANA", "URIBE", "SANTOS")
 win_nom <- c("ANDRES", "ALVARO", "JUAN MANUEL")
+runner_apellido <- c("SERPA","MOCKUS","ZULUAGA") 
 
 president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
   mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0))
+table(president$primer_apellido, president$ano)
+table(president$codpartido, president$ano)
 
+pres_cand <- president %>% 
+  filter(ano != 2002 & ano != 2006) %>%
+  filter(primer_apellido %in% win_apellido | primer_apellido %in% runner_apellido) %>%
+  dplyr::select(ano,codpartido,primer_apellido) %>%
+  unique(.) 
 
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
 ############################################## BY PARTY ###################################################
+######################################## SECONDS ROUNDS ONLY!! ############################################
 ###########################################################################################################
 
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
@@ -71,19 +82,23 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
 table(alcaldes_merge_r2$ano, alcaldes_merge_r2$year)
 
 # Use the same data base but merge with between party codes instead of coalition
-# All parties
+# Only parties with candidates running in second round
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
+  merge(., pres_cand,  by.x = c("year", "codpartido"), by.y = c("ano", "codpartido"), 
+        suffixes = c("_t", "_t1")) %>%  
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   group_by(ano, codmpio, codpartido) %>%
   mutate(party_2 = n()) %>%
   filter(party_2 == 1) %>% 
+#  merge(., president,  by.x = c("year", "codmpio", "codpartido"), by.y = c("ano", "codmpio", "codpartido"), 
+#        suffixes = c("_t", "_t1"), all.x = T) %>%
   merge(., president,  by.x = c("year", "codmpio", "codpartido"), by.y = c("ano", "codmpio", "codpartido"), 
-        suffixes = c("_t", "_t1")) %>%
+        suffixes = c("_t", "_t1"), all.x = T) %>%   
   filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0) %>%
-  # dplyr::select(codmpio, pobl_tot, coddepto, ano, year, codpartido, win_t, 
-  # votos_t, votos_t1, starts_with("prop")) %>% 
-  filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>%
+  mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
+  mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
+  #filter(is.na(prop_votes_c2) == F | prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
 
 ############################
@@ -155,6 +170,7 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   dplyr::select(-c(codep,n,nn)) %>%
   merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
+table(alcaldes_merge_r2$ano)
 dim(alcaldes_merge_r2)
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
@@ -232,7 +248,7 @@ dev.off()
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
-######################################## CURRENT andSECOND COALITION ######################################
+######################################## CURRENT and SECOND COALITION #####################################
 ###########################################################################################################
 
 # Load coalitions:
@@ -320,7 +336,7 @@ l_f <- function(o){
 
 r <- lapply(out, l_f)
 
-saveRDS(r, str_c(results, "/coat_tails_pressec_current_second_coalition.rds"))
+saveRDS(r, str_c(results, "/coat_tails_pressec_current2_coalition.rds"))
 r
 
 

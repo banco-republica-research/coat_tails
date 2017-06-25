@@ -39,7 +39,8 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   dplyr::select(-c(n,nn, party_2)) 
 
 a <- dcdensity_ggplot(alcaldes_merge_r2$margin_prop_2, cutpoint = 0, plot = T, ext.out  = T)
-a
+a$p
+
 a.l <- a$data[[1]]
 a.r <- a$data[[2]]
 

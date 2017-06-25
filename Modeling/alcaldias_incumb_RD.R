@@ -80,10 +80,8 @@ alcaldes_rd_all <- alcaldes_merge_r2 %>%
   filter(codpartido!=98 & codpartido!=99 & is.na(codpartido)==0) %>%
   mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
   mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
-  # dplyr::select(codmpio,pobl_tot, coddepto,  ano, codpartido, win_t, rank_t, votos_t, prop_votes_c2,
-                # run_t1, rank_t1 , votos_t1, prop_votes_cand_t1, prop_votes_total_t1,prop_votes_total_b_t1) %>%
+  #filter(is.na(prop_votes_c2) == F | prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
-  # %>% mutate(win_t1 = ifelse(is.na(rank_t1) == 1 | rank_t1 != 1, 0, 1)) 
 
 l <- alcaldes_rd_all 
 l2 <- l %>% filter(margin_prop_2 <= 0.2 & margin_prop_2 >= -0.2)
@@ -162,7 +160,7 @@ party2_des
 out <- c("prop_votes_total_t1")
 # other <- c("win_t1","prop_votes_total_b_t1","run_t1")
 r <- lapply(out, l_f) 
-saveRDS(r, str_c(results, "/incumbency_party2.rds"))
+saveRDS(r, str_c(results, "/incumbency_party_trad.rds"))
 r
 
 #################
@@ -178,7 +176,7 @@ party2n_des
 out <- c("prop_votes_total_t1")
 # other <- c("win_t1","prop_votes_total_b_t1","run_t1")
 r <- lapply(out, l_f) 
-saveRDS(r, str_c(results, "/incumbency_party2n.rds"))
+saveRDS(r, str_c(results, "/incumbency_party_notrad.rds"))
 r
 
 
@@ -590,7 +588,7 @@ l_f <- function(o){
 
 
 r <- lapply(out, l_f)
-saveRDS(r, str_c(results, "/incumbency_current_primera_coalition.rds"))
+saveRDS(r, str_c(results, "/incumbency_current1_coalition.rds"))
 r
 
 
@@ -678,7 +676,7 @@ l_f <- function(o){
 
 
 r <- lapply(out, l_f)
-saveRDS(r, str_c(results, "/incumbency_current_final_coalition.rds"))
+saveRDS(r, str_c(results, "/incumbency_currentfinal_coalition.rds"))
 r
 
 

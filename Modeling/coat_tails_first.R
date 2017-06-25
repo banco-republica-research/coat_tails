@@ -39,6 +39,10 @@ win_nom <- c("ANDRES", "ALVARO", "JUAN MANUEL")
 president <- readRDS(paste0(res, "presidentes_primera_merge.rds")) %>%
   mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0))
 
+# Candidates by election
+pres_cand <- president %>% filter(cand==1) %>%
+  dplyr::select(ano,codpartido,primer_apellido) %>%
+  unique(.) 
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
@@ -67,9 +71,11 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
 table(alcaldes_merge_r2$ano, alcaldes_merge_r2$year)
 
 # Use the same data base but merge with between party codes (codpartido) instead of coalition
-# All parties!!
+# Only parties with candidates running in first round
 
 alcaldes_rd <- alcaldes_merge_r2 %>%
+  merge(., pres_cand,  by.x = c("year", "codpartido"), by.y = c("ano", "codpartido"), 
+        suffixes = c("_t", "_t1")) %>%  
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
   group_by(ano, codmpio, codpartido) %>%
   mutate(party_2 = n()) %>%
@@ -81,7 +87,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   # votos_t, votos_t1, starts_with("prop")) %>% 
   mutate(run_t1=ifelse(is.na(prop_votes_total_t1), 0,1)) %>%
   mutate(prop_votes_total_t1= ifelse(run_t1 == 1, prop_votes_total_t1, 0)) %>%
-  filter(is.na(prop_votes_c2) == F) %>%
+  #filter(is.na(prop_votes_c2) == F | prop_votes_c2 != 0.5) %>%
   arrange(codmpio, ano)
 
 ############################
@@ -310,7 +316,7 @@ l_f <- function(o){
 }
 
 r <- lapply(out, l_f)
-saveRDS(r, str_c(results, "/coat_tails_presfirst_current_first_coalition.rds"))
+saveRDS(r, str_c(results, "/coat_tails_presfirst_current1_coalition.rds"))
 r
 
 

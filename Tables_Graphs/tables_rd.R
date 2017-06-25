@@ -14,8 +14,12 @@ results <- "Results/RD/"
 
 
 ###########################################################################################################
-###################################### FUNCTION TO EXTRACT INFO FROM RD'S #################################
+################################################ ELECTIONS ################################################
+################################################# BY PANEL ################################################ 
 ###########################################################################################################
+
+#############
+# Function to read results
 
 rd_to_df <- function(list){
   rd <- lapply(list, function(x){
@@ -35,58 +39,65 @@ rd_to_df <- function(list){
   return(df)
 }
 
-###########################################################################################################
-################################################ ELECTIONS ################################################
-################################################# BY PANEL ################################################ 
-###########################################################################################################
-
+#############
+# Read results
 setwd(results)
 
 list_files <- list.files() %>%
-  .[str_detect(., "party")]
-party <- lapply(list_files, readRDS) %>%
+  .[str_detect(., "_party.")]
+  party <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
 list_files <- list.files() %>%
-  .[str_detect(., "1_coalition")]
+  .[str_detect(., "_1_coalition")]
 coalition_1 <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
 list_files <- list.files() %>%
-  .[str_detect(., "2_coalition")]
+  .[str_detect(., "_2_coalition")]
 coalition_2 <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
 list_files <- list.files() %>%
-  .[str_detect(., "final_coalition")]
+  .[str_detect(., "_final_coalition")] 
 final <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
 list_files <- list.files() %>%
-  .[str_detect(., "current_coalition")] 
-current <- lapply(list_files, readRDS) %>%
+  .[str_detect(., "current1_coalition")]
+current_1 <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
+list_files <- list.files() %>%
+  .[str_detect(., "current2_coalition")]
+current_2 <- lapply(list_files, readRDS) %>%
+  lapply(., `[[`, 1) %>%
+  setNames(., list_files)
 
+list_files <- list.files() %>%
+  .[str_detect(., "currentfinal_coalition")]
+current_final <- lapply(list_files, readRDS) %>%
+  lapply(., `[[`, 1) %>%
+  setNames(., list_files)
 
-###########################################################################################################
-############################################  CREATE TABLES  ##############################################
-###########################################################################################################
+#############
+# Tables 
 
-# Party 
+# Incoming
 a <- rd_to_df(party) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE, out= "Tables/elec_party.tex")
-
-
-# Coalitions
 b <- rd_to_df(coalition_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec_coalition_1.tex")
 c <- rd_to_df(final)
 d <- rd_to_df(coalition_2) %>% cbind(., c) %>% .[c(7, 5, 6, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec_coalition_2.tex")
-e <- rd_to_df(current) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE, out= "Tables/elec_current.tex")
+
+# Current and incoming
+e <- rd_to_df(current_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec_coalition_current1.tex")
+f <- rd_to_df(current_final)
+g <- rd_to_df(current_2) %>% cbind(., f) %>% .[c(4, 2, 3, 1)] %>% stargazer(., summary = FALSE, out= "Tables/elec_coalition_current2.tex")
 
 
 
