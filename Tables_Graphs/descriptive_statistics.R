@@ -1,5 +1,6 @@
 ###########################################################################################################
-############################################# COAT-TAILS RD ###############################################
+############################################# COAT-TAILS ##################################################
+############################################ DESCRIPTIVES #################################################
 ###########################################################################################################
 
 rm(list=ls())
@@ -223,8 +224,8 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
 
 # Descriptive statistics: Characteristics and outcomes
 
-# des <- alcaldes_merge_r2 %>% dplyr::select(vias, f_SGPp, f_regalias, f_trans_nac, D, D2000, D1000, D3000, tasa_m, cob_pri, cob_sec, matematicas_s,lenguaje_s,fert_19_10_p,hom_tasa, desemp_fisc,desemp_int, alcalde, alcalde_guilty, top, top_guilty, light_pix,light_dm, ba_tot_vr, ba_peq_vr, pobl_tot.x, altura,discapital, disbogota, nbi.x)
-des <- alcaldes_merge_r2 %>% dplyr::select(log_vias, log_f_SGPp, log_f_regalias, log_f_trans_nac, log_D, log_D2000, log_D1000, log_D3000, tasa_m, cob_pri, cob_sec, matematicas_s,lenguaje_s,fert_19_10_p,hom_tasa, desemp_fisc,desemp_int, alcalde, alcalde_guilty, top, top_guilty, log_light_pix, log_light_dm, log_ba_tot_vr, log_ba_peq_vr, pobl_tot.x, altura,discapital, disbogota, nbi.x)
+des <- alcaldes_merge_r2 %>% dplyr::select(vias, f_SGPp, f_regalias, f_trans_nac, D, D2000, D1000, D3000, tasa_m, cob_pri, cob_sec, matematicas_s,lenguaje_s,fert_19_10_p,hom_tasa, desemp_fisc,desemp_int, alcalde, alcalde_guilty, top, top_guilty, light_pix,light_dm, ba_tot_vr, ba_peq_vr, pobl_tot.x, altura,discapital, disbogota, nbi.x)
+# des <- alcaldes_merge_r2 %>% dplyr::select(log_vias, log_f_SGPp, log_f_regalias, log_f_trans_nac, log_D, log_D2000, log_D1000, log_D3000, tasa_m, cob_pri, cob_sec, matematicas_s,lenguaje_s,fert_19_10_p,hom_tasa, desemp_fisc,desemp_int, alcalde, alcalde_guilty, top, top_guilty, log_light_pix, log_light_dm, log_ba_tot_vr, log_ba_peq_vr, pobl_tot.x, altura,discapital, disbogota, nbi.x)
 
 setwd(results)
 stargazer(des, summary.stat = c("mean", "sd", "median", "min", "max"), type = "latex", digits = 2, out= "descriptives.tex")

@@ -136,42 +136,10 @@ saveRDS(r, str_c(results, "/roads_total_current.rds"))
 r
 
 
-############################################# Sin 2011 ####################################################
-
-# Select periods
-l <- alcaldes_rd %>% filter(ano!=2011)
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
-# Regressions for list of outcomes
-l_f <- function(o, type){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
-
-r <- lapply(out_inv, l_f, type = "investment") 
-saveRDS(r, str_c(results, "/investment_total_s2011_current.rds"))
-r
-
-r <- lapply(out_road, l_f,  type = "roads") 
-saveRDS(r, str_c(results, "/roads_total_s2011_current.rds"))
-r
-
-
 
 ###########################################################################################################
 ######################################## INVESTMENT: TOTAL ################################################
-################################## Coalition wrt NEXT president  ##########################################
+################################ Coalition wrt INCOMING president  ########################################
 ########################################### could be + ####################################################
 ###########################################################################################################
 
@@ -251,251 +219,6 @@ r
 
 r <- lapply(out_road, l_f, type = "roads") 
 saveRDS(r, str_c(results, "/roads_total_next.rds"))
-r
-
-
-###########################################################################################################
-################################### INVESTMENT: TOTAL #####################################################
-################################ CURRENT and INCOMING president ###########################################
-######################################### Should be + #####################################################
-###########################################################################################################
-
-# Note: maires elected in 1997 begin in 01/01/1998 which is a presidential election year. Not enough overlapping with current
-# Not enough observations for 2015 maires either 
-
-# FINAL round CURRENT coalition
-coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio,coalition_new) %>% 
-  unique(.)
-
-# For a specific party (or group of parties), merge RD in t to outcomes in t+1
-# Drop elections where party is both 1 and 2 in t
-
-alcaldes_merge_r2 <- alcaldes_merge %>% 
-  filter(cand==1) %>%
-  filter(rank <= 2) %>% 
-  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
-  arrange(codmpio, ano, codpartido) %>%
-  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
-  mutate(ano = as.character(ano)) %>%
-  group_by(codmpio, ano) %>%
-  mutate(n = 1, nn = sum(n)) %>%
-  filter(nn==2) %>%
-  dplyr::select(-c(codep,n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
-
-alcaldes_rd <- alcaldes_merge_r2 %>%
-  filter(coalition_new == 1) %>%
-  group_by(ano, codmpio) %>%
-  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
-  filter(party_2 == 1) %>% 
-  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, codpartido, win_t, 
-                votos, starts_with("prop"), margin_prop_2) %>% 
-  merge(., ejecu_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., vias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., invias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  arrange(codmpio, ano)
-
-
-############################
-# RD and OLS regressions 
-
-# Select period: Drop 2011 given the coalition change during Santos I
-l <- alcaldes_rd 
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
-
-# Regressions for list of outcomes
-l_f <- function(o, type){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  pdf(str_c(results, "/Graphs/Investment", "/RD_", type, "_",o, "_total_curnext.pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         # y.lim = c(0.2, 0.8),
-         # x.lim = c(0.45, 0.55),
-         title = " ",
-         x.label = "Victory Margin",
-         y.label = "log(per capita investment)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
-  )
-  dev.off()
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
-
-
-# outcomes
-
-r <- lapply(out_inv, l_f, type = "investment")
-saveRDS(r, str_c(results, "/investment_total_curnext.rds"))
-r
-
-r <- lapply(out_road, l_f, type = "roads") 
-saveRDS(r, str_c(results, "/roads_total_curnext.rds"))
-r
-
-
-############################################# Sin 2011 ####################################################
-
-# Select periods
-l <- alcaldes_rd %>% filter(ano!=2011)
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
-# Regressions for list of outcomes
-l_f <- function(o, type){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
-
-r <- lapply(out_inv, l_f, type = "investment")
-saveRDS(r, str_c(results, "/investment_total_s2011_curnext.rds"))
-r
-
-r <- lapply(out_road, l_f, type = "roads") 
-saveRDS(r, str_c(results, "/roads_total_s2011_curnext.rds"))
-r
-
-###########################################################################################################
-################################### INVESTMENT: BEFORE  ###################################################
-################################ CURRENT and INCOMING president ###########################################
-######################################### Should be + #####################################################
-###########################################################################################################
-
-# Note: maires elected in 1997 begin in 01/01/1998 which is a presidential election year. Not enough overlapping with current
-# Not enough observations for 2015 maires either 
-
-# FINAL round CURRENT coalition
-coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio,coalition_new) %>% 
-  unique(.)
-
-# For a specific party (or group of parties), merge RD in t to outcomes in t+1
-# Drop elections where party is both 1 and 2 in t
-
-alcaldes_merge_r2 <- alcaldes_merge %>% 
-  filter(cand==1) %>%
-  filter(rank <= 2) %>% 
-  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
-  arrange(codmpio, ano, codpartido) %>%
-  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
-  mutate(ano = as.character(ano)) %>%
-  group_by(codmpio, ano) %>%
-  mutate(n = 1, nn = sum(n)) %>%
-  filter(nn==2) %>%
-  dplyr::select(-c(codep,n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
-
-alcaldes_rd <- alcaldes_merge_r2 %>%
-  filter(coalition_new == 1) %>%
-  group_by(ano, codmpio) %>%
-  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
-  filter(party_2 == 1) %>% 
-  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, codpartido, win_t, 
-                votos, starts_with("prop"), margin_prop_2) %>% 
-  merge(., ejecu_before,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., vias_before,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., invias_before,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  arrange(codmpio, ano)
-
-
-############################
-# RD and OLS regressions 
-
-# Select period: Drop 2011 given the coalition change during Santos I
-l <- alcaldes_rd 
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
-
-# Regressions for list of outcomes
-l_f <- function(o, type){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  pdf(str_c(results, "/Graphs/Investment", "/RD_", type, "_",o, "_before_curnext.pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         # y.lim = c(0.2, 0.8),
-         # x.lim = c(0.45, 0.55),
-         title = " ",
-         x.label = "Victory Margin",
-         y.label = "log(per capita investment)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
-  )
-  dev.off()
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
-
-
-# outcomes
-
-r <- lapply(out_inv, l_f, type = "investment")
-saveRDS(r, str_c(results, "/investment_before_curnext.rds"))
-r
-
-r <- lapply(out_road, l_f, type = "roads") 
-saveRDS(r, str_c(results, "/roads_before_curnext.rds"))
-r
-
-
-############################################# Sin 2011 ####################################################
-
-# Select periods
-l <- alcaldes_rd %>% filter(ano!=2011)
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
-# Regressions for list of outcomes
-l_f <- function(o, type){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
-
-r <- lapply(out_inv, l_f, type = "investment")
-saveRDS(r, str_c(results, "/investment_before_s2011_curnext.rds"))
-r
-
-r <- lapply(out_road, l_f, type = "roads") 
-saveRDS(r, str_c(results, "/roads_before_s2011_curnext.rds"))
 r
 
 
@@ -589,9 +312,6 @@ r <- lapply(out_road, l_f, type = "roads")
 saveRDS(r, str_c(results, "/roads_before_current.rds"))
 r
 
-
-
-
 ###########################################################################################################
 ################################### INVESTMENT: AFTER #####################################################
 ################################ Coalition wrt CURRENT president ##########################################
@@ -680,6 +400,282 @@ r
 
 
 
+
+###########################################################################################################
+################################### INVESTMENT: TOTAL #####################################################
+################################ CURRENT and INCOMING president ###########################################
+######################################### Should be + #####################################################
+###########################################################################################################
+
+# Note: maires elected in 1997 begin in 01/01/1998 which is a presidential election year. Not enough overlapping with current
+# Not enough observations for 2015 maires either 
+
+# FINAL round CURRENT coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
+  dplyr::select(codpartido,ano,codmpio,coalition_new) %>% 
+  unique(.)
+
+# For a specific party (or group of parties), merge RD in t to outcomes in t+1
+# Drop elections where party is both 1 and 2 in t
+
+alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(cand==1) %>%
+  filter(rank <= 2) %>% 
+  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
+  arrange(codmpio, ano, codpartido) %>%
+  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>%
+  filter(nn==2) %>%
+  dplyr::select(-c(codep,n,nn)) %>%
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
+
+alcaldes_rd <- alcaldes_merge_r2 %>%
+  filter(coalition_new == 1) %>%
+  group_by(ano, codmpio) %>%
+  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
+  filter(party_2 == 1) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, codpartido, win_t, 
+                votos, starts_with("prop"), margin_prop_2) %>% 
+  merge(., ejecu_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., vias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., invias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  arrange(codmpio, ano)
+
+
+############################
+# RD and OLS regressions 
+
+# Select period: Drop 2011 given the coalition change during Santos I
+l <- alcaldes_rd 
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+
+# Regressions for list of outcomes
+l_f <- function(o, type){
+  r <- rdrobust(y = l[,o],
+                x = l$margin_prop_2,
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                c = 0,
+                all = T,
+                vce = "nn")
+  pdf(str_c(results, "/Graphs/Investment", "/RD_", type, "_",o, "_total_curnext.pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Victory Margin",
+         y.label = "log(per capita investment)",
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
+  )
+  dev.off()
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
+  mean <- mean(l[,o], na.rm = T)
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
+}
+
+
+# outcomes
+
+r <- lapply(out_inv, l_f, type = "investment")
+saveRDS(r, str_c(results, "/investment_total_curnext.rds"))
+r
+
+r <- lapply(out_road, l_f, type = "roads") 
+saveRDS(r, str_c(results, "/roads_total_curnext.rds"))
+r
+
+
+
+###########################################################################################################
+################################### INVESTMENT: TOTAL #####################################################
+################################ INCOMING but no CURRENT president ########################################
+######################################### Should be + #####################################################
+###########################################################################################################
+
+# Note: maires elected in 1997 begin in 01/01/1998 which is a presidential election year. Not enough overlapping with current
+# Not enough observations for 2015 maires either 
+
+# FINAL round CURRENT coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_final.rds")) %>% 
+  dplyr::select(codpartido,ano,codmpio,coalition_new) %>% 
+  unique(.)
+
+# For a specific party (or group of parties), merge RD in t to outcomes in t+1
+# Drop elections where party is both 1 and 2 in t
+
+alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(cand==1) %>%
+  filter(rank <= 2) %>% 
+  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
+  arrange(codmpio, ano, codpartido) %>%
+  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>%
+  filter(nn==2) %>%
+  dplyr::select(-c(codep,n,nn)) %>%
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
+
+alcaldes_rd <- alcaldes_merge_r2 %>%
+  filter(coalition_new == 1) %>%
+  group_by(ano, codmpio) %>%
+  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
+  filter(party_2 == 1) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, codpartido, win_t, 
+                votos, starts_with("prop"), margin_prop_2) %>% 
+  merge(., ejecu_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., vias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., invias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  arrange(codmpio, ano)
+
+
+############################
+# RD and OLS regressions 
+
+# Select period: Drop 2011 given the coalition change during Santos I
+l <- alcaldes_rd 
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+
+# Regressions for list of outcomes
+l_f <- function(o, type){
+  r <- rdrobust(y = l[,o],
+                x = l$margin_prop_2,
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                c = 0,
+                all = T,
+                vce = "nn")
+  pdf(str_c(results, "/Graphs/Investment", "/RD_", type, "_",o, "_total_nocurnext.pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Victory Margin",
+         y.label = "log(per capita investment)",
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
+  )
+  dev.off()
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
+  mean <- mean(l[,o], na.rm = T)
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
+}
+
+
+# outcomes
+
+r <- lapply(out_inv, l_f, type = "investment")
+saveRDS(r, str_c(results, "/investment_total_nocurnext.rds"))
+r
+
+r <- lapply(out_road, l_f, type = "roads") 
+saveRDS(r, str_c(results, "/roads_total_curnext.rds"))
+r
+
+###########################################################################################################
+################################### INVESTMENT: BEFORE  ###################################################
+################################ CURRENT and INCOMING president ###########################################
+######################################### Should be + #####################################################
+###########################################################################################################
+
+# Note: maires elected in 1997 begin in 01/01/1998 which is a presidential election year. Not enough overlapping with current
+# Not enough observations for 2015 maires either 
+
+# FINAL round CURRENT coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
+  dplyr::select(codpartido,ano,codmpio,coalition_new) %>% 
+  unique(.)
+
+# For a specific party (or group of parties), merge RD in t to outcomes in t+1
+# Drop elections where party is both 1 and 2 in t
+
+alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(cand==1) %>%
+  filter(rank <= 2) %>% 
+  merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
+  arrange(codmpio, ano, codpartido) %>%
+  filter(is.na(coalition_new) == 0 & coalition_new != 98 & coalition_new != 99) %>%
+  mutate(ano = as.character(ano)) %>%
+  group_by(codmpio, ano) %>%
+  mutate(n = 1, nn = sum(n)) %>%
+  filter(nn==2) %>%
+  dplyr::select(-c(codep,n,nn)) %>%
+  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
+
+alcaldes_rd <- alcaldes_merge_r2 %>%
+  filter(coalition_new == 1) %>%
+  group_by(ano, codmpio) %>%
+  mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
+  filter(party_2 == 1) %>% 
+  mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
+  dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, codpartido, win_t, 
+                votos, starts_with("prop"), margin_prop_2) %>% 
+  merge(., ejecu_before,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., vias_before,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., invias_before,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  arrange(codmpio, ano)
+
+
+############################
+# RD and OLS regressions 
+
+# Select period: Drop 2011 given the coalition change during Santos I
+l <- alcaldes_rd 
+l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+
+# Regressions for list of outcomes
+l_f <- function(o, type){
+  r <- rdrobust(y = l[,o],
+                x = l$margin_prop_2,
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                c = 0,
+                all = T,
+                vce = "nn")
+  pdf(str_c(results, "/Graphs/Investment", "/RD_", type, "_",o, "_before_curnext.pdf"), height=6, width=12)
+  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
+         # y.lim = c(0.2, 0.8),
+         # x.lim = c(0.45, 0.55),
+         title = " ",
+         x.label = "Victory Margin",
+         y.label = "log(per capita investment)",
+         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
+  )
+  dev.off()
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
+  mean <- mean(l[,o], na.rm = T)
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
+}
+
+
+# outcomes
+
+r <- lapply(out_inv, l_f, type = "investment")
+saveRDS(r, str_c(results, "/investment_before_curnext.rds"))
+r
+
+r <- lapply(out_road, l_f, type = "roads") 
+saveRDS(r, str_c(results, "/roads_before_curnext.rds"))
+r
+
+
+
+
 ###########################################################################################################
 ######################################## INVESTMENT: BEFORE ###############################################
 ################################## Coalition wrt NEXT president  ##########################################
@@ -765,39 +761,6 @@ saveRDS(r, str_c(results, "/roads_before_next.rds"))
 r
 
 
-
-
-############################################# Sin 2011 ####################################################
-
-# Select periods
-l <- alcaldes_rd %>% filter(ano!=2011)
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
-# Regressions for list of outcomes
-l_f <- function(o, type){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
-
-r <- lapply(out_inv, l_f, type = "investment") 
-saveRDS(r, str_c(results, "/investment_before_s2011_next.rds"))
-r 
-
-r <- lapply(out_road, l_f, type = "roads") 
-saveRDS(r, str_c(results, "/roads_before_s2011_next.rds"))
-r
-
 ###########################################################################################################
 ##################################### INVESTMENT: AFTER (PREMIO) ##########################################
 ################################## Coalition wrt NEXT president  ##########################################
@@ -879,36 +842,5 @@ r
 
 r <- lapply(out_road, l_f, type = "roads") 
 saveRDS(r, str_c(results, "/roads_after_next.rds"))
-r
-
-############################################# Sin 2011 ####################################################
-
-# Select periods
-l <- alcaldes_rd %>% filter(ano!=2011)
-l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
-
-# Regressions for list of outcomes
-l_f <- function(o, type){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
-
-r <- lapply(out_inv, l_f, type = "investment") 
-saveRDS(r, str_c(results, "/investment_after_s2011_next.rds"))
-r 
-
-r <- lapply(out_road, l_f, type = "roads") 
-saveRDS(r, str_c(results, "/roads_after_s2011_next.rds"))
 r
 

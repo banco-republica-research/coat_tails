@@ -176,6 +176,9 @@ presidentes_merge_segunda <- presidentes_aggregate_segunda %>%
 
 saveRDS(presidentes_merge_segunda, paste0(res,"presidentes_segunda_merge.rds"))
 
+
+
+
 ###########################################################################################################
 #######################################  HOUSE OF REPRESENTATIVES   #######################################
 ###########################################################################################################
@@ -390,6 +393,41 @@ representantes_collapse <- representantes_aggregate %>%
 
 saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_current_primera_merge.rds"))
 
+
+##########################################  (Group by FIRST but not CURRENT coalition)   ############################################
+# Collapse candidates by coalition (identified mannually)
+
+# Load Electoral results
+representantes_merge <- readRDS(paste0(res,"representantes_merge.rds"))
+representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
+
+# load final stage coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_primera.rds")) %>% 
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_first)  
+
+representantes_collapse <- representantes_aggregate %>%
+  ldply() %>%
+  filter(cand == 1) %>%
+  filter(is.na(codpartido) == 0) %>%
+  arrange(codmpio, ano, rank) %>% mutate(ano = as.factor(ano)) %>%
+  mutate(year_lag_presidencial = fct_recode(ano,
+                                            "1997" = "1998",
+                                            "2000" = "2002",
+                                            "2003" = "2006",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
+  merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+  #This merge ignore the un-matched observations, because they represent non-existent voting. 
+  group_by(ano, codep, codmpio, coalition_new) %>%
+  summarise_at(vars(matches("vot")), sum) %>%
+  group_by(ano, codep, codmpio) %>%
+  mutate(rank = row_number(desc(votos)))
+
+saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_nocurrent_primera_merge.rds"))
+
+
 ##########################################  (Group by CURRENT and FINAL coalition)   ############################################
 # Collapse candidates by coalition (identified mannually)
 
@@ -422,6 +460,42 @@ representantes_collapse <- representantes_aggregate %>%
   mutate(rank = row_number(desc(votos)))
 
 saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_current_final_merge.rds"))
+
+##########################################  (Group by FINAL but not CURRENT coalition)   ############################################
+# Collapse candidates by coalition (identified mannually)
+
+# Load Electoral results
+representantes_merge <- readRDS(paste0(res,"representantes_merge.rds"))
+representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
+
+# load final stage coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_final.rds")) %>% 
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final)  
+
+representantes_collapse <- representantes_aggregate %>%
+  ldply() %>%
+  filter(cand == 1) %>%
+  filter(is.na(codpartido) == 0) %>%
+  arrange(codmpio, ano, rank) %>% mutate(ano = as.factor(ano)) %>%
+  mutate(year_lag_presidencial = fct_recode(ano,
+                                            "1997" = "1998",
+                                            "2000" = "2002",
+                                            "2003" = "2006",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
+  merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+  #This merge ignore the un-matched observations, because they represent non-existent voting. 
+  group_by(ano, codep, codmpio, coalition_new) %>%
+  summarise_at(vars(matches("vot")), sum) %>%
+  group_by(ano, codep, codmpio) %>%
+  mutate(rank = row_number(desc(votos)))
+
+saveRDS(representantes_collapse ,paste0(res,"representantes_coalition_nocurrent_final_merge.rds"))
+
+
+
 
 
 ###########################################################################################################
@@ -470,7 +544,7 @@ senado_aggregate <- senado %>%
       filter(is.na(prop_votes_total)==0) 
   })
 
-saveRDS(representantes_aggregate,paste0(res,"senado_aggregate.rds"))
+saveRDS(senado_aggregate,paste0(res,"senado_aggregate.rds"))
 
 
 ##########################################  (Group by party)   ##########################################
@@ -597,9 +671,9 @@ senado_collapse <- senado_aggregate %>%
   mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
   merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
   #This merge ignore the un-matched observations, because they represent non-existent voting. 
-  group_by(ano, codep, codmpio, coalition_new) %>%
+  group_by(ano, codmpio, coalition_new) %>%
   summarise_at(vars(matches("vot")), sum) %>%
-  group_by(ano, codep, codmpio) %>%
+  group_by(ano, codmpio) %>%
   mutate(rank = row_number(desc(votos)))
 
 saveRDS(senado_collapse ,paste0(res,"senate_coalition_merge.rds"))
@@ -642,6 +716,43 @@ senado_collapse <- senado_aggregate %>%
 saveRDS(senado_collapse ,paste0(res,"senate_coalition_current_primera_merge.rds"))
 
 
+##########################################  (Group by FIRST and not CURRENT coalition)   ############################################
+# Collapse candidates by coalition (identified mannually)
+
+# Load Electoral results
+senado_merge <- readRDS(paste0(res,"senado_merge.rds"))
+senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
+
+# load current stage coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_primera.rds")) %>% 
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_first)  
+
+table(senado_merge$ano)
+table(coalitions_long$ano, coalitions_long$year_first)
+
+senado_collapse <- senado_aggregate %>%
+  ldply() %>%
+  filter(cand == 1) %>%
+  filter(is.na(codpartido) == 0) %>%
+  arrange(codmpio, ano, rank) %>% mutate(ano = as.factor(ano)) %>%
+  mutate(year_lag_presidencial = fct_recode(ano,
+                                            "1997" = "1998",
+                                            "2000" = "2002",
+                                            "2003" = "2006",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
+  merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+  #This merge ignore the un-matched observations, because they represent non-existent voting. 
+  group_by(ano, codep, codmpio, coalition_new) %>%
+  summarise_at(vars(matches("vot")), sum) %>%
+  group_by(ano, codep, codmpio) %>%
+  mutate(rank = row_number(desc(votos)))
+
+saveRDS(senado_collapse ,paste0(res,"senate_coalition_nocurrent_primera_merge.rds"))
+
+
 ##########################################  (Group by CURRENT and FINAL coalition)   ############################################
 # Collapse candidates by coalition (identified mannually)
 
@@ -678,3 +789,38 @@ senado_collapse <- senado_aggregate %>%
 
 saveRDS(senado_collapse ,paste0(res,"senate_coalition_current_final_merge.rds"))
 
+##########################################  (Group by FINAL but not CURRENT coalition)   ############################################
+# Collapse candidates by coalition (identified mannually)
+
+# Load Electoral results
+senado_merge <- readRDS(paste0(res,"senado_merge.rds"))
+senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
+
+# load current stage coalition
+coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_final.rds")) %>% 
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final)  
+
+table(senado_merge$ano)
+table(coalitions_long$ano, coalitions_long$year_final)
+
+senado_collapse <- senado_aggregate %>%
+  ldply() %>%
+  filter(cand == 1) %>%
+  filter(is.na(codpartido) == 0) %>%
+  arrange(codmpio, ano, rank) %>% mutate(ano = as.factor(ano)) %>%
+  mutate(year_lag_presidencial = fct_recode(ano,
+                                            "1997" = "1998",
+                                            "2000" = "2002",
+                                            "2003" = "2006",
+                                            "2007" = "2010",
+                                            "2011" = "2014"
+  )) %>%
+  mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
+  merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+  #This merge ignore the un-matched observations, because they represent non-existent voting. 
+  group_by(ano, codep, codmpio, coalition_new) %>%
+  summarise_at(vars(matches("vot")), sum) %>%
+  group_by(ano, codep, codmpio) %>%
+  mutate(rank = row_number(desc(votos)))
+
+saveRDS(senado_collapse ,paste0(res,"senate_coalition_nocurrent_final_merge.rds"))

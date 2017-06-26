@@ -136,6 +136,9 @@ saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
 # saveRDS(alcaldes_merge,paste0(women,"alcaldes_merge.rds"))
 write_dta(alcaldes_merge,paste0(women,"alcaldes_merge.dta"))
 
+
+
+
 ###########################################################################################################
 #################################### Only winners 1988-1994  ##############################################
 ###########################################################################################################
@@ -181,6 +184,8 @@ saveRDS(alcaldes_merge_old,paste0(res,"alcaldes_merge_old.rds"))
 ###########################################################################################################
 ################################# COALITIONS NEXT PRIMERA #################################################
 ###########################################################################################################
+
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 
 # Coalitions in the Consevador party for 2011: year of extreme division between the party  
 muni_cons_2011 <- read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheet = "munp_conser_2011") %>%
@@ -269,6 +274,9 @@ saveRDS(coalitions_long, paste0(res, "coalitions_primera_new.rds"))
 ################################### COALITIONS NEXT SEGUNDA ###############################################
 ###########################################################################################################
 
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
+muni_cons_2011 <- readRDS(paste0(res,"coalitions_cons.rds")) 
+other_parties_coal <- readRDS(paste0(res,"coalitions_other.rds"))
 
 # Coalition by party (Second round): Hand-made based on oficial data, campaign reports and press 
 coalitions_segunda <- openxlsx::read.xlsx(str_c(coal, "Elecciones Alcaldía.xlsx"), sheet = "COALICION_2da_VUELTA") %>%
@@ -330,9 +338,7 @@ saveRDS(coalitions_long, paste0(res, "coalitions_segunda_new.rds"))
 ################################## COALITIONS NEXT FINAL ROUND ############################################
 ###########################################################################################################
 
-
 # Primera vuelta para Uribe
-
 coalitions_primera_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) 
 coalitions_segunda_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) 
 coalitions_long <- coalitions_primera_long %>% 
@@ -348,6 +354,10 @@ saveRDS(coalitions_long, paste0(res, "coalitions_new.rds"))
 ######################################## COALITIONS WRT ###################################################
 ###################################### CURRENT PRESIDENT  #################################################
 ###########################################################################################################
+
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
+muni_cons_2011 <- readRDS(paste0(res,"coalitions_cons.rds")) 
+other_parties_coal <- readRDS(paste0(res,"coalitions_other.rds"))
 
 # First:leads
 coalitions_primera <- readRDS(paste0(res,"coalitions_primera.rds")) %>% 
@@ -414,9 +424,11 @@ saveRDS(coalitions_long, paste0(res, "coalitions_current.rds"))
 ################################ CURRENT and INCOMING PRESIDENT  ##########################################
 ###########################################################################################################
 
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
+muni_cons_2011 <- readRDS(paste0(res,"coalitions_cons.rds")) 
+other_parties_coal <- readRDS(paste0(res,"coalitions_other.rds"))
 
-# Coalition_new: is 1 if both coalition and 0 if none (NaN otherwise)
-
+# Coalition_new: is 1 if both coalition and 0 if both 0 (missing in any of the coalition is missing)
 
 # Load data
 coalitions_primera_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% 
@@ -440,10 +452,32 @@ coalitions_current_primera <- coalitions_current_long %>% filter(ano != 2015) %>
   rename(year_first = year, coalition_first = coalition_new) %>% 
   mutate(coalition_new = ifelse(coalition_current==1 & coalition_first==1, 1,NA)) %>% 
   mutate(coalition_new = ifelse(coalition_current==0 & coalition_first==0, 0,coalition_new)) 
-
+  # mutate(coalition_new = ifelse(coalition_current==1 & coalition_first==0, 0,coalition_new)) %>% 
+  # mutate(coalition_new = ifelse(coalition_current==0 & coalition_first==1, 0,coalition_new)) 
 
 table(coalitions_current_primera$coalition_current, coalitions_current_primera$coalition_first)
+table(coalitions_current_primera$coalition_new)
+
 saveRDS(coalitions_current_primera, paste0(res, "coalitions_current_primera.rds"))
+
+
+###################
+# First but not current
+coalitions_nocurrent_primera <- coalitions_current_long %>% filter(ano != 2015) %>% 
+  rename(year_current = year, coalition_current = coalition_new) %>%
+  merge(., coalitions_primera_long, by.x = c("codpartido", "ano", "codmpio"), 
+        by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>% 
+  rename(year_first = year, coalition_first = coalition_new) %>% 
+  mutate(coalition_new = ifelse(coalition_current==0 & coalition_first==1, 1,NA)) %>% 
+  mutate(coalition_new = ifelse(coalition_current==0 & coalition_first==0, 0,coalition_new))  
+  # mutate(coalition_new = ifelse(coalition_current==1 & coalition_first==1, 0,coalition_new)) %>% 
+  # mutate(coalition_new = ifelse(coalition_current==1 & coalition_first==0, 0,coalition_new)) 
+
+
+table(coalitions_nocurrent_primera$coalition_current, coalitions_current_primera$coalition_first)
+table(coalitions_nocurrent_primera$coalition_new)
+
+saveRDS(coalitions_nocurrent_primera, paste0(res, "coalitions_nocurrent_primera.rds"))
 
 ###################
 # Current + Second
@@ -457,10 +491,32 @@ coalitions_current_segunda <- coalitions_current_long %>% filter(ano != 2015) %>
   rename(year_second = year, coalition_second = coalition_new) %>% 
   mutate(coalition_new = ifelse(coalition_current==1 & coalition_second==1, 1,NA)) %>% 
   mutate(coalition_new = ifelse(coalition_current==0 & coalition_second==0, 0,coalition_new)) 
-
+  # mutate(coalition_new = ifelse(coalition_current==1 & coalition_second==0, 0,coalition_new)) %>% 
+  # mutate(coalition_new = ifelse(coalition_current==0 & coalition_second==1, 0,coalition_new)) 
 
 table(coalitions_current_segunda$coalition_current, coalitions_current_segunda$coalition_second)
+table(coalitions_current_segunda$coalition_new)
+
 saveRDS(coalitions_current_segunda, paste0(res, "coalitions_current_segunda.rds"))
+
+
+###################
+# Second but not current
+coalitions_nocurrent_segunda <- coalitions_current_long %>% filter(ano != 2015) %>% 
+  rename(year_current = year, coalition_current = coalition_new) %>%
+  merge(., coalitions_segunda_long, by.x = c("codpartido", "ano", "codmpio"), 
+        by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>% 
+  rename(year_second = year, coalition_second = coalition_new) %>% 
+  mutate(coalition_new = ifelse(coalition_current==0 & coalition_second==1, 1,NA)) %>% 
+  mutate(coalition_new = ifelse(coalition_current==0 & coalition_second==0, 0,coalition_new))  
+  # mutate(coalition_new = ifelse(coalition_current==1 & coalition_second==1, 0,coalition_new)) %>% 
+  # mutate(coalition_new = ifelse(coalition_current==1 & coalition_second==0, 0,coalition_new)) 
+
+table(coalitions_nocurrent_segunda$coalition_current, coalitions_nocurrent_segunda$coalition_second)
+table(coalitions_nocurrent_segunda$coalition_new)
+
+saveRDS(coalitions_nocurrent_segunda, paste0(res, "coalitions_nocurrent_segunda.rds"))
+
 
 ###################
 # Current + final
@@ -474,21 +530,45 @@ coalitions_current_final <- coalitions_current_long %>% filter(ano != 2015) %>%
   rename(year_final = year, coalition_final = coalition_new) %>% 
   mutate(coalition_new = ifelse(coalition_current==1 & coalition_final==1, 1,NA)) %>% 
   mutate(coalition_new = ifelse(coalition_current==0 & coalition_final==0, 0,coalition_new)) 
+  # mutate(coalition_new = ifelse(coalition_current==1 & coalition_final==0, 0,coalition_new))  
+  # mutate(coalition_new = ifelse(coalition_current==0 & coalition_final==1, 0,coalition_new)) 
 
 table(coalitions_current_final$coalition_current, coalitions_current_final$coalition_final)
+table(coalitions_current_final$coalition_new)
+
 saveRDS(coalitions_current_final, paste0(res, "coalitions_current_final.rds"))
 
 
-# transitions of coaltions over years
-
-a <- unique(coalitions_current_final$ano)
-
-coal <- lapply(a, function(x){
-  b <- coalitions_current_final %>% filter(ano==x)
-  b <- table(b$coalition_current, b$coalition_final)[1:2,1:2] 
-  return(b)
-}) %>% ldply() 
+# # transitions of coaltions over years
+# 
+# a <- unique(coalitions_current_final$ano)
+# 
+# coal <- lapply(a, function(x){
+#   b <- coalitions_current_final %>% filter(ano==x)
+#   b <- table(b$coalition_current, b$coalition_final)[1:2,1:2] 
+#   return(b)
+# }) %>% ldply() 
    
+
+###################
+# final but not current
+
+coalitions_nocurrent_final <- coalitions_current_long %>% filter(ano != 2015) %>% 
+  rename(year_current = year, coalition_current = coalition_new) %>%
+  merge(., coalitions_final_long, by.x = c("codpartido", "ano", "codmpio"), 
+        by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>% 
+  rename(year_final = year, coalition_final = coalition_new) %>% 
+  mutate(coalition_new = ifelse(coalition_current==0 & coalition_final==1, 1,NA)) %>% 
+  mutate(coalition_new = ifelse(coalition_current==0 & coalition_final==0, 0,coalition_new)) 
+  # mutate(coalition_new = ifelse(coalition_current==1 & coalition_final==1, 0,coalition_new)) %>% 
+  # mutate(coalition_new = ifelse(coalition_current==1 & coalition_final==0, 0,coalition_new)) 
+
+table(coalitions_nocurrent_final$coalition_current, coalitions_nocurrent_final$coalition_final)
+table(coalitions_nocurrent_final$coalition_new)
+
+saveRDS(coalitions_nocurrent_final, paste0(res, "coalitions_nocurrent_final.rds"))
+
+
 
 #########################################################################################################
 ##################################### MAYORS IN T + 1 - INCUMBENCY ######################################
@@ -519,8 +599,10 @@ saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1.rds"))
 
 
 #########################################################################################################
-############################ MAYORS IN T + 1 BY COALITION - INCUMBENCY ##################################
+############################ MAYORS IN T + 1 BY INCOMING COALITION - INCUMBENCY #########################
 #########################################################################################################
+
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 
 coalitions_primera <- readRDS(paste0(res,"coalitions_primera_new.rds"))
 coalitions_segunda <- readRDS(paste0(res,"coalitions_segunda_new.rds"))
@@ -542,7 +624,7 @@ election_coalitions <- function(x, y){
     mutate(ano_lag = as.character(ano_lag)) %>%
     merge(., x, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
     rename(ano_t1 = ano) %>%
-    group_by(codmpio, ano_lag, ano_t1, coalition_new, codpartido) %>%
+    group_by(codmpio, ano_lag, ano_t1, coalition_new) %>%
     summarize(., votos = sum(votos),
               prop_votes_cand = sum(prop_votes_cand),
               prop_votes_total = sum(prop_votes_total))
@@ -557,6 +639,8 @@ saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1_coalition.rds"))
 ############################ MAYORS IN T + 1 BY COALITION - INCUMBENCY ##################################
 ###################################### CURRENT AND INCOMING #############################################
 #########################################################################################################
+
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 
 coalitions_current <- readRDS(paste0(res,"coalitions_current.rds")) 
 coalitions_current_primera <- readRDS(paste0(res,"coalitions_current_primera.rds")) 
@@ -579,7 +663,7 @@ election_coalitions <- function(x, y){
     mutate(ano_lag = as.character(ano_lag)) %>%
     merge(., x, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
     rename(ano_t1 = ano) %>%
-    group_by(codmpio, ano_lag, ano_t1, coalition_new, codpartido) %>%
+    group_by(codmpio, ano_lag, ano_t1, coalition_new) %>%
     summarize(., votos = sum(votos),
               prop_votes_cand = sum(prop_votes_cand),
               prop_votes_total = sum(prop_votes_total))
@@ -588,4 +672,41 @@ election_coalitions <- function(x, y){
 
 alcaldes_merge_t1 <- lapply(list_coalitions, election_coalitions, y = alcaldes_merge)
 saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1_coalition_current.rds"))
+
+#########################################################################################################
+############################ MAYORS IN T + 1 BY COALITION - INCUMBENCY ##################################
+################################## INCOMING but not CURRENT #############################################
+#########################################################################################################
+
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
+
+coalitions_nocurrent_primera <- readRDS(paste0(res,"coalitions_nocurrent_primera.rds")) 
+coalitions_nocurrent_segunda <- readRDS(paste0(res,"coalitions_nocurrent_segunda.rds")) 
+coalitions_nocurrent_final <- readRDS(paste0(res,"coalitions_nocurrent_final.rds")) 
+
+list_coalitions <- list(coalitions_nocurrent_primera, coalitions_nocurrent_segunda, coalitions_nocurrent_final)
+
+election_coalitions <- function(x, y){
+  df_merge <- y %>%
+    filter(.,cand == 1) %>%
+    filter(ano!=1997) %>% 
+    mutate(ano_lag = as.factor(ano)) %>%
+    mutate(ano_lag = fct_recode(ano_lag,
+                                "1997" = "2000",
+                                "2000" = "2003",
+                                "2003" = "2007",
+                                "2007" = "2011",
+                                "2011" = "2015")) %>%
+    mutate(ano_lag = as.character(ano_lag)) %>%
+    merge(., x, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+    rename(ano_t1 = ano) %>%
+    group_by(codmpio, ano_lag, ano_t1, coalition_new) %>%
+    summarize(., votos = sum(votos),
+              prop_votes_cand = sum(prop_votes_cand),
+              prop_votes_total = sum(prop_votes_total))
+  return(df_merge)
+} 
+
+alcaldes_merge_t1 <- lapply(list_coalitions, election_coalitions, y = alcaldes_merge)
+saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1_coalition_nocurrent.rds"))
 
