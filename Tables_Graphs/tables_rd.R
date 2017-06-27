@@ -20,6 +20,229 @@ results <- "Results/RD/"
 
 
 ###########################################################################################################
+################################################# INVESTMENT ##############################################
+###########################################################################################################
+
+#############
+# Function to Read results
+
+rd_to_df_2 <-  function(list){
+  rd <- lapply(list, function(x){
+    x$rd %>% .$tabl3.str}) %>%
+    lapply(as.data.frame)  %>%
+    lapply( "[", 3 , ) %>%
+    ldply() %>% mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
+    mutate(N_r = unlist(lapply(list, function(x) x$rd$N_h_r))) %>%
+    mutate(mean_bw = unlist(lapply(list, function(x) x$mean)))%>%
+    mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
+    mutate(N = as.numeric(N_l) + as.numeric(N_r)) %>%
+    mutate(dens_pvalue = unlist(lapply(list, function(x) x$d)))
+  
+  df <- rd %>% t() %>% as.data.frame()
+  row.names(df) <- c("Type","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right",  "Average outcome","Bandwidth","Observations",  "p-value_dens")
+  # colnames(df) <- df$Eleccion
+  return(df)
+}
+
+#############
+# Read results
+
+setwd(results)
+
+# out_investment <- c("log_D","log_D4000","log_D2000", "log_D1000", "log_D3000")
+# out_roads <- c("log_vias","log_f_propios","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
+
+out_investment <- c("log_D","log_D2000", "log_D1000", "log_D3000")
+out_roads <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
+outcomes <- c(out_investment, out_roads)
+
+
+# Current
+list_files <- list.files() %>%
+  .[str_detect(., "total_current")]
+total_current <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "before_current")]
+before_current <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "after_current")]
+after_current <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "total_s2011_current")]
+total_s2011_current <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "before_s2011_current")]
+before_s2011_current <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "after_s2011_current")]
+after_s2011_current <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+# Next
+list_files <- list.files() %>%
+  .[str_detect(., "total_next")]
+total_next <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "before_next")]
+before_next <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "after_next")]
+after_next <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "total_s2011_next")]
+total_s2011_next <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "before_s2011_next")]
+before_s2011_next <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "after_s2011_next")]
+after_s2011_next <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+# current and next
+list_files <- list.files() %>%
+  .[str_detect(., "total_curnext")]
+total_curnext <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "before_curnext")]
+before_curnext <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "after_curnext")]
+after_curnext <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "total_s2011_curnext")]
+total_s2011_curnext <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "before_s2011_curnext")]
+before_s2011_curnext <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+list_files <- list.files() %>%
+  .[str_detect(., "after_s2011_curnext")]
+after_s2011_curnext <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+#############
+# Tables
+
+# c(5:8)
+
+# Total current: roads 
+inv_t <- rd_to_df_2(total_current) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_current.tex")
+inv_b <- rd_to_df_2(before_current) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_current.tex")
+inv_a <- rd_to_df_2(after_current) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_current.tex")
+
+# Total current: roads (sin 2011)
+inv_t <- rd_to_df_2(total_s2011_current) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_s2011_current.tex")
+inv_b <- rd_to_df_2(before_s2011_current) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_s2011_current.tex")
+inv_a <- rd_to_df_2(after_s2011_current) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_s2011_current.tex")
+
+# percentage effect
+100*(exp(0.779)-1)
+100*(exp(1.3909)-1)
+100*(exp(0.406)-1)
+
+
+# Total next: roads 
+inv_t <- rd_to_df_2(total_next) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_next.tex")
+inv_b <- rd_to_df_2(before_next) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_next.tex")
+inv_a <- rd_to_df_2(after_next) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_next.tex")
+
+# Total next: roads  (sin 2011)
+inv_t <- rd_to_df_2(total_s2011_next) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_s2011_next.tex")
+inv_b <- rd_to_df_2(before_s2011_next) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_s2011_next.tex")
+inv_a <- rd_to_df_2(after_s2011_next) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_s2011_next.tex")
+
+
+# Total curnext: roads 
+inv_t <- rd_to_df_2(total_curnext) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_curnext.tex")
+inv_b <- rd_to_df_2(before_curnext) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_curnext.tex")
+inv_a <- rd_to_df_2(after_curnext) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_curnext.tex")
+
+# Total curnext: roads (sin 2011)
+inv_t <- rd_to_df_2(total_s2011_curnext) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_s2011_curnext.tex")
+inv_b <- rd_to_df_2(before_s2011_curnext) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_s2011_curnext.tex")
+inv_a <- rd_to_df_2(after_s2011_curnext) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_s2011_curnext.tex")
+
+
+
+###########################################################################################################
+################################################ LOAD RESULTS #############################################
+################################################# AFTERMATH ############################################### 
+###########################################################################################################
+
+setwd(results)
+
+out_growth <- c("log_light_pix","log_light_dm","log_ba_tot_vr", "log_ba_peq_vr")
+out_institutions <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty")
+out_publicgoods <- c("tasa_m", "cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p","hom_tasa")
+outcomes <- c(out_growth, out_institutions, out_publicgoods)
+out_l <- list(out_growth, out_institutions, out_publicgoods) %>%
+  sapply(length)
+
+list_files <- list.files() %>%
+  .[str_detect(., "aftermath")]
+aftermath <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE) %>%  
+  setNames(., outcomes)
+
+###########################################################################################################
+############################################  CREATE TABLES  ##############################################
+###########################################################################################################
+
+a <- rd_to_df(aftermath) %>% .[, 1:4]  %>% stargazer(., summary = FALSE, out= "Tables/aftermath_a.tex")
+b <- rd_to_df(aftermath) %>% .[, 5:10]  %>% stargazer(., summary = FALSE, out= "Tables/aftermath_b.tex")
+c <- rd_to_df(aftermath) %>% .[, 11:length(.)]  %>% stargazer(., summary = FALSE, out= "Tables/aftermath_c.tex")
+
+
+
+###########################################################################################################
 ################################################ ELECTIONS ################################################
 ###########################################################################################################
 
@@ -29,17 +252,17 @@ results <- "Results/RD/"
 rd_to_df <- function(list){
   rd <- lapply(list, function(x){
     x$rd %>% .$tabl3.str}) %>%
-  lapply(as.data.frame)  %>%
-  lapply( "[", 3 , ) %>%
-  ldply() %>% mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
-  mutate(N_r = unlist(lapply(list, function(x) x$rd$N_h_r))) %>%
-  mutate(N = as.numeric(N_l) + as.numeric(N_r)) %>%
-  mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
-  mutate(mean_bw = unlist(lapply(list, function(x) x$mean)))%>%
-  mutate(dens_pvalue = unlist(lapply(list, function(x) x$d)))
-
+    lapply(as.data.frame)  %>%
+    lapply( "[", 3 , ) %>%
+    ldply() %>% mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
+    mutate(N_r = unlist(lapply(list, function(x) x$rd$N_h_r))) %>%
+    mutate(mean_bw = unlist(lapply(list, function(x) x$mean)))%>%
+    mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
+    mutate(N = as.numeric(N_l) + as.numeric(N_r)) %>%
+    mutate(dens_pvalue = unlist(lapply(list, function(x) x$d)))
+  
   df <- rd %>% t() %>% as.data.frame()
-  row.names(df) <- c("Eleccion","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws", "Media control", "p-value_dens")
+  row.names(df) <- c("Type","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right",  "Average outcome","Bandwidth","Observations",  "p-value_dens")
   colnames(df) <- df$Eleccion
   return(df)
 }
@@ -50,7 +273,7 @@ setwd(results)
 
 list_files <- list.files() %>%
   .[str_detect(., "_party.")]
-  party <- lapply(list_files, readRDS) %>%
+party <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
@@ -130,128 +353,4 @@ g <- rd_to_df(current_2) %>% cbind(., f) %>% .[c(4, 2, 3, 1)] %>% stargazer(., s
 ne <- rd_to_df(nocurrent_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec_coalition_nocurrent1.tex")
 nf <- rd_to_df(nocurrent_final)
 ng <- rd_to_df(nocurrent_2) %>% cbind(., nf) %>% .[c(4, 2, 3, 1)] %>% stargazer(., summary = FALSE, out= "Tables/elec_coalition_nocurrent2.tex")
-
-
-###########################################################################################################
-################################################# INVESTMENT ##############################################
-###########################################################################################################
-
-#############
-# Function to Read results
-
-rd_to_df_2 <-  function(list){
-  rd <- lapply(list, function(x){
-    x$rd %>% .$tabl3.str}) %>%
-    lapply(as.data.frame)  %>%
-    lapply( "[", 3 , ) %>%
-    ldply() %>% mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
-    mutate(N_r = unlist(lapply(list, function(x) x$rd$N_h_r))) %>%
-    mutate(N = as.numeric(N_l) + as.numeric(N_r)) %>%
-    mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
-    mutate(mean_bw = unlist(lapply(list, function(x) x$mean)))%>%
-    mutate(dens_pvalue = unlist(lapply(list, function(x) x$d)))
-  
-  df <- rd %>% t() %>% as.data.frame()
-  row.names(df) <- c("Type","Tratamiento", "StdErr", "Z", "p", "CI_l", "CI_u", "N_left","N_right", "N", "bws", "Media control", "p-value_dens")
-  # colnames(df) <- df$Eleccion
-  return(df)
-}
-
-#############
-# Read results
-
-setwd(results)
-
-out_investment <- c("log_D","log_D2000", "log_D1000", "log_D3000")
-out_roads <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
-outcomes <- c(out_investment, out_roads)
-
-list_files <- list.files() %>%
-  .[str_detect(., "total_current")]
-total_current <- lapply(list_files, readRDS)%>%
-  unlist(recursive = FALSE) %>%
-  setNames(., outcomes)
-
-
-list_files <- list.files() %>%
-  .[str_detect(., "before_current")]
-before_current <- lapply(list_files, readRDS)%>%
-  unlist(recursive = FALSE) %>%
-  setNames(., outcomes)
-
-list_files <- list.files() %>%
-  .[str_detect(., "after_current")]
-after_current <- lapply(list_files, readRDS)%>%
-  unlist(recursive = FALSE) %>%
-  setNames(., outcomes)
-
-
-list_files <- list.files() %>%
-  .[str_detect(., "total_next")]
-total_next <- lapply(list_files, readRDS)%>%
-  unlist(recursive = FALSE) %>%
-  setNames(., outcomes)
-
-list_files <- list.files() %>%
-  .[str_detect(., "total_curnext")]
-total_curnext <- lapply(list_files, readRDS)%>%
-  unlist(recursive = FALSE) %>%
-  setNames(., outcomes)
-
-
-
-
-#############
-# Tables
-
-# Total current: roads and investment
-roads_t <- rd_to_df_2(total_current) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/roads_total_current.tex")
-inv_t <- rd_to_df_2(total_current) %>% .[c(1:4)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_current.tex")
-
-# Before/after current: roads and investment
-roads_b <- rd_to_df_2(before_current) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/roads_before_current.tex")
-inv_b <- rd_to_df_2(before_current) %>% .[c(1:4)] %>% stargazer(., summary = FALSE, out= "Tables/inv_before_current.tex")
-
-roads_a <- rd_to_df_2(after_current) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/roads_after_current.tex")
-inv_a <- rd_to_df_2(after_current) %>% .[c(1:4)] %>% stargazer(., summary = FALSE, out= "Tables/inv_after_current.tex")
-
-
-# Total incoming: roads and investment
-roads_t <- rd_to_df_2(total_next) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/roads_total_next.tex")
-inv_t <- rd_to_df_2(total_next) %>% .[c(1:4)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_next.tex")
-
-# Total current and incoming: roads and investment
-roads_t <- rd_to_df_2(total_curnext) %>% .[c(5:8)] %>% stargazer(., summary = FALSE, out= "Tables/roads_total_curnext.tex")
-inv_t <- rd_to_df_2(total_curnext) %>% .[c(1:4)] %>% stargazer(., summary = FALSE, out= "Tables/inv_total_curnext.tex")
-
-
-
-
-###########################################################################################################
-################################################ LOAD RESULTS #############################################
-################################################# AFTERMATH ############################################### 
-###########################################################################################################
-
-setwd(results)
-
-out_growth <- c("log_light_pix","log_light_dm","log_ba_tot_vr", "log_ba_peq_vr")
-out_institutions <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty")
-out_publicgoods <- c("tasa_m", "cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p","hom_tasa")
-outcomes <- c(out_growth, out_institutions, out_publicgoods)
-out_l <- list(out_growth, out_institutions, out_publicgoods) %>%
-  sapply(length)
-
-list_files <- list.files() %>%
-  .[str_detect(., "aftermath")]
-aftermath <- lapply(list_files, readRDS) %>%
-  unlist(recursive = FALSE) %>%  
-  setNames(., outcomes)
-
-###########################################################################################################
-############################################  CREATE TABLES  ##############################################
-###########################################################################################################
-
-a <- rd_to_df(aftermath) %>% .[, 1:4]  %>% stargazer(., summary = FALSE, out= "Tables/aftermath_a.tex")
-b <- rd_to_df(aftermath) %>% .[, 5:10]  %>% stargazer(., summary = FALSE, out= "Tables/aftermath_b.tex")
-c <- rd_to_df(aftermath) %>% .[, 11:length(.)]  %>% stargazer(., summary = FALSE, out= "Tables/aftermath_c.tex")
 

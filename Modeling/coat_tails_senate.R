@@ -14,7 +14,7 @@ setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 results <- "Results/RD"
-doc <- "Document/Figures/"
+doc <- "Results/RD/Graphs/RD/"
 
 ###########################################################################################################
 ############################################# LOAD DATA ###################################################
@@ -30,6 +30,28 @@ controls <- cede %>%
   dplyr::select(coddepto, codmpio, municipio, ano, nbi) %>%
   filter(ano == 1993) %>%
   merge(., cede, by.x = c("codmpio"), by.y = c("codmpio"), all = T)
+
+
+###########################################################################################################
+#################################### Estimation Function  #################################################
+###########################################################################################################
+
+# Regressions for list of outcomes
+l_f <- function(o){
+  r <- rdrobust(y = l[,o],
+                x = l$margin_prop_2,
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                c = 0,
+                all = T,
+                vce = "nn")
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
+  mean <- mean(l[,o], na.rm = T)
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
+}
 
 
 ###########################################################################################################
@@ -95,34 +117,6 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # outcomes
 out <- c("prop_votes_total_t1")
 
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  pdf(str_c(results, "/Graphs/Senate", "/RD_senate_party.pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         # y.lim = c(0.2, 0.8),
-         # x.lim = c(0.45, 0.55),
-         title = " ",
-         x.label = "Victory Margin",
-         y.label = "Vote share (subsequent Election)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
-  )
-  dev.off()
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
-
-
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_senate_party.rds"))
 r 
@@ -182,32 +176,6 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # outcomes
 out <- c("prop_votes_total_t1")
 
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  pdf(str_c(results, "/Graphs/Senate", "/RD_senate_first.pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         # y.lim = c(0.2, 0.8),
-         # x.lim = c(0.45, 0.55),
-         title = " ",
-         x.label = "Victory Margin",
-         y.label = "Vote share (subsequent Election)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
-  )
-  dev.off()
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
 
 r <-lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_senate_1_coalition.rds"))
@@ -268,32 +236,6 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # outcomes
 out <- c("prop_votes_total_t1")
 
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  pdf(str_c(results, "/Graphs/Senate", "/RD_senate_second.pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         # y.lim = c(0.2, 0.8),
-         # x.lim = c(0.45, 0.55),
-         title = " ",
-         x.label = "Victory Margin",
-         y.label = "Vote share (subsequent Election)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
-  )
-  dev.off()
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
 
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_senate_2_coalition.rds"))
@@ -353,35 +295,6 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 l <- alcaldes_rd 
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
-# outcomes
-out <- c("prop_votes_total_t1")
-
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  pdf(str_c(results, "/Graphs/Senate", "/RD_senate_final.pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         # y.lim = c(0.0, 0.4),
-         # x.lim = c(0.45, 0.55),
-         title = " ",
-         x.label = "Victory Margin",
-         y.label = "Vote share (subsequent Election)",
-         binselect="es", nbins= 10, kernel="triangular", p=3, ci=95
-  )
-  dev.off()
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
 
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_senate_final_coalition.rds"))
@@ -459,32 +372,6 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # outcomes
 out <- c("prop_votes_total_t1")
 
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  pdf(str_c(results, "/Graphs/Senate", "/RD_senate_current1.pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         # y.lim = c(0.2, 0.8),
-         # x.lim = c(0.45, 0.55),
-         title = " ",
-         x.label = "Victory Margin",
-         y.label = "Vote share (subsequent Election)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
-  )
-  dev.off()
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0)
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
 
 r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/coat_tails_senate_current1_coalition.rds"))
@@ -549,32 +436,6 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # outcomes
 out <- c("prop_votes_total_t1")
 
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  pdf(str_c(results, "/Graphs/Senate", "/RD_senate_currentfinal.pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         # y.lim = c(0.2, 0.8),
-         # x.lim = c(0.45, 0.55),
-         title = " ",
-         x.label = "Victory Margin",
-         y.label = "Vote share (subsequent Election)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
-  )
-  dev.off()
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0)
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
 
 r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/coat_tails_senate_currentfinal_coalition.rds"))
@@ -641,33 +502,6 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # outcomes
 out <- c("prop_votes_total_t1")
 
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  pdf(str_c(results, "/Graphs/Senate", "/RD_senate_nocurrent1.pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         # y.lim = c(0.2, 0.8),
-         # x.lim = c(0.45, 0.55),
-         title = " ",
-         x.label = "Victory Margin",
-         y.label = "Vote share (subsequent Election)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
-  )
-  dev.off()
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0)
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
-
 r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/coat_tails_senate_nocurrent1_coalition.rds"))
 r
@@ -731,32 +565,6 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # outcomes
 out <- c("prop_votes_total_t1")
 
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  pdf(str_c(results, "/Graphs/Senate", "/RD_senate_nocurrentfinal.pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         # y.lim = c(0.2, 0.8),
-         # x.lim = c(0.45, 0.55),
-         title = " ",
-         x.label = "Victory Margin",
-         y.label = "Vote share (subsequent Election)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95
-  )
-  dev.off()
-  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
-                         margin_prop_2 >= 0 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0)
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
 
 r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/coat_tails_senate_nocurrentfinal_coalition.rds"))
