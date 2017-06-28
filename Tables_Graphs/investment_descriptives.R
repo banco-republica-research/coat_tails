@@ -44,7 +44,7 @@ ggplot(data = inv, aes(x = ano, y = value, fill = factor(source, levels=c("Other
   theme(legend.position="bottom", axis.line = element_line(colour = "black"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        panel.border = element_blank(),
+        panel.border = element_blank(),s
         panel.background = element_blank()) 
 
 
