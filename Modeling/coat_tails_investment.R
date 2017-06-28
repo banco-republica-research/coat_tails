@@ -150,7 +150,64 @@ r <- lapply(out_road, l_f, type = "roads")
 saveRDS(r, str_c(results, "/roads_total_s2011_current.rds"))
 r
 
+# Graph 
 
+# l_g <- function(o){
+#     pdf(str_c(doc, "RD_",paste0(o),".pdf"), height=6, width=12)
+#     rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
+#        y.lim = c(0, 6),
+#        # x.lim = c(0.45, 0.55),
+#        title = " ",
+#        x.label = "Victory Margin",
+#        y.label = "Vote share (subsequent Election)",
+#        binselect="es", nbins= 10, kernel="triangular", p=3, ci=95)
+#     dev.off()
+#     }
+# 
+# lapply(out_road, l_g) 
+
+pdf(str_c(doc, "log_vias.pdf"), height=6, width=12)
+rdplot(y=l2$log_vias, x=l2$margin_prop_2, c = 0,
+       y.lim = c(5, 8),
+       # x.lim = c(0.45, 0.55),
+       title = " ",
+       x.label = "Victory Margin",
+       y.label = "log(1+Investment)",
+       binselect="es", nbins= 10, kernel="triangular", p=3, ci=95)
+dev.off()
+
+pdf(str_c(doc, "log_f_SGPp.pdf"), height=6, width=12)
+    rdplot(y=l2$log_f_SGPp, x=l2$margin_prop_2, c = 0,
+       y.lim = c(3, 6),
+       # x.lim = c(0.45, 0.55),
+       title = " ",
+       x.label = "Victory Margin",
+       y.label = "log(1+Investment)",
+       binselect="es", nbins= 10, kernel="triangular", p=3, ci=95)
+    dev.off()
+
+pdf(str_c(doc, "log_f_regalias.pdf"), height=6, width=12)
+    rdplot(y=l2$log_f_regalias, x=l2$margin_prop_2, c = 0,
+           y.lim = c(0,3),
+           # x.lim = c(0.45, 0.55),
+           title = " ",
+           x.label = "Victory Margin",
+           y.label = "log(1+Investment)",
+           binselect="es", nbins= 10, kernel="triangular", p=3, ci=95)
+    dev.off()
+
+pdf(str_c(doc, "log_f_trans_nac.pdf"), height=6, width=12)
+    rdplot(y=l2$log_f_trans_nac, x=l2$margin_prop_2, c = 0,
+           y.lim = c(1,5),
+           # x.lim = c(0.45, 0.55),
+           title = " ",
+           x.label = "Victory Margin",
+           y.label = "log(1+Investment)",
+           binselect="es", nbins= 10, kernel="triangular", p=3, ci=95)
+    dev.off()
+
+        
+    
 ###########################################################################################################
 ################################### INVESTMENT: BEFORE  ###################################################
 ################################ Coalition wrt CURRENT president ##########################################

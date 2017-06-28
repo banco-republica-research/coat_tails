@@ -21,6 +21,7 @@ edu <- "Data/Educacion/"
 noaa <- "Data/NOAA/"
 
 results <- "Results/RD/"
+doc <- "Results/RD/Graphs/RD/"
 
 ###########################################################################################################
 ######################################## ELECTIONS DATA ###################################################
@@ -57,10 +58,32 @@ icfes <- read_dta(paste0(edu,"icfes_all.dta"))
 teen <- read_dta(paste0(edu,"fert_all.dta"))
 mort <- read_dta(paste0(edu,"tasa_mort_all.dta"))
 nightlights <- read_dta(paste0(noaa,"nightlights_all.dta"))
-  
+
 ###########################################################################################################
-################################### desempeño: LAST year ##################################################
-######################################## PGN: all #########################################################
+#################################### Estimation Function  #################################################
+###########################################################################################################
+
+# Regressions for list of outcomes
+l_f <- function(o){
+  r <- rdrobust(y = l[,o],
+                x = l$margin_prop_2,
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                c = 0,
+                all = T,
+                vce = "nn")
+  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
+                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- mean(l[,o], na.rm = T)
+  
+  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- dens$test$p_jk
+  return(list(rd = r, mean = mean, d = dens))
+}
+
+
+
+###########################################################################################################
+################################### AFTERMATH OUTCOMES ####################################################
 ################################ Coalition wrt CURRENT president ##########################################
 ###########################################################################################################
 
@@ -119,38 +142,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
-# Regressions for list of outcomes
-l_f <- function(o){
-  r <- rdrobust(y = l[,o],
-                x = l$margin_prop_2,
-                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
-                c = 0,
-                all = T,
-                vce = "nn")
-  pdf(str_c(results, "/Graphs/After/RD_", o, ".pdf"), height=6, width=12)
-  rdplot(y=l2[,o], x=l2$margin_prop_2, c = 0,
-         title = " ",
-         x.label = "Victory Margin",
-         y.label = "Vote share (subsequent Election)",
-         binselect="es", nbins= 14, kernel="triangular", p=3, ci=95 
-  )
-  dev.off()
-  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
-                         prop_votes_c2 >= 0.5 - r$bws[1])
-  mean <- mean(l[,o], na.rm = T)
-  
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
-  dens <- dens$test$p_jk
-  return(list(rd = r, mean = mean, d = dens))
-}
-
-
 # outcomes
-
-out <- c("cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p", "tasa_m", "hom_tasa")
-r <- lapply(out, l_f) 
-saveRDS(r, str_c(results, "aftermath_publicgoods.rds"))
-r
 
 out <- c("log_ba_tot_vr", "log_ba_peq_vr","log_light_pix","log_light_dm")
 r <- lapply(out, l_f) 
@@ -161,3 +153,9 @@ out <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_gu
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "aftermath_institutions.rds"))
 r
+
+out <- c("cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p", "tasa_m","hom_tasa")
+r <- lapply(out, l_f) 
+saveRDS(r, str_c(results, "aftermath_publicgoods.rds"))
+r
+
