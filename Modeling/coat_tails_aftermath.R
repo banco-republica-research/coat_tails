@@ -19,6 +19,7 @@ violencia <- "Data/Violencia/"
 agro <- "Data/Agro/"
 edu <- "Data/Educacion/"
 noaa <- "Data/NOAA/"
+vitales <- "Data/Vitales/"
 
 results <- "Results/RD/"
 doc <- "Results/RD/Graphs/RD/"
@@ -55,8 +56,8 @@ hom <- read_dta(paste0(violencia,"homicidios_all.dta"))
 agro <- read_dta(paste0(agro,"agro_all.dta"))
 cobertura <- read_dta(paste0(edu,"cobertura_all.dta"))
 icfes <- read_dta(paste0(edu,"icfes_all.dta"))
-teen <- read_dta(paste0(edu,"fert_all.dta"))
-mort <- read_dta(paste0(edu,"tasa_mort_all.dta"))
+teen <- read_dta(paste0(vitales,"fert_all.dta"))
+mort <- read_dta(paste0(vitales,"tasa_mort_all.dta"))
 nightlights <- read_dta(paste0(noaa,"nightlights_all.dta"))
 
 ###########################################################################################################
