@@ -104,12 +104,6 @@ ggplot(data = vias_source_2, aes(x = ano, y = value, fill = factor(source, level
         panel.border = element_blank(),
         panel.background = element_blank()) 
 
-ggsave(path=final,"roads_source.pdf", width = 8, height = 5, dpi = 300)
-ggsave(path=doc,"roads_source.pdf", width = 8, height = 5, dpi = 300)
-ggsave(path=pres,"roads_source.pdf", width = 8, height = 5, dpi = 300)
-
-
-
 # credito en others 
 vias_source <- vias %>% dplyr::select(codmpio, ano, f_propios, f_SGPp, f_regalias, f_trans_nac, f_trans_dep, f_credito,f_otras) %>% 
   mutate(otras = f_credito + f_trans_dep + f_otras) %>% 
@@ -127,6 +121,29 @@ ggplot(data = vias_source, aes(x = ano, y = value, fill = factor(source, levels=
         panel.background = element_blank()) 
 
 
+
+ggsave(path=final,"roads_source.pdf", width = 8, height = 5, dpi = 300)
+ggsave(path=doc,"roads_source.pdf", width = 8, height = 5, dpi = 300)
+ggsave(path=pres,"roads_source.pdf", width = 8, height = 5, dpi = 300)
+
+# Sin other 
+
+vias_source <- vias %>% dplyr::select(codmpio, ano, f_propios, f_SGPp, f_regalias, f_trans_nac, f_trans_dep, f_credito,f_otras) %>% 
+  dplyr::select(-c(f_trans_dep, f_otras)) %>% 
+  group_by(ano) %>% summarise(Local =sum(f_propios, na.rm = TRUE), SGP = sum(f_SGPp, na.rm = TRUE), Royalties = sum(f_regalias, na.rm = TRUE), Cofinanced =sum(f_trans_nac, na.rm = TRUE)) %>% 
+  gather(source,value, Local:Cofinanced)
+
+ggplot(data = vias_source, aes(x = ano, y = value, fill = factor(source, levels=c("Cofinanced","Royalties","SGP","Local")))) + geom_bar(stat = "identity") + 
+  labs(y= "Investment (Million pesos 2014)", x = "Year") + scale_x_continuous(breaks = c(1996, 1998, 2000, 2002, 2004, 2006, 2008,2010, 2012, 2014)) + 
+  theme_bw() + scale_fill_manual(values=c("#a1d99b","#2b8cbe","#a6bddb","#F1E7DA"), name = "", labels = c("Cofinanced","Royalties","SGP","Local Revenue")) + theme_bw() +  
+  theme(legend.position="bottom", axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+
 # Share of transfers
 vias_source_tot <- vias %>% dplyr::select(codmpio, ano, f_propios, f_SGPp, f_regalias, f_trans_nac, f_trans_dep, f_credito, f_otras) %>% 
   mutate(otras = f_trans_dep + f_otras) %>% 
@@ -140,3 +157,7 @@ trans_tot <- vias_source_tot %>% filter(source %in% trans) %>%
   mutate(share = sum(share)) %>%
   mutate(share_2 = value / sum(value)) 
 
+
+trans_tot <- vias_source_tot  %>%
+  mutate(share = sum(share)) %>%
+  mutate(share_2 = value / sum(value)) 

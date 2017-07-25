@@ -30,7 +30,8 @@ rd_to_df <- function(list){
     x$rd %>% .$tabl3.str}) %>%
     lapply(as.data.frame)  %>%
     lapply( "[", 3 , ) %>%
-    ldply() %>% mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
+    ldply() %>% 
+    mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
     mutate(N_r = unlist(lapply(list, function(x) x$rd$N_h_r))) %>%
     mutate(mean_bw = unlist(lapply(list, function(x) x$mean)))%>%
     mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
@@ -44,7 +45,6 @@ rd_to_df <- function(list){
 }
 
 setwd(results)
-
 
 #############
 # Tables 
@@ -139,7 +139,8 @@ rd_to_df_2 <-  function(list){
     x$rd %>% .$tabl3.str}) %>%
     lapply(as.data.frame)  %>%
     lapply( "[", 3 , ) %>%
-    ldply() %>% mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
+    ldply() %>% 
+    mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
     mutate(N_r = unlist(lapply(list, function(x) x$rd$N_h_r))) %>%
     mutate(mean_bw = unlist(lapply(list, function(x) x$mean)))%>%
     mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
@@ -152,13 +153,10 @@ rd_to_df_2 <-  function(list){
   return(df)
 }
 
-#############
-# Read results
-
 setwd(results)
 
-# out_investment <- c("log_D","log_D4000","log_D2000", "log_D1000", "log_D3000")
-# out_roads <- c("log_vias","log_f_propios","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
+#############
+# Read results
 
 out_investment <- c("log_D","log_D2000", "log_D1000", "log_D3000")
 out_roads <- c("log_vias","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
@@ -316,19 +314,19 @@ inv_a <- rd_to_df_2(after_s2011_curnext) %>% .[c(5:8)] %>% stargazer(., summary 
 
 
 ###########################################################################################################
-################################################ LOAD RESULTS #############################################
 ################################################# AFTERMATH ############################################### 
 ###########################################################################################################
-
+  
 #############
-# Function to read results
+# Function to Read results
 
 rd_to_df <- function(list){
   rd <- lapply(list, function(x){
     x$rd %>% .$tabl3.str}) %>%
     lapply(as.data.frame)  %>%
     lapply( "[", 3 , ) %>%
-    ldply() %>% mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
+    ldply() %>% 
+    mutate(N_l = unlist(lapply(list, function(x) x$rd$N_h_l))) %>%
     mutate(N_r = unlist(lapply(list, function(x) x$rd$N_h_r))) %>%
     mutate(mean_bw = unlist(lapply(list, function(x) x$mean)))%>%
     mutate(bws = unlist(lapply(list, function(x) x$rd$bws[1,1]))) %>%
@@ -341,32 +339,38 @@ rd_to_df <- function(list){
   return(df)
 }
 
+setwd(results)
+
 #############
-# read results and create tables
-
-setwd(results)
-
-setwd(results)
+# Read results
 
 out_growth <- c("log_light_pix","log_light_dm","log_ba_tot_vr", "log_ba_peq_vr")
-out_institutions <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty","hom_tasa")
-out_publicgoods <- c("tasa_m", "cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p")
-outcomes <- c(out_growth, out_institutions, out_publicgoods)
-
-out_l <- list(out_growth, out_institutions, out_publicgoods) %>%
-  sapply(length)
+out_institutions <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty","hom_tasa","log_H_coca")
+out_publicgoods <- c("tasa_m","cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p")
 
 list_files <- list.files() %>%
-  .[str_detect(., "aftermath")]
-aftermath <- lapply(list_files, readRDS) %>%
-  unlist(recursive = FALSE) %>%  
-  setNames(., outcomes)
+  .[str_detect(., "growth")]
+aftermath_growth <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE)  %>%
+  setNames(., out_growth)
+
+list_files <- list.files() %>%
+  .[str_detect(., "institutions")]
+aftermath_institutions <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE)  %>%
+  setNames(., out_institutions)
+
+list_files <- list.files() %>%
+  .[str_detect(., "publicgoods")]
+aftermath_publicgoods <- lapply(list_files, readRDS) %>%
+  unlist(recursive = FALSE)  %>%
+  setNames(., out_publicgoods)
+
 
 # Tables
-
-a <- rd_to_df(aftermath) %>% .[, 1:4]  %>% stargazer(., summary = FALSE, out= "Tables/after/aftermath_growth.tex")
-b <- rd_to_df(aftermath) %>% .[, 5:11]  %>% stargazer(., summary = FALSE, out= "Tables/after/aftermath_institutions.tex")
-c <- rd_to_df(aftermath) %>% .[, 12:length(.)]  %>% stargazer(., summary = FALSE, out= "Tables/after/aftermath_publicgoods.tex")
+a <- rd_to_df(aftermath_growth) %>%  stargazer(., summary = FALSE, out= "Tables/after/aftermath_growth.tex")
+b <- rd_to_df(aftermath_institutions) %>%  stargazer(., summary = FALSE, out= "Tables/after/aftermath_institutions.tex")
+c <- rd_to_df(aftermath_publicgoods) %>%  stargazer(., summary = FALSE, out= "Tables/after/aftermath_publicgoods.tex")
 
 
 

@@ -1,65 +1,67 @@
-###########################################################################################################
-############################################# COAT-TAILS ##################################################
-############################################ DESCRIPTIVES #################################################
-###########################################################################################################
-
-rm(list=ls())
-packageList<-c("data.table","foreign","haven","plyr","dplyr","stargazer", "broom", "knitr","tidyr")
-lapply(packageList,require,character.only=TRUE)
-
-# Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
-# setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
-
-data <-"Data/CEDE/Microdatos/"
-res <-"Data/CEDE/Bases/"
-dnp_e <- "Data/DNP/Ejecuciones/"
-dnp_d <- "Data/DNP/Desempeno/"
-invias <- "Data/invias/"
-pgn <- "Data/PGN/"
-violencia <- "Data/Violencia/"
-agro <- "Data/Agro/"
-edu <- "Data/Educacion/"
-vitales <- "Data/Vitales/"
-noaa <- "Data/NOAA/"
-
-results <- "Results/Descriptives/"
-
-# COntrols
-cede <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
-controls <- cede %>%
-  dplyr::select(coddepto, codmpio, municipio, ano, nbi) %>%
-  filter(ano == 1993) %>%
-  merge(., cede, by.x = c("codmpio"), by.y = c("codmpio"), all = T)
-
-# Load ejecuciones
-ejecu_all <- read_dta(paste0(dnp_e,"Ejecuciones_all.dta"))
-vias_all <- read_dta(paste0(dnp_e,"Vias_SICEP_all.dta"))
-invias_all <- read_dta(paste0(invias,"invias_all.dta"))
-
-# Load outcomes
-desempeno <- read_dta(paste0(dnp_d,"desempeno_last.dta"))
-pgn <- read_dta(paste0(pgn,"PGN_all.dta"))
-hom <- read_dta(paste0(violencia,"homicidios_all.dta"))
-agro <- read_dta(paste0(agro,"agro_all.dta"))
-cobertura <- read_dta(paste0(edu,"cobertura_all.dta"))
-icfes <- read_dta(paste0(edu,"icfes_all.dta"))
-teen <- read_dta(paste0(vitales,"fert_all.dta"))
-mort <- read_dta(paste0(vitales,"tasa_mort_all.dta"))
-nightlights <- read_dta(paste0(noaa,"nightlights_all.dta"))
-
-# Load maire data
-alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
-
-
-# Subsequent elections
-alcaldes_t1 <-  readRDS(paste0(res,"alcaldes_t1.rds"))
-representantes <- readRDS(paste0(res,"representantes_merge.rds")) 
-senado <- readRDS(paste0(res,"senado_merge.rds")) 
-president_1 <- readRDS(paste0(res, "presidentes_primera_merge.rds")) 
-president_2 <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) 
-
+  ###########################################################################################################
+  ############################################# COAT-TAILS ##################################################
+  ############################################ DESCRIPTIVES #################################################
+  ###########################################################################################################
+  
+  rm(list=ls())
+  packageList<-c("data.table","foreign","haven","plyr","dplyr","stargazer", "broom", "knitr","tidyr")
+  lapply(packageList,require,character.only=TRUE)
+  
+  # Directory 
+  # setwd("~/Dropbox/BANREP/Elecciones/")
+  setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+  # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
+  
+  data <-"Data/CEDE/Microdatos/"
+  res <-"Data/CEDE/Bases/"
+  dnp_e <- "Data/DNP/Ejecuciones/"
+  dnp_d <- "Data/DNP/Desempeno/"
+  invias <- "Data/invias/"
+  pgn <- "Data/PGN/"
+  violencia <- "Data/Violencia/"
+  agro <- "Data/Agro/"
+  edu <- "Data/Educacion/"
+  vitales <- "Data/Vitales/"
+  noaa <- "Data/NOAA/"
+  coca <- "Data/Coca/"
+  
+  results <- "Results/Descriptives/"
+  
+  # COntrols
+  cede <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
+  controls <- cede %>%
+    dplyr::select(coddepto, codmpio, municipio, ano, nbi) %>%
+    filter(ano == 1993) %>%
+    merge(., cede, by.x = c("codmpio"), by.y = c("codmpio"), all = T)
+  
+  # Load ejecuciones
+  ejecu_all <- read_dta(paste0(dnp_e,"Ejecuciones_all.dta"))
+  vias_all <- read_dta(paste0(dnp_e,"Vias_SICEP_all.dta"))
+  invias_all <- read_dta(paste0(invias,"invias_all.dta"))
+  
+  # Load outcomes
+  desempeno <- read_dta(paste0(dnp_d,"desempeno_last.dta"))
+  pgn <- read_dta(paste0(pgn,"PGN_all.dta"))
+  hom <- read_dta(paste0(violencia,"homicidios_all.dta"))
+  agro <- read_dta(paste0(agro,"agro_all.dta"))
+  cobertura <- read_dta(paste0(edu,"cobertura_all.dta"))
+  icfes <- read_dta(paste0(edu,"icfes_all.dta"))
+  teen <- read_dta(paste0(vitales,"fert_all.dta"))
+  mort <- read_dta(paste0(vitales,"tasa_mort_all.dta"))
+  nightlights <- read_dta(paste0(noaa,"nightlights_all.dta"))
+  coca <- read_dta(paste0(coca,"coca_all.dta"))
+  
+  # Load maire data
+  alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
+  
+  
+  # Subsequent elections
+  alcaldes_t1 <-  readRDS(paste0(res,"alcaldes_t1.rds"))
+  representantes <- readRDS(paste0(res,"representantes_merge.rds")) 
+  senado <- readRDS(paste0(res,"senado_merge.rds")) 
+  president_1 <- readRDS(paste0(res, "presidentes_primera_merge.rds")) 
+  president_2 <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) 
+  
 
 
 ###########################################################################################################
@@ -199,38 +201,39 @@ stargazer(des_pres2, summary.stat = c("mean", "sd", "median", "min", "max"), typ
 ###########################################################################################################
 
 # Dataset: incumbency regression 
+  
+  alcaldes_merge_r2 <- alcaldes_merge %>% 
+    filter(ano != 2015) %>%
+  #  filter(rank <= 2) %>% 
+    arrange(codmpio, ano, codpartido) %>%
+  #  mutate(ano = as.character(ano)) %>%
+  #  group_by(codmpio, ano) %>%
+  #  mutate(n = 1, nn = sum(n)) %>%
+  #  filter(nn == 2) %>%
+  #  dplyr::select(-c(n,nn)) %>%
+    merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) %>% 
+    merge(., ejecu_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+    merge(., vias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+    merge(., invias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+    merge(., desempeno,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+    merge(., pgn,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+    merge(., hom,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+    merge(., agro,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+    merge(., cobertura,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+    merge(., icfes,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+    merge(., teen,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+    merge(., mort,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+    merge(., nightlights,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>% 
+    merge(., coca,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T)
 
-alcaldes_merge_r2 <- alcaldes_merge %>% 
-  filter(ano != 2015) %>%
-  filter(rank <= 2) %>% 
-  arrange(codmpio, ano, codpartido) %>%
-  mutate(ano = as.character(ano)) %>%
-  group_by(codmpio, ano) %>%
-  mutate(n = 1, nn = sum(n)) %>%
-  filter(nn == 2) %>%
-  dplyr::select(-c(n,nn)) %>%
-  merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) %>% 
-  merge(., ejecu_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., vias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., invias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., desempeno,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., pgn,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., hom,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., agro,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., cobertura,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., icfes,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., teen,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., mort,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
-  merge(., nightlights,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T)
-
-# Descriptive statistics: Characteristics and outcomes
-
-# des <- alcaldes_merge_r2 %>% dplyr::select(vias, f_propios, f_sgp_reg, f_SGPp, f_regalias, f_trans_nac, light_pix,light_dm, ba_tot_vr, ba_peq_vr,  desemp_fisc,desemp_int, alcalde, alcalde_guilty, top, top_guilty, pobl_tot.x, altura,discapital, disbogota, nbi.x)
- des <- alcaldes_merge_r2 %>% dplyr::select(vias, f_propios, f_sgp_reg, f_SGPp, f_regalias, f_trans_nac, D, D4000, sgp_reg, D2000, D1000, D3000, tasa_m, cob_pri, cob_sec, matematicas_s,lenguaje_s,fert_19_10_p,hom_tasa, desemp_fisc,desemp_int, alcalde, alcalde_guilty, top, top_guilty, light_pix,light_dm, ba_tot_vr, ba_peq_vr, pobl_tot.x, altura,discapital, disbogota, nbi.x)
-# des <- alcaldes_merge_r2 %>% dplyr::select(log_vias, log_f_SGPp, log_f_regalias, log_f_trans_nac, log_D, log_D2000, log_D1000, log_D3000, tasa_m, cob_pri, cob_sec, matematicas_s,lenguaje_s,fert_19_10_p,hom_tasa, desemp_fisc,desemp_int, alcalde, alcalde_guilty, top, top_guilty, log_light_pix, log_light_dm, log_ba_tot_vr, log_ba_peq_vr, pobl_tot.x, altura,discapital, disbogota, nbi.x)
-
-setwd(results)
-stargazer(des, summary.stat = c("mean", "sd", "median", "min", "max"), type = "latex", digits = 2, out= "descriptives.tex")
+  
+  # Descriptive statistics: Characteristics and outcomes
+  
+   des <- alcaldes_merge_r2 %>% dplyr::select(vias, f_SGPp, f_regalias, f_trans_nac, light_pix,light_dm, ba_tot_vr, ba_peq_vr, desemp_fisc,desemp_int, alcalde, alcalde_guilty, top, top_guilty, hom_tasa, H_coca, tasa_m, cob_pri, cob_sec, matematicas_s,lenguaje_s,fert_19_10_p, pobl_tot.x, altura,discapital, disbogota, nbi.x)
+  # des <- alcaldes_merge_r2 %>% dplyr::select(log_vias, log_f_SGPp, log_f_regalias, log_f_trans_nac, log_D, log_D2000, log_D1000, log_D3000, tasa_m, cob_pri, cob_sec, matematicas_s,lenguaje_s,fert_19_10_p,hom_tasa, desemp_fisc,desemp_int, alcalde, alcalde_guilty, top, top_guilty, log_light_pix, log_light_dm, log_ba_tot_vr, log_ba_peq_vr, pobl_tot.x, altura,discapital, disbogota, nbi.x)
+  
+  setwd(results)
+  stargazer(des, summary.stat = c("mean", "sd", "median", "min", "max"), type = "latex", digits = 2, out= "descriptives.tex")
 
 
 

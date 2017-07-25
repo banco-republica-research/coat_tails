@@ -20,6 +20,7 @@ agro <- "Data/Agro/"
 edu <- "Data/Educacion/"
 noaa <- "Data/NOAA/"
 vitales <- "Data/Vitales/"
+coca <- "Data/Coca/"
 
 results <- "Results/RD/"
 doc <- "Results/RD/Graphs/RD/"
@@ -59,28 +60,29 @@ icfes <- read_dta(paste0(edu,"icfes_all.dta"))
 teen <- read_dta(paste0(vitales,"fert_all.dta"))
 mort <- read_dta(paste0(vitales,"tasa_mort_all.dta"))
 nightlights <- read_dta(paste0(noaa,"nightlights_all.dta"))
+coca <- read_dta(paste0(coca,"coca_all.dta"))
 
 ###########################################################################################################
 #################################### Estimation Function  #################################################
 ###########################################################################################################
 
 # Regressions for list of outcomes
-l_f <- function(o){
+
+l_f <- function(o, type){
   r <- rdrobust(y = l[,o],
                 x = l$margin_prop_2,
                 covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
                 c = 0,
                 all = T,
                 vce = "nn")
-  mean <- l %>% filter(prop_votes_c2 <= 0.5 + r$bws[1] &
-                         prop_votes_c2 >= 0.5 - r$bws[1])
+  mean <- l %>% filter(margin_prop_2 <= 0 + r$bws[1] &
+                         margin_prop_2 >= 0 - r$bws[1])
   mean <- mean(l[,o], na.rm = T)
   
   dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
   return(list(rd = r, mean = mean, d = dens))
 }
-
 
 
 ###########################################################################################################
@@ -102,6 +104,7 @@ table(coalitions_long$ano,coalitions_long$year)
 # Drop elections where party is both 1 and 2 in t
 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
+  filter(ano != 2015) %>%
   filter(rank <= 2) %>% 
   merge(., coalitions_long, by.x = c("codpartido","ano","codmpio") , by.y = c("codpartido","ano","codmpio"), all.x = T) %>%
   arrange(codmpio, ano, codpartido) %>%
@@ -113,17 +116,18 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   dplyr::select(-c(codep,n,nn)) %>%
   merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
+
 alcaldes_rd <- alcaldes_merge_r2 %>%
   filter(coalition_new == 1) %>%
   group_by(ano, codmpio) %>%
   mutate(party_2 = n()) %>% #Drop if two candidates are on the coalition 
   filter(party_2 == 1) %>% 
   mutate(win_t = ifelse(rank == 1, 1, 0)) %>% 
-  merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano_pl", "codmpio", "coalition"), 
-        suffixes = c("_t", "_t1"), all.x = T) %>%
-  dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, year, codpartido_t, win_t, 
-                votos_t, votos_t1, starts_with("prop"), margin_prop_2) %>% 
-  filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
+  # merge(., president,  by.x = c("year", "codmpio", "coalition_new"), by.y = c("ano_pl", "codmpio", "coalition"), 
+  #       suffixes = c("_t", "_t1"), all.x = T) %>%
+  # dplyr::select(codmpio, pobl_tot, nbi.x, discapital, disbogota, altura, coddepto.x, ano, year, codpartido_t, win_t, 
+  #               votos_t, votos_t1, starts_with("prop"), margin_prop_2) %>% 
+  # filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
   merge(., desempeno,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., pgn,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., hom,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
@@ -133,30 +137,31 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   merge(., teen,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., mort,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., nightlights,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., coca,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano)
-
-
-############################
-# RD and OLS regressions 
 
 # Select period: Drop 2011 given the coalition change during Santos I
 l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
+
+############################
+# RD and OLS regressions 
+
 # outcomes
 
-out <- c("log_ba_tot_vr", "log_ba_peq_vr","log_light_pix","log_light_dm")
-r <- lapply(out, l_f) 
-saveRDS(r, str_c(results, "aftermath_growths.rds"))
+out <- c("log_light_pix","log_light_dm","log_ba_tot_vr", "log_ba_peq_vr")
+r <- lapply(out, l_f,  type = "growth") 
+saveRDS(r, str_c(results, "aftermath_growth.rds"))
 r
 
-out <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty")
-r <- lapply(out, l_f) 
+out <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty","hom_tasa", "log_H_coca")
+r <- lapply(out, l_f,  type = "institutions") 
 saveRDS(r, str_c(results, "aftermath_institutions.rds"))
 r
 
-out <- c("cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p", "tasa_m","hom_tasa")
-r <- lapply(out, l_f) 
+out <- c("tasa_m","cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p")
+r <- lapply(out, l_f,  type = "public") 
 saveRDS(r, str_c(results, "aftermath_publicgoods.rds"))
 r
 
