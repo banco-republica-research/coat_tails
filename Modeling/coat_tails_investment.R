@@ -17,6 +17,8 @@ dnp <- "Data/DNP/Ejecuciones/"
 invias <- "Data/invias/"
 doc <- "Results/RD/Graphs/RD/"
 
+results <- "Results/RD/"
+
 ###########################################################################################################
 ######################################## ELECTIONS DATA ###################################################
 ###########################################################################################################
@@ -75,8 +77,6 @@ l_f <- function(o, type){
   return(list(rd = r, mean = mean, d = dens))
 }
 
-
-
 ###########################################################################################################
 ##################################### INVESTMENT: TOTAL term ##############################################
 ############################### Coalition wrt CURRENT president  ##########################################
@@ -119,12 +119,12 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   merge(., invias_all,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   arrange(codmpio, ano)
 
-############################
-# RD and OLS regressions 
-
 # Select period: 
 l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
+
+############################
+# All years
 
 r <- lapply(out_inv, l_f, type = "investment") 
 saveRDS(r, str_c(results, "/investment_total_current.rds"))
