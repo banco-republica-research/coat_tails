@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+#setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -179,5 +179,33 @@ s_ef <- ggplot(alcaldes_difference, aes(parties_ef, difference)) + geom_point(ae
 
 ggplotly(s_ef)
 
+
+
+###########################################################################################################
+#################################### COALITIONS ACROSS TIME AND PARTIES ###################################
+###########################################################################################################
+coalitions_long_primera <- readRDS(paste0(res,"coalitions_primera_new.rds"))
+coalitions_long_segunda <- readRDS(paste0(res,"coalitions_segunda_new.rds"))
+coalitions_long_current <- readRDS(paste0(res, "coalitions_current.rds"))
+
+coal_list <- list(coalitions_long_current, coalitions_long_primera, coalitions_long_segunda) %>%
+  lapply(function(x){
+    x %>%
+      dplyr::select(., codpartido, ano, codmpio, coalition_new) %>%
+      mutate(coalition_new = recode(.[, "coalition_new"], "98" = "99")) %>%
+      mutate(ano = as.character(ano)) %>%
+      filter(., ano != 2015) %>%
+      group_by(ano, coalition_new) %>%
+      summarize(., count  = n()) 
+  }) %>% Reduce(function(...) merge(..., by = c("ano", "coalition_new"), all.x = TRUE, suffixes=c("_current", "_primera", "segunda")), .) %>%
+  dplyr::filter(., !is.na(coalition_new)) %>%
+  dplyr::arrange(.,  ano, desc(coalition_new)) %>%
+  #dplyr::filter(., coalition_new != 98) %>%
+   dplyr::mutate(., 
+                 coalition_new = recode(.[, "coalition_new"], `1` = "Coalition", `0` = "No Coalition", `99` = "Undefined")) %>% t()
+coal_list[,c(1, 2, 4, 5, 3, 7, 8, 6, 10, 11, 9, 13, 14, 12)]
+
+library(stargazer)
+stargazer(coal_list[,c(1, 2, 4, 5, 3, 7, 8, 6, 10, 11, 9, 13, 14, 12)], summary = F)
 
 
