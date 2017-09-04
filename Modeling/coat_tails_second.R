@@ -3,12 +3,12 @@
 ###########################################################################################################
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","broom","gtools","TraMineR","cluster", "rdrobust")
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","broom","gtools","TraMineR","cluster", "rdrobust", "rddensity")
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-#setwd("~/Dropbox/BANREP/Elecciones/")
- setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+#setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -69,10 +69,24 @@ l_f <- function(o){
                          margin_prop_2 >= 0 - r$bws[1])
   mean <- mean(l[,o], na.rm = T)
   
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- rddensity::rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
   return(list(rd = r, mean = mean, d = dens))
 }
+
+#BW sensibility function
+
+l_f_sens <- function(o, bw){
+  r <- rdrobust(y = l[,o],
+                x = l$margin_prop_2,
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                c = 0,
+                all = T,
+                h = bw,
+                vce = "nn")
+  return(r)
+}
+
 
 
 ###########################################################################################################
@@ -211,6 +225,15 @@ rdplot(y=l2$prop_votes_total_t1, x=l2$margin_prop_2, c = 0,
 )
 dev.off()
 
+###############################################################################
+################################ PLACEBO TESTS ################################
+###############################################################################
+
+bw_sensibility <- c(seq(0.01, 0.5, by = 0.01), r[[1]]$rd$bws[1, 1]) %>%
+  .[sort.list(.)] %>% as.list()
+
+r_sensibility <- mapply(l_f_sens, o = out, bw = bw_sensibility, SIMPLIFY = F)
+saveRDS(r_sensibility, str_c(results, "Placebos", "/coat_tails_pressec_2_coalition_placebo.rds"))
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################

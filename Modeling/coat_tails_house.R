@@ -9,8 +9,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,library,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+ setwd("~/Dropbox/BANREP/Elecciones/")
+#setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -54,6 +54,20 @@ l_f <- function(o){
   dens <- dens$test$p_jk
   return(list(rd = r, mean = mean, d = dens))
 }
+
+#BW sensibility function
+
+l_f_sens <- function(o, bw){
+  r <- rdrobust(y = l[,o],
+                x = l$margin_prop_2,
+                covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+                c = 0,
+                all = T,
+                h = bw,
+                vce = "nn")
+  return(r)
+}
+
 
 ###########################################################################################################
 ######################################## COAT TAILS HOUSE BY PARTY: RD ####################################
@@ -322,6 +336,17 @@ rdplot(y=l2$prop_votes_total_t1, x=l2$margin_prop_2, c = 0,
        binselect="es", nbins= 10, kernel="triangular", p=3, ci=95
 )
 dev.off()
+
+###############################################################################
+################################ PLACEBO TESTS ################################
+###############################################################################
+
+bw_sensibility <- c(seq(0.01, 0.5, by = 0.01), r[[1]]$rd$bws[1, 1]) %>%
+  .[sort.list(.)] %>% as.list()
+
+r_sensibility <- mapply(l_f_sens, o = out, bw = bw_sensibility, SIMPLIFY = F)
+saveRDS(r_sensibility, str_c(results, "Placebos", "/coat_tails_house_final_coalition_placebo.rds"))
+
 
 
 ###########################################################################################################
