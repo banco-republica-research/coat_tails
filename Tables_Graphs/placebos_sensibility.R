@@ -27,7 +27,7 @@ rd_to_df <- function(list, name){
     mutate(N = N_l + N_r) %>%
     mutate(bws = unlist(lapply(list, function(x) x$bws[1, 1]))) %>%
     as.data.frame() %>%
-    rename(Tratamiento = tabl3.str.Coef, SE = tabl3.str.Std..Err., z = tabl3.str.z, p_value = tabl3.str.P..z., CI_l = tabl3.str.CI.Lower, 
+    rename(Treatment = tabl3.str.Coef, SE = tabl3.str.Std..Err., z = tabl3.str.z, p_value = tabl3.str.P..z., CI_l = tabl3.str.CI.Lower, 
            CI_u = tabl3.str.CI.Upper, N_left = N_l, N_right = N_r, N = N, Bandwidth = bws ) %>%
   mutate_all(funs(as.character)) %>% mutate_all(funs(as.numeric)) %>% mutate(.id = name)
   return(rd)
@@ -62,17 +62,22 @@ optimal_bws <- c(coalition_2, final) %>%
 sens_df <- mapply(rd_to_df, list = sens_test, 
                   name = list("House", "Presidential (Second Round)", "Senate", "Mayor"), 
                   SIMPLIFY = F) %>%
-  ldply() %>% mutate(optimal_bw = ifelse(Bandwidth %in% optimal_bws, 1, 0))
+  ldply() %>% 
+  mutate(optimal_bw = ifelse(Bandwidth %in% optimal_bws, 1, 0)) %>%
+  mutate(ci_10_h = Treatment + 1.645 * SE) %>%
+  mutate(ci_10_l = Treatment - 1.645 * SE) %>%
+  subset(Bandwidth <= 0.25)
+  
 
 
-#Graph LATE for all distances with IC's
+#Graph LATE for all BW's with IC's
 setwd("~/Dropbox/BANREP/Elecciones/Results/RD/Graphs/Sens_tests/")
-g <- ggplot(sens_df, aes(y = Tratamiento, x = Bandwidth)) 
+g <- ggplot(sens_df, aes(y = Treatment, x = Bandwidth)) 
 g <- g + facet_wrap( ~ .id, ncol=1, scales = "fixed")
 g <- g + geom_line()
 # g <- g + scale_y_continuous(lim = c(-0.12, 0.2))
 g <- g + coord_cartesian(xlim = c(0, 0.25))
-g <- g + geom_ribbon(aes(ymin = CI_l, ymax = CI_u), alpha = 0.2)
+g <- g + geom_ribbon(aes(ymin = ci_10_l, ymax = ci_10_h), alpha = 0.2)
 # g <- g + geom_vline(xintercept = 0, linetype = 2) 
 g <- g + geom_vline(data = sens_df[sens_df$optimal_bw == 1, ], aes(xintercept = Bandwidth), colour="red")
 g <- g + geom_hline(yintercept = 0, linetype = 2, colour = "grey")

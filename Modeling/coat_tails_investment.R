@@ -49,7 +49,7 @@ invias_before <- read_dta(paste0(invias,"invias_before.dta"))
 # out_inv <- c("log_D_pc","log_D1000_pc", "log_D2000_pc", "log_D3000_pc")
 # out_inv <- c("log_D","log_D4000","log_D1000", "log_D2000", "log_D3000")
 # out_inv <- c("log_D","log_D4000", "log_sgp_reg", "log_D3000")
- out_inv <- c("log_D","log_D1000", "log_D2000", "log_D3000")
+out_inv <- c("log_D","log_D1000", "log_D2000", "log_D3000")
 
 # out_road <- c("log_vias_pc", "log_f_SGPp_pc","log_f_regalias_pc", "log_f_trans_nac_pc")
 # out_road <- c("log_vias","log_f_propios","log_f_SGPp","log_f_regalias", "log_f_trans_nac")
@@ -90,6 +90,25 @@ l_f_sens <- function(o, bw){
                 vce = "nn")
   return(r)
 }
+
+
+l_f_sens <- function(o, bw){
+  r <- rapply(bw, function(x){
+    print(x)
+    rdrobust(y = l[,o],
+             x = l$margin_prop_2,
+             covs = cbind(l$pobl_tot, l$altura, l$disbogota, l$discapital, l$nbi.x),
+             c = 0,
+             all = T,
+             h = x,
+             vce = "nn")
+    
+  },
+  how = "list")
+  return(r)
+}
+
+
 
 ###########################################################################################################
 ##################################### INVESTMENT: TOTAL term ##############################################
@@ -140,13 +159,13 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 ############################
 # All years
 
-r <- lapply(out_inv, l_f, type = "investment") 
-saveRDS(r, str_c(results, "/investment_total_current.rds"))
-r
+r_investment_all <- lapply(out_inv, l_f, type = "investment") 
+saveRDS(r_investment_all, str_c(results, "/investment_total_current.rds"))
+r_investment_all
 
-r <- lapply(out_road, l_f,  type = "roads") 
-saveRDS(r, str_c(results, "/roads_total_current.rds"))
-r
+r_roads_all <- lapply(out_road, l_f,  type = "roads") 
+saveRDS(r_roads_all, str_c(results, "/roads_total_current.rds"))
+r_roads_all
 
 ############################
 # Sin 2011
@@ -156,13 +175,13 @@ l <- alcaldes_rd %>% filter(ano!= 2011)
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 
-r <- lapply(out_inv, l_f, type = "investment") 
-saveRDS(r, str_c(results, "/investment_total_s2011_current.rds"))
-r 
+r_investment_2011 <- lapply(out_inv, l_f, type = "investment") 
+saveRDS(r_investment_2011, str_c(results, "/investment_total_s2011_current.rds"))
+r_investment_2011
 
-r <- lapply(out_road, l_f, type = "roads") 
-saveRDS(r, str_c(results, "/roads_total_s2011_current.rds"))
-r
+r_roads_2011 <- lapply(out_road, l_f, type = "roads") 
+saveRDS(r_roads_2011, str_c(results, "/roads_total_s2011_current.rds"))
+r_roads_2011
 
 # Graph 
 
@@ -220,7 +239,22 @@ pdf(str_c(doc, "log_f_trans_nac.pdf"), height=6, width=12)
            binselect="es", nbins= 10, kernel="triangular", p=3, ci=95)
     dev.off()
 
-        
+###############################################################################
+################################ PLACEBO TESTS ################################
+###############################################################################
+
+bw_sensibility <- lapply(r_roads_all, function(x){
+  bws <- x$rd$bws[1, 1]
+  dist <- c(seq(0.01, 0.5, by = 0.01), bws) %>%
+    .[sort.list(.)] %>%  as.list()
+  })
+
+    
+r_sensibility <- mapply(l_f_sens, o = as.list(out_road), bw = bw_sensibility, SIMPLIFY = F)
+saveRDS(r_sensibility, str_c(results, "Placebos", "/incumbency_final_coalition_placebo.rds"))
+    
+    
+
     
 ###########################################################################################################
 ################################### INVESTMENT: BEFORE  ###################################################
