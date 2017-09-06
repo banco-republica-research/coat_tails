@@ -39,9 +39,14 @@ setwd(results)
 ######################## RDROBUST OBJ TO DATAFRAME ###########################
 ############################# LOAD SAVED OBJECTS #############################
 
-list_files <- list.files("Placebos", full.names = T) 
+list_files <- list.files("Placebos", full.names = T) %>% .[1:4]
 sens_test <- lapply(list_files, readRDS) %>%
   setNames(., list_files)
+
+list_files <- list.files("Placebos", full.names = T) %>%
+  .[str_detect(.,"roads")]
+sens_test_inv <- lapply(list_files, readRDS) %>%
+  setNames(., list_files) %>% .[[1]]
 
 list_files <- list.files() %>%
   .[str_detect(., "_2_coalition")]
@@ -55,24 +60,50 @@ final <- lapply(list_files, readRDS) %>%
   lapply(., `[[`, 1) %>%
   setNames(., list_files)
 
-optimal_bws <- c(coalition_2, final) %>%
+list_files <- list.files() %>%
+  .[str_detect(., "total_current")]
+total_current <- lapply(list_files, readRDS)%>%
+  unlist(recursive = FALSE) %>%
+  setNames(., outcomes)
+
+########################### GET OPTIMAL BW'S #############################
+
+#ELECTIONS
+optimal_bws_elec <- c(coalition_2, final) %>%
  lapply(., function(x) x$rd$bws[1,1])
 
 
-sens_df <- mapply(rd_to_df, list = sens_test, 
+#INVESTMENT
+optimal_bws_inv <- c(total_current[5:8]) %>%
+  lapply(., function(x) x$rd$bws[1,1])
+
+
+###################### SENSIBILITY TESTS TO DF ##############################
+
+#ELECTIONS
+sens_df_elec <- mapply(rd_to_df, list = sens_test, 
                   name = list("House", "Presidential (Second Round)", "Senate", "Mayor"), 
                   SIMPLIFY = F) %>%
   ldply() %>% 
-  mutate(optimal_bw = ifelse(Bandwidth %in% optimal_bws, 1, 0)) %>%
+  mutate(optimal_bw = ifelse(Bandwidth %in% optimal_bws_elec, 1, 0)) %>%
   mutate(ci_10_h = Treatment + 1.645 * SE) %>%
   mutate(ci_10_l = Treatment - 1.645 * SE) %>%
   subset(Bandwidth <= 0.25)
   
+#INVESTMENT
+sens_df_inv <- mapply(rd_to_df, list = sens_test_inv, 
+                  name = list("Total", "SGP", "Royalties", "Co-financing Funds"), 
+                  SIMPLIFY = F) %>%
+  ldply() %>% 
+  mutate(optimal_bw = ifelse(Bandwidth %in% optimal_bws_inv, 1, 0)) %>%
+  mutate(ci_10_h = Treatment + 1.645 * SE) %>%
+  mutate(ci_10_l = Treatment - 1.645 * SE) %>%
+  subset(Bandwidth <= 0.25)
 
 
-#Graph LATE for all BW's with IC's
+############################# PLOT SENSIBILITY TEST ####################
 setwd("~/Dropbox/BANREP/Elecciones/Results/RD/Graphs/Sens_tests/")
-g <- ggplot(sens_df, aes(y = Treatment, x = Bandwidth)) 
+g <- ggplot(sens_df_elec, aes(y = Treatment, x = Bandwidth)) 
 g <- g + facet_wrap( ~ .id, ncol=1, scales = "fixed")
 g <- g + geom_line()
 # g <- g + scale_y_continuous(lim = c(-0.12, 0.2))
@@ -85,6 +116,21 @@ g <- g + theme_bw()
 g
 ggsave("RDggplot_sens_test.pdf", width=30, height=20, units="cm")
 
+
+############################# PLOT SENSIBILITY TEST ####################
+setwd("~/Dropbox/BANREP/Elecciones/Results/RD/Graphs/Sens_tests/")
+g <- ggplot(sens_df_inv, aes(y = Treatment, x = Bandwidth)) 
+g <- g + facet_wrap( ~ .id, ncol=1, scales = "fixed")
+g <- g + geom_line()
+# g <- g + scale_y_continuous(lim = c(-0.12, 0.2))
+g <- g + coord_cartesian(xlim = c(0, 0.25))
+g <- g + geom_ribbon(aes(ymin = ci_10_l, ymax = ci_10_h), alpha = 0.2)
+# g <- g + geom_vline(xintercept = 0, linetype = 2) 
+g <- g + geom_vline(data = sens_df_inv[sens_df_inv$optimal_bw == 1, ], aes(xintercept = Bandwidth), colour="red")
+g <- g + geom_hline(yintercept = 0, linetype = 2, colour = "grey")
+g <- g + theme_bw()
+g
+ggsave("RDggplot_sens_test_inv.pdf", width=30, height=20, units="cm")
 
 
 

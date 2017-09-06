@@ -251,9 +251,8 @@ bw_sensibility <- lapply(r_roads_all, function(x){
 
     
 r_sensibility <- mapply(l_f_sens, o = as.list(out_road), bw = bw_sensibility, SIMPLIFY = F)
-saveRDS(r_sensibility, str_c(results, "Placebos", "/incumbency_final_coalition_placebo.rds"))
-    
-    
+saveRDS(r_sensibility, str_c(results, "Placebos", "/roads_final_coalition_placebo.rds"))
+  
 
     
 ###########################################################################################################
