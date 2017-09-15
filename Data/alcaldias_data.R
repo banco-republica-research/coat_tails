@@ -4,8 +4,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "tidyr", "forcats",
 lapply(packageList,library,character.only=TRUE)
 
 # Directory 
- setwd("~/Dropbox/BANREP/Elecciones/")
-#setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
   data <-"Data/CEDE/Microdatos/"
@@ -604,13 +604,20 @@ saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1.rds"))
 
 alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 
-coalitions_primera <- readRDS(paste0(res,"coalitions_primera_new.rds"))
+coalitions_primera <- readRDS(paste0(res,"coalitions_primera_new.rds")) 
 coalitions_segunda <- readRDS(paste0(res,"coalitions_segunda_new.rds"))
 coalitions_final <- readRDS(paste0(res,"coalitions_new.rds"))
 
 list_coalitions <- list(coalitions_primera, coalitions_segunda, coalitions_final)
 
-election_coalitions <- function(x, y){
+election_coalitions <- function(x, y){ 
+  
+  coalition <- x %>% filter(coalition_new == 0 | coalition_new == 1) %>% 
+    group_by(codpartido, ano, codmpio) %>%
+    mutate(coalition_new = as.numeric(coalition_new)) %>%
+    summarize(coalition_new = max(coalition_new)) 
+      
+  
   df_merge <- y %>%
     filter(.,cand == 1) %>%
     filter(ano!=1997) %>% 
@@ -622,7 +629,7 @@ election_coalitions <- function(x, y){
                                 "2007" = "2011",
                                 "2011" = "2015")) %>%
     mutate(ano_lag = as.character(ano_lag)) %>%
-    merge(., x, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+    merge(., coalition, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
     rename(ano_t1 = ano) %>%
     group_by(codmpio, ano_lag, ano_t1, coalition_new) %>%
     summarize(., votos = sum(votos),
@@ -632,6 +639,7 @@ election_coalitions <- function(x, y){
 } 
 
 alcaldes_merge_t1 <- lapply(list_coalitions, election_coalitions, y = alcaldes_merge)
+
 saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1_coalition.rds"))
 
 
@@ -650,6 +658,13 @@ coalitions_current_final <- readRDS(paste0(res,"coalitions_current_final.rds"))
 list_coalitions <- list(coalitions_current,coalitions_current_primera, coalitions_current_segunda, coalitions_current_final)
 
 election_coalitions <- function(x, y){
+  
+  coalition <- x %>% filter(coalition_new == 0 | coalition_new == 1) %>% 
+    group_by(codpartido, ano, codmpio) %>%
+    mutate(coalition_new = as.numeric(coalition_new)) %>%
+    summarize(coalition_new = max(coalition_new)) 
+  
+  
   df_merge <- y %>%
     filter(.,cand == 1) %>%
     filter(ano!=1997) %>% 
@@ -661,7 +676,7 @@ election_coalitions <- function(x, y){
                                 "2007" = "2011",
                                 "2011" = "2015")) %>%
     mutate(ano_lag = as.character(ano_lag)) %>%
-    merge(., x, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+    merge(., coalition, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
     rename(ano_t1 = ano) %>%
     group_by(codmpio, ano_lag, ano_t1, coalition_new) %>%
     summarize(., votos = sum(votos),
@@ -671,6 +686,7 @@ election_coalitions <- function(x, y){
 } 
 
 alcaldes_merge_t1 <- lapply(list_coalitions, election_coalitions, y = alcaldes_merge)
+
 saveRDS(alcaldes_merge_t1 ,paste0(res,"alcaldes_t1_coalition_current.rds"))
 
 #########################################################################################################
@@ -687,6 +703,12 @@ coalitions_nocurrent_final <- readRDS(paste0(res,"coalitions_nocurrent_final.rds
 list_coalitions <- list(coalitions_nocurrent_primera, coalitions_nocurrent_segunda, coalitions_nocurrent_final)
 
 election_coalitions <- function(x, y){
+
+  coalition <- x %>% filter(coalition_new == 0 | coalition_new == 1) %>% 
+    group_by(codpartido, ano, codmpio) %>%
+    mutate(coalition_new = as.numeric(coalition_new)) %>%
+    summarize(coalition_new = max(coalition_new)) 
+
   df_merge <- y %>%
     filter(.,cand == 1) %>%
     filter(ano!=1997) %>% 
@@ -698,7 +720,7 @@ election_coalitions <- function(x, y){
                                 "2007" = "2011",
                                 "2011" = "2015")) %>%
     mutate(ano_lag = as.character(ano_lag)) %>%
-    merge(., x, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+    merge(., coalition, by.x = c("codpartido", "ano_lag", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
     rename(ano_t1 = ano) %>%
     group_by(codmpio, ano_lag, ano_t1, coalition_new) %>%
     summarize(., votos = sum(votos),
