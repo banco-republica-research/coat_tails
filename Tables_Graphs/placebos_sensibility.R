@@ -88,7 +88,8 @@ sens_df_elec <- mapply(rd_to_df, list = sens_test,
   mutate(optimal_bw = ifelse(Bandwidth %in% optimal_bws_elec, 1, 0)) %>%
   mutate(ci_10_h = Treatment + 1.645 * SE) %>%
   mutate(ci_10_l = Treatment - 1.645 * SE) %>%
-  subset(Bandwidth <= 0.25)
+  subset(Bandwidth <= 0.25) %>%
+  mutate(.id = factor(.$.id, levels = c('Mayor', 'House', 'Senate', 'Presidential (Second Round)')))
   
 #INVESTMENT
 sens_df_inv <- mapply(rd_to_df, list = sens_test_inv, 
@@ -98,7 +99,8 @@ sens_df_inv <- mapply(rd_to_df, list = sens_test_inv,
   mutate(optimal_bw = ifelse(Bandwidth %in% optimal_bws_inv, 1, 0)) %>%
   mutate(ci_10_h = Treatment + 1.645 * SE) %>%
   mutate(ci_10_l = Treatment - 1.645 * SE) %>%
-  subset(Bandwidth <= 0.25)
+  subset(Bandwidth <= 0.25) %>%
+  mutate(.id = factor(.$.id, levels = c('Total', 'SGP', 'Royalties', 'Co-financing Funds')))
 
 
 ############################# PLOT SENSIBILITY TEST ####################
@@ -110,8 +112,9 @@ g <- g + geom_line()
 g <- g + coord_cartesian(xlim = c(0, 0.25))
 g <- g + geom_ribbon(aes(ymin = ci_10_l, ymax = ci_10_h), alpha = 0.2)
 # g <- g + geom_vline(xintercept = 0, linetype = 2) 
-g <- g + geom_vline(data = sens_df[sens_df$optimal_bw == 1, ], aes(xintercept = Bandwidth), colour="red")
+g <- g + geom_vline(data = sens_df_elec[sens_df_elec$optimal_bw == 1, ], aes(xintercept = Bandwidth), colour="red")
 g <- g + geom_hline(yintercept = 0, linetype = 2, colour = "grey")
+g <- g + labs(y = "Estimated effect")
 g <- g + theme_bw()
 g
 ggsave("RDggplot_sens_test.pdf", width=30, height=20, units="cm")
@@ -128,6 +131,7 @@ g <- g + geom_ribbon(aes(ymin = ci_10_l, ymax = ci_10_h), alpha = 0.2)
 # g <- g + geom_vline(xintercept = 0, linetype = 2) 
 g <- g + geom_vline(data = sens_df_inv[sens_df_inv$optimal_bw == 1, ], aes(xintercept = Bandwidth), colour="red")
 g <- g + geom_hline(yintercept = 0, linetype = 2, colour = "grey")
+g <- g + labs(y = "Estimated effect")
 g <- g + theme_bw()
 g
 ggsave("RDggplot_sens_test_inv.pdf", width=30, height=20, units="cm")
