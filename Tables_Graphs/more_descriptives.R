@@ -3,12 +3,12 @@
 ###########################################################################################################
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust")
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust","stargazer")
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-#setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -184,6 +184,7 @@ ggplotly(s_ef)
 ###########################################################################################################
 #################################### COALITIONS ACROSS TIME AND PARTIES ###################################
 ###########################################################################################################
+
 coalitions_long_primera <- readRDS(paste0(res,"coalitions_primera_new.rds"))
 coalitions_long_segunda <- readRDS(paste0(res,"coalitions_segunda_new.rds"))
 coalitions_long_current <- readRDS(paste0(res, "coalitions_current.rds"))
