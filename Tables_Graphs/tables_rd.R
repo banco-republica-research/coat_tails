@@ -10,8 +10,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -75,10 +75,9 @@ final <- lapply(list_files, readRDS) %>%
   setNames(., list_files)
 
 
-a <- rd_to_df(party) %>% .[c(5, 1, 4, 2, 3)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_party.tex")
-b <- rd_to_df(coalition_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_coalition_1.tex")
-c <- rd_to_df(final)
-d <- rd_to_df(coalition_2) %>% cbind(., c) %>% .[c(7, 5, 6, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_coalition_2.tex")
+a <- rd_to_df(party) %>% .[c(6, 1, 5, 2, 4)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_party.tex")
+b <- rd_to_df(coalition_1) %>% .[c(8, 1, 7, 4)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_coalition_1.tex")
+c <- rd_to_df(final) %>% .[c(8, 1, 7, 4)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_coalition_final.tex")
 
 # Current and incoming
 list_files <- list.files() %>%
@@ -100,8 +99,7 @@ current_final <- lapply(list_files, readRDS) %>%
   setNames(., list_files)
 
 e <- rd_to_df(current_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_coalition_current1.tex")
-f <- rd_to_df(current_final)
-g <- rd_to_df(current_2) %>% cbind(., f) %>% .[c(4, 2, 3, 1)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_coalition_current2.tex")
+f <- rd_to_df(current_final) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_coalition_current_final.tex")
 
 # Incoming but no current
 list_files <- list.files() %>%
@@ -123,8 +121,7 @@ nocurrent_final <- lapply(list_files, readRDS) %>%
   setNames(., list_files)
 
 ne <- rd_to_df(nocurrent_1) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_coalition_nocurrent1.tex")
-nf <- rd_to_df(nocurrent_final)
-ng <- rd_to_df(nocurrent_2) %>% cbind(., nf) %>% .[c(4, 2, 3, 1)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_coalition_nocurrent2.tex")
+nf <- rd_to_df(nocurrent_final) %>% .[c(4, 1, 3, 2)] %>% stargazer(., summary = FALSE, out= "Tables/elec/elec_coalition_nocurrent_final.tex")
 
 
 ###########################################################################################################

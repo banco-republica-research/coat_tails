@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-setwd("~/Dropbox/BANREP/Elecciones/")
-#setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -149,7 +149,7 @@ out <- c("prop_votes_total_t1")
 
 
 r <- lapply(out, l_f)
-saveRDS(r, str_c(results, "/coat_tails_pressec_party.rds"))
+saveRDS(r, str_c(results, "/coat_tails_pressec_2_party.rds"))
 r
 
 
@@ -224,6 +224,21 @@ rdplot(y=l2$prop_votes_total_t1, x=l2$margin_prop_2, c = 0,
        binselect="es", nbins= 10, kernel="triangular", p=3, ci=95
 )
 dev.off()
+
+#################
+# Reelection
+
+# before
+l <- alcaldes_rd %>% filter(ano <= 2002)
+r <- lapply(out, l_f)
+saveRDS(r, str_c(results, "/coat_tails_pressec_2_coalition_before_reelection.rds"))
+r
+
+# after
+l <- alcaldes_rd %>% filter(ano >= 2002)
+r <- lapply(out, l_f)
+saveRDS(r, str_c(results, "/coat_tails_pressec_2_coalition_after_reelection.rds"))
+r
 
 ###############################################################################
 ################################ PLACEBO TESTS ################################
@@ -369,3 +384,6 @@ r <- lapply(out, l_f)
 
 saveRDS(r, str_c(results, "/coat_tails_pressec_nocurrent2_coalition.rds"))
 r
+
+
+

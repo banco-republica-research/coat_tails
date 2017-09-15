@@ -9,8 +9,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,library,character.only=TRUE)
 
 # Directory 
- setwd("~/Dropbox/BANREP/Elecciones/")
-#setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("~/Dropbox/BANREP/Elecciones/")
+setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -73,7 +73,7 @@ l_f_sens <- function(o, bw){
 ######################################## COAT TAILS HOUSE BY PARTY: RD ####################################
 ###########################################################################################################
 
-#House representatives by party (previous house data bases were arranged by coalition of first or second round)
+#House representatives by party 
 representantes <- readRDS(paste0(res,"representantes_merge.rds")) 
 
 # Parties by election
@@ -199,6 +199,21 @@ saveRDS(r, str_c(results, "/coat_tails_house_1_coalition.rds"))
 r
 
 
+#################
+# Reelection
+
+# before
+l <- alcaldes_rd %>% filter(ano <= 2002)
+r <- lapply(out, l_f)
+saveRDS(r, str_c(results, "/coat_tails_house_1_coalition_before_reelection.rds"))
+r
+
+# after
+l <- alcaldes_rd %>% filter(ano >= 2002)
+r <- lapply(out, l_f)
+saveRDS(r, str_c(results, "/coat_tails_house_1_coalition_after_reelection.rds"))
+r
+
 ###########################################################################################################
 ###################################### COAT TAILS HOUSE + COALITION: RD ###################################
 #######################################  COALITION SECOND ROUND ###########################################
@@ -262,7 +277,6 @@ saveRDS(r, str_c(results, "/coat_tails_house_2_coalition.rds"))
 r
 
 
-
 ###########################################################################################################
 ###################################### COAT TAILS HOUSE + COALITION: RD ###################################
 ########################################  COALITION FINAL ROUND ###########################################
@@ -320,7 +334,6 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 # outcomes
 out <- c("prop_votes_total_t1")
 
-
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/coat_tails_house_final_coalition.rds"))
 r
@@ -337,6 +350,7 @@ rdplot(y=l2$prop_votes_total_t1, x=l2$margin_prop_2, c = 0,
 )
 dev.off()
 
+
 ###############################################################################
 ################################ PLACEBO TESTS ################################
 ###############################################################################
@@ -346,6 +360,23 @@ bw_sensibility <- c(seq(0.01, 0.5, by = 0.01), r[[1]]$rd$bws[1, 1]) %>%
 
 r_sensibility <- mapply(l_f_sens, o = out, bw = bw_sensibility, SIMPLIFY = F)
 saveRDS(r_sensibility, str_c(results, "Placebos", "/coat_tails_house_final_coalition_placebo.rds"))
+
+
+#################
+# Reelection
+
+
+# before
+l <- alcaldes_rd %>% filter(ano <= 2002)
+r <- lapply(out, l_f)
+saveRDS(r, str_c(results, "/coat_tails_house_final_coalition_before_reelection.rds"))
+r
+
+# after
+l <- alcaldes_rd %>% filter(ano >= 2002)
+r <- lapply(out, l_f)
+saveRDS(r, str_c(results, "/coat_tails_house_final_coalition_after_reelection.rds"))
+r
 
 
 
