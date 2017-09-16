@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-#setwd("~/Dropbox/BANREP/Elecciones/")
- setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+#setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -209,16 +209,19 @@ invalid_places <- c(NaN, 96, 97, 99)
 representantes_aggregate <- representantes %>%
   lapply(., function(x){
     arrange(x, codmpio, ano) %>%
-      filter(is.na(votos) == 0) %>% 
+      # filter(is.na(votos) == 0) %>% 
       filter(!codmpio %in% invalid_places) %>% #Remove totals
       mutate(no_cand = ifelse(primer_apellido %in% non_candidate_votes | nombre %in% non_candidate_votes | codpartido %in% non_candidate_votes_p, 1, 0 )) %>% 
       mutate(codpartido = ifelse(no_cand == 0, codpartido, NA)) %>%      
-      mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>% 
+      mutate(cand = ifelse(no_cand == 0 & is.na(primer_apellido) == 0, 1, 0)) %>%
+      mutate(ano = as.numeric(ano)) %>%
       group_by(codmpio, ano) %>%
       mutate(rank = row_number(desc(votos))) %>%
-      mutate(prop_votes_total = votos / sum(votos)) %>%
+      mutate(total_votos = sum(votos)) %>%
+      mutate(prop_votes_total = votos / total_votos) %>%
       mutate(votos_cand = ifelse(cand == 1, votos, 0)) %>%
-      mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
+      mutate(total_votos_cand = sum(votos_cand)) %>%
+      mutate(prop_votes_cand = votos / total_votos_cand) %>%
       mutate(parties = sum(cand)) %>%
       mutate(party_ef = ifelse(prop_votes_cand > 0.1, 1,0)) %>%
       mutate(parties_ef = sum(party_ef)) %>% 
@@ -235,16 +238,16 @@ saveRDS(representantes_aggregate,paste0(res,"representantes_aggregate.rds"))
 representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
 
 representantes_collapse <- representantes_aggregate %>%
-  lapply(., function(x){
-    filter(x, cand == 1) %>%
-      group_by(ano, codep, codmpio, codpartido) %>%
-      summarise_at(vars(matches("vot")), sum) %>%
-      group_by(ano, codep, codmpio) %>%
-      mutate(rank = row_number(desc(votos)))
-  })
+  ldply() %>%
+    filter(cand == 1) %>%
+      group_by(ano, codmpio, codpartido) %>%
+      summarise(votos=sum(votos),prop_votes_total=sum(prop_votes_total), prop_votes_cand=sum(prop_votes_cand)) %>%
+      group_by(ano, codmpio) %>%
+      mutate(rank = row_number(desc(votos))) %>%
+      ungroup()
 
 representantes_merge <- representantes_collapse %>%
-  ldply() %>% filter(is.na(codpartido)==0) %>%
+  filter(is.na(codpartido)==0) %>%
   arrange(codmpio, ano, rank) %>% mutate(ano = as.factor(ano)) %>%
   mutate(year_lag_presidencial = fct_recode(ano,
                                             "1997" = "1998",
@@ -270,6 +273,15 @@ representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
 coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% 
   dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
 
+representantes_collapse <- representantes_merge %>%
+  merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+  #This merge ignore the un-matched observations, because they represent non-existent voting. 
+  group_by(coalition_new, ano, codmpio) %>%
+  summarise(votos=sum(votos),prop_votes_total=sum(prop_votes_total), prop_votes_cand=sum(prop_votes_cand)) %>%
+  group_by(ano, codmpio) %>%
+  mutate(rank = row_number(desc(votos)))
+
+
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
   filter(cand == 1) %>%
@@ -283,9 +295,10 @@ representantes_collapse <- representantes_aggregate %>%
                                             "2011" = "2014"
   )) %>%
   mutate(year_lag_presidencial = as.character(year_lag_presidencial)) %>%
-  merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio")) %>%
+  merge(., coalitions_long, by.x = c("codpartido", "year_lag_presidencial", "codmpio"), by.y = c("codpartido", "ano", "codmpio"), all.x = T) %>%
+  # mutate(ano = as.character(ano)) %>%
   #This merge ignore the un-matched observations, because they represent non-existent voting. 
-  group_by(ano, codep, codmpio, coalition_new) %>%
+  group_by(coalition_new, year, codmpio) %>%
   summarise_at(vars(matches("vot")), sum) %>%
   group_by(ano, codep, codmpio) %>%
   mutate(rank = row_number(desc(votos)))
