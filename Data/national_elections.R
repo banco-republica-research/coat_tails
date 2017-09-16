@@ -7,8 +7,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
-#setwd("~/Dropbox/BANREP/Elecciones/")
- setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+#setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -268,7 +268,10 @@ representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
 
 # load first stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% 
-  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
+  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
@@ -301,7 +304,11 @@ representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
 
 # load first stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% 
-  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
+  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
+  
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
@@ -335,7 +342,10 @@ representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
 
 # load final stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% 
-  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
+  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
@@ -369,7 +379,10 @@ representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
 
 # load final stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current_primera.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_first)  
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_first) %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
@@ -403,7 +416,10 @@ representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
 
 # load final stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_primera.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_first)  
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_first)  %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
@@ -437,7 +453,10 @@ representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
 
 # load final stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final)  
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final) %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
@@ -470,7 +489,10 @@ representantes_aggregate <- readRDS(paste0(res,"representantes_aggregate.rds"))
 
 # load final stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_final.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final)  
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final)  %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 representantes_collapse <- representantes_aggregate %>%
   ldply() %>%
@@ -587,7 +609,10 @@ senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
 
 # load first stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% 
-  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
+  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 senado_collapse <- senado_aggregate %>%
   ldply() %>%
@@ -621,7 +646,10 @@ senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
 
 # load first stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% 
-  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)
+  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new) %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 senado_collapse <- senado_aggregate %>%
   ldply() %>%
@@ -654,7 +682,10 @@ senado_merge <- readRDS(paste0(res,"senado_merge.rds"))
 senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
 
 # load final stage coalition
-coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) 
+coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))  %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 senado_collapse <- senado_aggregate %>%
   ldply() %>%
@@ -688,10 +719,10 @@ senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
 
 # load current stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current_primera.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_first)  
-
-table(senado_merge$ano)
-table(coalitions_long$ano, coalitions_long$year_first)
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_first)  %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 senado_collapse <- senado_aggregate %>%
   ldply() %>%
@@ -725,10 +756,10 @@ senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
 
 # load current stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_primera.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_first)  
-
-table(senado_merge$ano)
-table(coalitions_long$ano, coalitions_long$year_first)
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_first)  %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 senado_collapse <- senado_aggregate %>%
   ldply() %>%
@@ -762,10 +793,10 @@ senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
 
 # load current stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final)  
-
-table(senado_merge$ano)
-table(coalitions_long$ano, coalitions_long$year_final)
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final)  %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 senado_collapse <- senado_aggregate %>%
   ldply() %>%
@@ -798,10 +829,10 @@ senado_aggregate <- readRDS(paste0(res,"senado_aggregate.rds"))
 
 # load current stage coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_final.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final)  
-
-table(senado_merge$ano)
-table(coalitions_long$ano, coalitions_long$year_final)
+  dplyr::select(codpartido,ano,codmpio, coalition_new, year_current, year_final)  %>%
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 senado_collapse <- senado_aggregate %>%
   ldply() %>%

@@ -9,8 +9,8 @@ packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr
 lapply(packageList,library,character.only=TRUE)
 
 # Directory 
-# setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+setwd("~/Dropbox/BANREP/Elecciones/")
+#setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
@@ -50,7 +50,7 @@ l_f <- function(o){
                          margin_prop_2 >= 0 - r$bws[1])
   mean <-   mean(l[,o], na.rm = T)
   
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- rddensity::rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
   return(list(rd = r, mean = mean, d = dens))
 }
@@ -80,7 +80,6 @@ representantes <- readRDS(paste0(res,"representantes_merge.rds"))
 rep_cand <- representantes %>% filter(codpartido!=98 |codpartido!=99) %>%
   dplyr::select(ano,codep,codpartido) %>%
   unique(.) 
-
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
@@ -145,9 +144,10 @@ r
 
 # coalition FIRST round
 coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% 
-  dplyr::select(codpartido,ano,year,codmpio,coalition_new) %>%
-  unique(.)
-table(coalitions_long$ano, coalitions_long$year)
+  dplyr::select(codpartido,ano,year,codmpio,coalition_new)  %>% 
+  group_by(codpartido, ano, codmpio, year) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 representantes_coalition <- readRDS(paste0(res,"representantes_coalition_primera_merge.rds"))
 table(representantes_coalition$ano)
@@ -222,8 +222,10 @@ r
 
 # coalition second rounds
 coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% 
-  dplyr::select(codpartido,ano,year,codmpio,coalition_new) %>%
-  unique(.)
+  dplyr::select(codpartido,ano,year,codmpio,coalition_new) %>% 
+  group_by(codpartido, ano, codmpio, year) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 representantes_coalition <- readRDS(paste0(res,"representantes_coalition_segunda_merge.rds"))
 table(coalitions_long$ano,coalitions_long$year)
@@ -284,8 +286,10 @@ r
 
 # coalition FINAL roundS
 coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% 
-  dplyr::select(codpartido,ano,year,codmpio,coalition_new) %>%
-  unique(.)
+  dplyr::select(codpartido,ano,year,codmpio,coalition_new) %>% 
+  group_by(codpartido, ano, codmpio, year) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
@@ -387,9 +391,10 @@ r
   
   # coalition CURRENT AND FINAL round at t 
   coalitions_long <- readRDS(paste0(res,"coalitions_current_primera.rds")) %>% 
-    dplyr::select(codpartido,ano, codmpio, coalition_new,year_first) %>%
-    unique(.)
-  table(coalitions_long$ano,coalitions_long$year_first)
+    dplyr::select(codpartido,ano, codmpio, coalition_new,year_first) %>% 
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
   
   
   # Elections t+1
@@ -457,10 +462,11 @@ r
 ###########################################################################################################
 
 # coalition CURRENT AND FINAL round at t 
-coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
-  dplyr::select(codpartido,ano, codmpio, coalition_new,year_final) %>%
-  unique(.)
-table(coalitions_long$ano,coalitions_long$year_final)
+coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>%  
+  dplyr::select(codpartido,ano,year,codmpio,coalition_new)  %>% 
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 
 # Elections t+1
@@ -526,9 +532,10 @@ r
 
 # coalition CURRENT AND FINAL round at t 
 coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_primera.rds")) %>% 
-  dplyr::select(codpartido,ano, codmpio, coalition_new,year_first) %>%
-  unique(.)
-table(coalitions_long$ano,coalitions_long$year_first)
+  dplyr::select(codpartido,ano, codmpio, coalition_new,year_first) %>% 
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 
 # Elections t+1
@@ -594,9 +601,10 @@ r
 
 # coalition CURRENT AND FINAL round at t 
 coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_final.rds")) %>% 
-  dplyr::select(codpartido,ano, codmpio, coalition_new,year_final) %>%
-  unique(.)
-table(coalitions_long$ano,coalitions_long$year_final)
+  dplyr::select(codpartido,ano, codmpio, coalition_new,year_final) %>% 
+  group_by(codpartido, ano, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 
 # Elections t+1
