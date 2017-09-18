@@ -219,8 +219,8 @@ r
 
 pdf(str_c(doc, "RD_pressec_final.pdf"), height=6, width=12)
 rdplot(y=l2$prop_votes_total_t1, x=l2$margin_prop_2, c = 0,
-       y.lim = c(0.3, 0.8),
-       # x.lim = c(0.45, 0.55),
+       y.lim = c(0.4, 0.7),
+       # x.lim = c(0.4, 0.7),
        title = " ",
        x.label = "Victory Margin",
        y.label = "Vote share (subsequent Election)",
@@ -244,7 +244,7 @@ saveRDS(r, str_c(results, "/coat_tails_pressec_final_coalition_after_reelection.
 r
 
 ###############################################################################
-################################ PLACEBO TESTS ################################
+############################## ROBUSTNESS TESTS ###############################
 ###############################################################################
 
 bw_sensibility <- c(seq(0.01, 0.5, by = 0.01), r[[1]]$rd$bws[1, 1]) %>%
@@ -319,7 +319,6 @@ out <- c("prop_votes_total_t1")
 
 
 r <- lapply(out, l_f)
-
 saveRDS(r, str_c(results, "/coat_tails_pressec_currentfinal_coalition.rds"))
 r
 
@@ -390,7 +389,6 @@ out <- c("prop_votes_total_t1")
 
 
 r <- lapply(out, l_f)
-
 saveRDS(r, str_c(results, "/coat_tails_pressec_nocurrentfinal_coalition.rds"))
 r
 
