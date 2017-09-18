@@ -80,6 +80,7 @@ representantes <- readRDS(paste0(res,"representantes_merge.rds"))
 rep_cand <- representantes %>% filter(codpartido!=98 |codpartido!=99) %>%
   dplyr::select(ano,codep,codpartido) %>%
   unique(.) 
+
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
   filter(ano != 2015) %>%
