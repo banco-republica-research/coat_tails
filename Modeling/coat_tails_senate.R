@@ -48,7 +48,7 @@ l_f <- function(o){
                          margin_prop_2 >= 0 - r$bws[1])
   mean <- mean(l[,o], na.rm = T)
   
-  dens <- rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
+  dens <- rddensity::rddensity(X = l$margin_prop_2, h = r$bws[1], c = 0) 
   dens <- dens$test$p_jk
   return(list(rd = r, mean = mean, d = dens))
 }
@@ -141,10 +141,11 @@ r
 ###########################################################################################################
 
 # coalition FIRST roundS
-coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>% 
-  dplyr::select(codpartido,ano,year, codmpio,coalition_new) %>%
-  unique(.)
-table(coalitions_long$ano,coalitions_long$year)
+coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds"))  %>% 
+  dplyr::select(codpartido,ano,year,codmpio,coalition_new)  %>% 
+  group_by(codpartido, ano, codmpio, year) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 senado_coalition <- readRDS(paste0(res,"senate_coalition_primera_merge.rds"))
 
@@ -202,10 +203,11 @@ r
 ###########################################################################################################
 
 # coalition FINAL roundS
-coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>% 
-  dplyr::select(codpartido,ano,year, codmpio, coalition_new) %>%
-  unique(.)
-table(coalitions_long$ano,coalitions_long$year)
+coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds"))  %>% 
+  dplyr::select(codpartido,ano,year,codmpio,coalition_new)  %>% 
+  group_by(codpartido, ano, codmpio, year) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 senado_coalition <- readRDS(paste0(res,"senate_coalition_segunda_merge.rds"))
 
@@ -263,8 +265,10 @@ r
 
 # coalition FINAL roundS
 coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% 
-  dplyr::select(codpartido,ano,year, codmpio, coalition_new) %>%
-  unique(.)
+  dplyr::select(codpartido,ano,year,codmpio,coalition_new)  %>% 
+  group_by(codpartido, ano, codmpio, year) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 senado_coalition <- readRDS(paste0(res,"senate_coalition_merge.rds"))
 table(coalitions_long$ano,coalitions_long$year)
@@ -349,14 +353,13 @@ saveRDS(r_sensibility, str_c(results, "/Placebos", "/coat_tails_senate_final_coa
 
 # coalition FIRST round
 coalitions_long <- readRDS(paste0(res,"coalitions_current_primera.rds")) %>% 
-  dplyr::select(codpartido,ano, codmpio, coalition_new,year_first) %>%
-  unique(.)
-table(coalitions_long$ano,coalitions_long$year_first)
+  dplyr::select(codpartido,ano,codmpio,coalition_new, starts_with("year"))  %>% 
+  group_by(codpartido, ano, codmpio, year_first, year_current) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 # Elections t+1
 senado_coalition <- readRDS(paste0(res,"senate_coalition_current_primera_merge.rds"))
-table(senado_coalition$ano)
-
 
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99
 alcaldes_merge_r2 <- alcaldes_merge %>%
@@ -413,9 +416,10 @@ r
 
 # coalition FIRST round
 coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
-  dplyr::select(codpartido,ano, codmpio, coalition_new,year_final) %>%
-  unique(.)
-table(coalitions_long$ano,coalitions_long$year_final)
+  dplyr::select(codpartido,ano,codmpio,coalition_new, starts_with("year"))  %>% 
+  group_by(codpartido, ano, codmpio, year_final) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 # Elections t+1
 senado_coalition <- readRDS(paste0(res,"senate_coalition_current_final_merge.rds"))
@@ -479,9 +483,11 @@ r
 
 # coalition FIRST round
 coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_primera.rds")) %>% 
-  dplyr::select(codpartido,ano, codmpio, coalition_new,year_first) %>%
-  unique(.)
-table(coalitions_long$ano,coalitions_long$year_first)
+  dplyr::select(codpartido,ano,codmpio,coalition_new, starts_with("year"))  %>% 
+  group_by(codpartido, ano, codmpio, year_first, year_current) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
+
 
 # Elections t+1
 senado_coalition <- readRDS(paste0(res,"senate_coalition_nocurrent_primera_merge.rds"))
@@ -542,9 +548,11 @@ r
 
 # coalition FIRST round
 coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_final.rds")) %>% 
-  dplyr::select(codpartido,ano, codmpio, coalition_new,year_final) %>%
-  unique(.)
-table(coalitions_long$ano,coalitions_long$year_final)
+  dplyr::select(codpartido,ano,codmpio,coalition_new, starts_with("year"))  %>% 
+  group_by(codpartido, ano, codmpio, year_final, year_current) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
+
 
 # Elections t+1
 senado_coalition <- readRDS(paste0(res,"senate_coalition_nocurrent_final_merge.rds"))

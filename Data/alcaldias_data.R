@@ -1,4 +1,3 @@
-
 rm(list=ls())
 packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "tidyr", "forcats", "stringr", "openxlsx")
 lapply(packageList,library,character.only=TRUE)
@@ -8,13 +7,13 @@ lapply(packageList,library,character.only=TRUE)
 setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
 # setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
-  data <-"Data/CEDE/Microdatos/"
-  coal <-"Data/CEDE/coaliciones/"
-  res <-"Data/CEDE/Bases/"
-  results <- "Results/RD"
+data <-"Data/CEDE/Microdatos/"
+coal <-"Data/CEDE/coaliciones/"
+res <-"Data/CEDE/Bases/"
+results <- "Results/RD"
 
 # Paper gender  
-women <- "D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones_Mujeres/Data/Elections/"  
+#women <- "D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones_Mujeres/Data/Elections/"  
   
 ###########################################################################################################
 ############################ Winners and loosers since 1997  ##############################################
@@ -99,8 +98,6 @@ alcaldes_aggregate <- alcaldes %>%
       mutate(prop_votes_cand = votos / sum(votos_cand)) %>%
       mutate(votos_r2 = ifelse(rank <= 2, votos ,0)) %>% 
       mutate(prop_votes_c2 = votos / sum(votos_r2)) %>% 
-      # mutate(diff = votos - lag(votos, default=first(votos))) %>%
-      # mutate(margin_prop = diff / sum(votos_r2)) %>%
       mutate(parties = sum(cand)) %>%
       mutate(margin_prop_2 = 2*(prop_votes_c2) -1) %>%
       mutate(party_ef = ifelse(prop_votes_cand > 0.1, 1,0)) %>%
@@ -121,23 +118,11 @@ alcaldes_merge <- alcaldes_aggregate %>%
   mutate(ano = as.integer(ano))
 
 
-#Prueba
-alcaldes_merge_prueba <- alcaldes_merge %>%
-  filter(rank <= 2) %>%
-  group_by(rank) %>%
-  summarise(min_prop = min(prop_votes_c2, na.rm = T),
-            max_prop = max(prop_votes_c2, na.rm = T),
-            mean_prop = mean(prop_votes_c2, na.rm = T))
-
-
 saveRDS(alcaldes_merge,paste0(res,"alcaldes_merge.rds"))
 
 # Save for elections women
 # saveRDS(alcaldes_merge,paste0(women,"alcaldes_merge.rds"))
-write_dta(alcaldes_merge,paste0(women,"alcaldes_merge.dta"))
-
-
-
+#write_dta(alcaldes_merge,paste0(women,"alcaldes_merge.dta"))
 
 ###########################################################################################################
 #################################### Only winners 1988-1994  ##############################################
@@ -177,9 +162,6 @@ alcaldes_merge_old <- alcaldes_aggregate_old %>%
 
 hist(alcaldes_merge_old$prop_votes_total)
 saveRDS(alcaldes_merge_old,paste0(res,"alcaldes_merge_old.rds"))
-
-
-
 
 ###########################################################################################################
 ################################# COALITIONS NEXT PRIMERA #################################################
@@ -344,7 +326,6 @@ coalitions_segunda_long <- readRDS(paste0(res,"coalitions_segunda_new.rds"))
 coalitions_long <- coalitions_primera_long %>% 
   filter(year==2002 | year== 2006) %>%
   rbind(.,coalitions_segunda_long) 
-
 
 table(coalitions_long$ano ,coalitions_long$year)
 saveRDS(coalitions_long, paste0(res, "coalitions_new.rds"))
