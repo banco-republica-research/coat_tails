@@ -121,9 +121,10 @@ l_f_sens <- function(o, bw){
 
 # FINAL round CURRENT coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio,coalition_new) %>%
-  unique(.)
-
+  filter(coalition_new == 0 | coalition_new == 1) %>%
+  group_by(codpartido,ano,year, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -266,8 +267,11 @@ saveRDS(r_sensibility, str_c(results, "Placebos", "/roads_final_coalition_placeb
 
 # FINAL round CURRENT coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio,coalition_new)  %>% 
-  unique(.)
+  filter(coalition_new == 0 | coalition_new == 1) %>%
+  group_by(codpartido,ano,year, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
+
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -345,9 +349,10 @@ r
 
 # FINAL round CURRENT coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio,coalition_new) %>% 
-  unique(.)
-
+  filter(coalition_new == 0 | coalition_new == 1) %>%
+  group_by(codpartido,ano,year, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -417,8 +422,11 @@ r
 
 # FINAL round NEXT coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))  %>% 
-  dplyr::select(codpartido,ano, codmpio, coalition_new) %>%
-  unique(.)
+  filter(coalition_new == 0 | coalition_new == 1) %>%
+  group_by(codpartido,ano,year, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
+
 
 # top2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>%
@@ -490,8 +498,10 @@ r
 
 # FINAL round NEXT coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))  %>% 
-  dplyr::select(codpartido,ano, codmpio, coalition_new) %>%
-  unique(.)
+  filter(coalition_new == 0 | coalition_new == 1) %>%
+  group_by(codpartido,ano,year, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 # top2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>%
@@ -556,14 +566,17 @@ r
 
 ###########################################################################################################
 ##################################### INVESTMENT: AFTER (PREMIO) ##########################################
-################################## Coalition wrt NEXT president  ##########################################
+################################## Coalition wrt INCOMING president  ######################################
 ########################################### Could be + ####################################################
 ###########################################################################################################
 
 # FINAL round NEXT coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_new.rds"))  %>% 
-  dplyr::select(codpartido,ano, codmpio, coalition_new) %>%
-  unique(.)
+  filter(coalition_new == 0 | coalition_new == 1) %>%
+  group_by(codpartido,ano,year, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
+
 
 # top2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>%
@@ -638,8 +651,11 @@ r
 
 # FINAL round CURRENT coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio,coalition_new) %>% 
-  unique(.)
+  filter(coalition_new == 0 | coalition_new == 1) %>%
+  group_by(codpartido,ano,year_current, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
+
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -717,8 +733,10 @@ r
 
 # FINAL round CURRENT coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio,coalition_new) %>% 
-  unique(.)
+  filter(coalition_new == 0 | coalition_new == 1) %>%
+  group_by(codpartido,ano,year_current, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -794,8 +812,10 @@ r
 
 # FINAL round CURRENT coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current_final.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio,coalition_new) %>% 
-  unique(.)
+  filter(coalition_new == 0 | coalition_new == 1) %>%
+  group_by(codpartido,ano,year_current, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
@@ -875,8 +895,10 @@ r
 
 # FINAL round CURRENT coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_nocurrent_final.rds")) %>% 
-  dplyr::select(codpartido,ano,codmpio,coalition_new) %>% 
-  unique(.)
+  filter(coalition_new == 0 | coalition_new == 1) %>%
+  group_by(codpartido,ano,year_current, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t

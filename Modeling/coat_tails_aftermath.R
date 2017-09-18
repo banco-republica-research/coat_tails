@@ -95,8 +95,10 @@ l_f <- function(o, type){
 
 # FINAL round CURRENT coalition
 coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>% 
-  dplyr::select(codpartido,ano,year, codmpio,coalition_old, coalition_new)  %>%
-  unique(.)
+  filter(coalition_new == 0 | coalition_new == 1) %>%
+  group_by(codpartido,ano,year, codmpio) %>%
+  mutate(coalition_new = as.numeric(coalition_new)) %>%
+  summarize(coalition_new = max(coalition_new))
 
 table(coalitions_long$ano,coalitions_long$year)
 
