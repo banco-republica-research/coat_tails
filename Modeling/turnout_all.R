@@ -170,7 +170,9 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 
 alcaldes_rd <- alcaldes_rd %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
-  mutate(., turnout = votos_t / total_adult_pop)
+  mutate(., turnout_total = votos_t / total_adult_pop,
+            turnout_cand = votos_cand_t / total_adult_pop,
+            turnout_dif = votos_cand_t / )
 
 ############################
 # RD and OLS regressions 
@@ -179,13 +181,10 @@ alcaldes_rd <- alcaldes_rd %>%
 l <- alcaldes_rd 
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
-
-# outcomes
-out <- c("prop_votes_total_t1")
-out <- c("turnout")
+out <- c("turnout_total", "turnout_cand", "turnout_dif")
 
 r <- lapply(out, l_f)
-saveRDS(r, str_c(results, "/coat_tails_house_1_coalition.rds"))
+saveRDS(r, str_c(results, "/turnout_house_1_coalition.rds"))
 r
 
 
@@ -221,9 +220,10 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   dplyr::select(-c(n,nn)) %>%
   merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T)
 
-#Merge voter population data
-alcaldes_merge_r2 <- alcaldes_merge_r2 %>%
-  merge(., )
+#Add voter population data
+alcaldes_rd <- alcaldes_rd %>%
+  merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
+  mutate(., turnout = votos_t / total_adult_pop)
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
 # Drop elections where party is both 1 and 2 in t
