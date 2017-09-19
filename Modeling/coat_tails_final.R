@@ -251,7 +251,7 @@ bw_sensibility <- c(seq(0.01, 0.5, by = 0.01), r[[1]]$rd$bws[1, 1]) %>%
   .[sort.list(.)] %>% as.list()
 
 r_sensibility <- mapply(l_f_sens, o = out, bw = bw_sensibility, SIMPLIFY = F)
-saveRDS(r_sensibility, str_c(results, "Placebos", "/coat_tails_pressec_2_coalition_placebo.rds"))
+saveRDS(r_sensibility, str_c(results, "Placebos", "/coat_tails_pressec_final_coalition_placebo.rds"))
 
 ###########################################################################################################
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
