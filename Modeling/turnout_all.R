@@ -22,11 +22,7 @@ doc <- "Results/RD/Graphs/RD/"
 ############################################# LOAD DATA ###################################################
 ###########################################################################################################
 
-alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds")) %>% 
-  group_by(codmpio, ano) %>%
-  mutate(votos_totales = sum(votos),
-         votos_cand_total = sum(votos_cand),
-         votos_no_cand_total = votos_totales - votos_cand_total)
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds")) 
 
 # Load party codes and municipal covariates
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
@@ -137,8 +133,12 @@ coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds")) %>%
   mutate(coalition_new = as.numeric(coalition_new)) %>%
   summarize(coalition_new = max(coalition_new))
 
-representantes_coalition <- readRDS(paste0(res,"representantes_coalition_primera_merge.rds"))
-table(representantes_coalition$ano)
+representantes_coalition <- readRDS(paste0(res,"representantes_coalition_primera_merge.rds")) %>% 
+  mutate(votos_totales = votos  /prop_votes_total,
+         votos_totales_cand = votos / prop_votes_cand,
+         votos_totales_no_cand = votos_totales - votos_totales_cand)
+           
+table(representantes_coalition$ano) 
 
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
@@ -176,9 +176,8 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 alcaldes_rd <- alcaldes_rd %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
   mutate(., turnout_total = votos_totales / total_adult_pop,
-            turnout_cand = votos_cand_total / total_adult_pop,
-            turnout_dif = votos_no_cand_total / votos_totales,
-            turnout_dif)
+            turnout_cand = votos_totales_cand / total_adult_pop,
+            turnout_diff =  votos_totales_no_cand / votos_totales)
 
 ############################
 # RD and OLS regressions 
@@ -187,7 +186,7 @@ alcaldes_rd <- alcaldes_rd %>%
 l <- alcaldes_rd 
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
-out <- c("turnout_total", "turnout_cand", "turnout_dif")
+out <- c("votos_totales", "turnout_total", "turnout_cand", "turnout_diff")
 
 r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/turnout_house_1_coalition.rds"))
@@ -207,7 +206,11 @@ coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds")) %>%
   mutate(coalition_new = as.numeric(coalition_new)) %>%
   summarize(coalition_new = max(coalition_new))
 
-representantes_coalition <- readRDS(paste0(res,"representantes_coalition_segunda_merge.rds"))
+representantes_coalition <- readRDS(paste0(res,"representantes_coalition_segunda_merge.rds")) %>% 
+  mutate(votos_totales = votos  /prop_votes_total,
+         votos_totales_cand = votos / prop_votes_cand,
+         votos_totales_no_cand = votos_totales - votos_totales_cand)
+
 table(coalitions_long$ano,coalitions_long$year)
 table(representantes_coalition$ano)
 
@@ -247,9 +250,8 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 alcaldes_rd <- alcaldes_rd %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
   mutate(., turnout_total = votos_totales / total_adult_pop,
-         turnout_cand = votos_cand_total / total_adult_pop,
-         turnout_dif = votos_no_cand_total / votos_totales,
-         turnout_dif)
+         turnout_cand = votos_totales_cand / total_adult_pop,
+         turnout_diff =  votos_totales_no_cand / votos_totales)
 
 ############################
 # RD and OLS regressions 
@@ -260,8 +262,7 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 
 # outcomes
-out <- c("turnout_total", "turnout_cand", "turnout_dif")
-
+out <- c("votos_totales", "turnout_total", "turnout_cand", "turnout_diff")
 
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/turnout_house_2_coalition.rds"))
@@ -295,7 +296,10 @@ alcaldes_merge_r2 <- alcaldes_merge %>%
   merge(., controls[, c("pobl_tot", "coddepto.x", "ano.y", "codmpio", "altura", "discapital", "disbogota", "nbi.x")], by.x = c("codmpio", "ano"), by.y = c("codmpio", "ano.y"), all.x = T) 
 
 # Representatant for t+1
-representantes_coalition <- readRDS(paste0(res,"representantes_coalition_merge.rds"))
+representantes_coalition <- readRDS(paste0(res,"representantes_coalition_merge.rds")) %>% 
+  mutate(votos_totales = votos  /prop_votes_total,
+         votos_totales_cand = votos / prop_votes_cand,
+         votos_totales_no_cand = votos_totales - votos_totales_cand)
 table(representantes_coalition$ano)
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
@@ -318,9 +322,8 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 alcaldes_rd <- alcaldes_rd %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
   mutate(., turnout_total = votos_totales / total_adult_pop,
-         turnout_cand = votos_cand_total / total_adult_pop,
-         turnout_dif = votos_no_cand_total / votos_totales)
-
+         turnout_cand = votos_totales_cand / total_adult_pop,
+         turnout_diff =  votos_totales_no_cand / votos_totales)
 table(alcaldes_rd$ano, alcaldes_rd$year)
 
 ############################
@@ -332,7 +335,8 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 
 # outcomes
-out <- c("turnout_total", "turnout_cand", "turnout_dif")
+out <- c("votos_totales", "turnout_total", "turnout_cand", "turnout_diff")
+
 
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/turnout_house_final_coalition.rds"))
@@ -342,14 +346,7 @@ r
 ############################################## TURNOUT SENATE: RD #########################################
 ###########################################################################################################
 
-
-alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds")) %>% 
-  group_by(codmpio, ano) %>%
-  mutate(votos_totales = sum(votos),
-         votos_cand_total = sum(votos_cand),
-         votos_no_cand_total = votos_totales - votos_cand_total) %>%
-  ungroup()
-
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds")) 
 adult_pop <- readRDS(paste0("Data/Poblacion/", "adult_population_municipal.rds"))
 
 ###########################################################################################################
@@ -357,7 +354,10 @@ adult_pop <- readRDS(paste0("Data/Poblacion/", "adult_population_municipal.rds")
 ###########################################################################################################
 
 #Senate representatives by party (previous house data bases were arranged by coalition of first or second round)
-senado <- readRDS(paste0(res,"senado_merge.rds")) 
+senado <- readRDS(paste0(res,"senado_merge.rds")) %>% 
+  mutate(votos_totales = votos  /prop_votes_total,
+         votos_totales_cand = votos / prop_votes_cand,
+         votos_totales_no_cand = votos_totales - votos_totales_cand)
 
 # Parties by election
 sen_cand <- senado %>% filter(codpartido!=98 |codpartido!=99) %>%
@@ -408,8 +408,9 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 alcaldes_rd <- alcaldes_rd %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
   mutate(., turnout_total = votos_totales / total_adult_pop,
-         turnout_cand = votos_cand_total / total_adult_pop,
-         turnout_dif = votos_no_cand_total / votos_totales)
+         turnout_cand = votos_totales_cand / total_adult_pop,
+         turnout_diff =  votos_totales_no_cand / votos_totales)
+table(alcaldes_rd$ano, alcaldes_rd$year)
 
 
 ############################
@@ -421,7 +422,7 @@ l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 
 # outcomes
-out <- c("turnout_total", "turnout_cand", "turnout_dif")
+out <- c("votos_totales", "turnout_total", "turnout_cand", "turnout_diff")
 
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/turnout_senate_party.rds"))
@@ -439,7 +440,10 @@ coalitions_long <- readRDS(paste0(res,"coalitions_primera_new.rds"))  %>%
   mutate(coalition_new = as.numeric(coalition_new)) %>%
   summarize(coalition_new = max(coalition_new))
 
-senado_coalition <- readRDS(paste0(res,"senate_coalition_primera_merge.rds"))
+senado_coalition <- readRDS(paste0(res,"senate_coalition_primera_merge.rds"))  %>% 
+  mutate(votos_totales = votos  /prop_votes_total,
+         votos_totales_cand = votos / prop_votes_cand,
+         votos_totales_no_cand = votos_totales - votos_totales_cand)
 
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
@@ -476,8 +480,8 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 alcaldes_rd <- alcaldes_rd %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
   mutate(., turnout_total = votos_totales / total_adult_pop,
-         turnout_cand = votos_cand_total / total_adult_pop,
-         turnout_dif = votos_no_cand_total / votos_totales)
+         turnout_cand = votos_totales_cand / total_adult_pop,
+         turnout_diff =  votos_totales_no_cand / votos_totales)
 
 
 ############################
@@ -488,7 +492,7 @@ l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # outcomes
-out <- c("turnout_total", "turnout_cand", "turnout_dif")
+out <- c("votos_totales", "turnout_total", "turnout_cand", "turnout_diff")
 
 r <-lapply(out, l_f) 
 saveRDS(r, str_c(results, "/turnout_senate_1_coalition.rds"))
@@ -507,7 +511,10 @@ coalitions_long <- readRDS(paste0(res,"coalitions_segunda_new.rds"))  %>%
   mutate(coalition_new = as.numeric(coalition_new)) %>%
   summarize(coalition_new = max(coalition_new))
 
-senado_coalition <- readRDS(paste0(res,"senate_coalition_segunda_merge.rds"))
+senado_coalition <- readRDS(paste0(res,"senate_coalition_segunda_merge.rds")) %>% 
+  mutate(votos_totales = votos  /prop_votes_total,
+         votos_totales_cand = votos / prop_votes_cand,
+         votos_totales_no_cand = votos_totales - votos_totales_cand)
 
 # Top 2 and drop municipality if at least one of the top2 is 98 or 99 
 alcaldes_merge_r2 <- alcaldes_merge %>% 
@@ -543,8 +550,8 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 alcaldes_rd <- alcaldes_rd %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
   mutate(., turnout_total = votos_totales / total_adult_pop,
-         turnout_cand = votos_cand_total / total_adult_pop,
-         turnout_dif = votos_no_cand_total / votos_totales)
+         turnout_cand = votos_totales_cand / total_adult_pop,
+         turnout_diff =  votos_totales_no_cand / votos_totales)
 
 
 ############################
@@ -555,7 +562,7 @@ l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # outcomes
-out <- c("turnout_total", "turnout_cand", "turnout_dif")
+out <- c("votos_totales", "turnout_total", "turnout_cand", "turnout_diff")
 
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/turnout_senate_2_coalition.rds"))
@@ -574,7 +581,11 @@ coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>%
   mutate(coalition_new = as.numeric(coalition_new)) %>%
   summarize(coalition_new = max(coalition_new))
 
-senado_coalition <- readRDS(paste0(res,"senate_coalition_merge.rds"))
+senado_coalition <- readRDS(paste0(res,"senate_coalition_merge.rds")) %>% 
+  mutate(votos_totales = votos  /prop_votes_total,
+         votos_totales_cand = votos / prop_votes_cand,
+         votos_totales_no_cand = votos_totales - votos_totales_cand)
+
 table(coalitions_long$ano,coalitions_long$year)
 table(senado_coalition$ano)
 
@@ -612,8 +623,8 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 alcaldes_rd <- alcaldes_rd %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
   mutate(., turnout_total = votos_totales / total_adult_pop,
-         turnout_cand = votos_cand_total / total_adult_pop,
-         turnout_dif = votos_no_cand_total / votos_totales)
+         turnout_cand = votos_totales_cand / total_adult_pop,
+         turnout_diff =  votos_totales_no_cand / votos_totales)
 
 
 ############################
@@ -624,8 +635,7 @@ l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # outcomes
-out <- c("turnout_total", "turnout_cand", "turnout_dif")
-
+out <- c("votos_totales", "turnout_total", "turnout_cand", "turnout_diff")
 
 r <- lapply(out, l_f) 
 saveRDS(r, str_c(results, "/turnout_senate_final_coalition.rds"))
@@ -636,13 +646,7 @@ r
 ###########################################################################################################
 
 # Load maire and coalition data
-alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds")) %>% 
-  group_by(codmpio, ano) %>%
-  mutate(votos_totales = sum(votos),
-         votos_cand_total = sum(votos_cand),
-         votos_no_cand_total = votos_totales - votos_cand_total) %>%
-  ungroup()
-
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds")) 
 adult_pop <- readRDS(paste0("Data/Poblacion/", "adult_population_municipal.rds"))
 
 ###########################################################################################################
@@ -663,7 +667,10 @@ win_apellido <- c("PASTRANA", "URIBE", "SANTOS")
 win_nom <- c("ANDRES", "ALVARO", "JUAN MANUEL")
 
 president <- readRDS(paste0(res, "presidentes_primera_merge.rds")) %>%
-  mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0))
+  mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0))  %>% 
+  mutate(votos_totales = votos  /prop_votes_total,
+         votos_totales_cand = votos / prop_votes_cand,
+         votos_totales_no_cand = votos_totales - votos_totales_cand)
 
 # Candidates by election
 pres_cand <- president %>% filter(cand==1) %>%
@@ -719,8 +726,8 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 alcaldes_rd <- alcaldes_rd %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
   mutate(., turnout_total = votos_totales / total_adult_pop,
-         turnout_cand = votos_cand_total / total_adult_pop,
-         turnout_dif = votos_no_cand_total / votos_totales)
+         turnout_cand = votos_totales_cand / total_adult_pop,
+         turnout_diff =  votos_totales_no_cand / votos_totales)
 
 
 ############################
@@ -731,8 +738,7 @@ l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # outcomes
-out <- c("turnout_total", "turnout_cand", "turnout_dif")
-
+out <- c("votos_totales", "turnout_total", "turnout_cand", "turnout_diff")
 
 r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/turnout_presfirst_1_coalition.rds"))
@@ -742,6 +748,28 @@ r
 ##################################### RD: REVERSE COAT-TAILS EFFECT #######################################
 ######################################### PRESIDENT FINAL ROUND ###########################################
 ###########################################################################################################
+
+
+# Load presidential for t+1
+# Only Parties with candidate in final round! 
+
+win_apellido <- c("PASTRANA", "URIBE", "SANTOS")
+win_nom <- c("ANDRES", "ALVARO", "JUAN MANUEL")
+runner_apellido <- c("SERPA","MOCKUS","ZULUAGA") 
+
+president_all <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
+  mutate(coalition = ifelse(primer_apellido %in% win_apellido & nombre %in% win_nom , 1, 0))  %>% 
+  mutate(votos_totales = votos  /prop_votes_total,
+         votos_totales_cand = votos / prop_votes_cand,
+         votos_totales_no_cand = votos_totales - votos_totales_cand)
+
+
+pres_cand <- president %>% 
+  filter(ano != 2002 & ano != 2006) %>%
+  filter(primer_apellido %in% win_apellido | primer_apellido %in% runner_apellido) %>%
+  dplyr::select(ano,codpartido,primer_apellido) %>%
+  unique(.) 
+
 
 # coalition SECOND roundS
 # coalitions_long <- readRDS(paste0(res,"coalitions_new.rds")) %>% 
@@ -792,8 +820,10 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
 alcaldes_rd <- alcaldes_rd %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
   mutate(., turnout_total = votos_totales / total_adult_pop,
-         turnout_cand = votos_cand_total / total_adult_pop,
-         turnout_dif = votos_no_cand_total / votos_totales)
+         turnout_cand = votos_totales_cand / total_adult_pop,
+         turnout_diff =  votos_totales_no_cand / votos_totales,
+         turnout_diff_cand = votos_totales_cand / votos_totales)
+
 
 
 ############################
@@ -804,8 +834,7 @@ l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # outcomes
-out <- c("turnout_total", "turnout_cand", "turnout_dif")
-
+out <- c("votos_totales", "turnout_total", "turnout_cand", "turnout_diff", "turnout_diff_cand")
 
 r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/turnout_pressec_final_coalition.rds"))
@@ -817,12 +846,7 @@ r
 ###########################################################################################################
 
 # Load maire and coalition data
-alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds")) %>% 
-  group_by(codmpio, ano) %>%
-  mutate(votos_totales = sum(votos),
-         votos_cand_total = sum(votos_cand),
-         votos_no_cand_total = votos_totales - votos_cand_total) %>%
-  ungroup()
+alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds")) 
 
 adult_pop <- readRDS(paste0("Data/Poblacion/", "adult_population_municipal.rds"))
 
@@ -834,9 +858,6 @@ adult_pop <- readRDS(paste0("Data/Poblacion/", "adult_population_municipal.rds")
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 alcaldes_t1 <-  readRDS(paste0(res,"alcaldes_t1.rds"))
 alcaldes_t1_coalition <-  readRDS(paste0(res,"alcaldes_t1_coalition.rds"))
-alcaldes_t1_coalition_current <- readRDS(paste0(res,"alcaldes_t1_coalition_current.rds"))
-alcaldes_t1_coalition_nocurrent <- readRDS(paste0(res,"alcaldes_t1_coalition_nocurrent.rds"))
-
 
 cede <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
 controls <- cede %>%
@@ -848,28 +869,20 @@ controls <- cede %>%
 # READ ALCALDES_T1_COALITION WHICH IS A LIST 
 names <- c("primera", "segunda", "final")
 
+
+alcaldes_t1_coalition <- lapply(alcaldes_t1_coalition, function(x){
+  x %>%
+  group_by(codmpio, ano_t1) %>%
+    mutate(votos_totales = votos  /prop_votes_total,
+           votos_totales_cand = votos / prop_votes_cand,
+           votos_totales_no_cand = votos_totales - votos_totales_cand) %>%
+    ungroup()
+})
+
 lapply(seq_along(alcaldes_t1_coalition), 
        function(x) {
          assign(names[x], alcaldes_t1_coalition[[x]], envir=.GlobalEnv)
        })
-
-# READ ALCALDES_T1_COALITION CURRENT WHICH IS A LIST 
-names <- c("current","current_primera", "current_segunda", "current_final")
-
-lapply(seq_along(alcaldes_t1_coalition_current), 
-       function(x) {
-         assign(names[x], alcaldes_t1_coalition_current[[x]], envir=.GlobalEnv)
-       })
-
-
-# READ ALCALDES_T1_COALITION CURRENT WHICH IS A LIST 
-names <- c("nocurrent_primera", "nocurrent_segunda", "nocurrent_final")
-
-lapply(seq_along(alcaldes_t1_coalition_nocurrent), 
-       function(x) {
-         assign(names[x], alcaldes_t1_coalition_nocurrent[[x]], envir=.GlobalEnv)
-       })
-
 
 ###########################################################################################################
 ############################# RD: IMCUMBENCY EFFECT - COALITION PARTIES ###################################
@@ -923,8 +936,9 @@ table(alcaldes_rd_c$coalition_new)
 alcaldes_rd <- alcaldes_rd_c %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
   mutate(., turnout_total = votos_totales / total_adult_pop,
-         turnout_cand = votos_cand_total / total_adult_pop,
-         turnout_dif = votos_no_cand_total / votos_totales)
+         turnout_cand = votos_totales_cand / total_adult_pop,
+         turnout_diff =  votos_totales_no_cand / votos_totales,
+         turnout_diff_cand = votos_totales_cand / votos_totales)
 
 
 ############################
@@ -935,8 +949,7 @@ l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # outcomes
-out <- c("turnout_total", "turnout_cand", "turnout_dif")
-
+out <- c("votos_totales", "turnout_total", "turnout_cand", "turnout_diff")
 
 r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/turnout_incumbency_1_coalition.rds"))
@@ -991,8 +1004,9 @@ table(alcaldes_rd_c$coalition_new)
 alcaldes_rd <- alcaldes_rd_c %>%
   merge(., adult_pop, by.x = c("ano", "codmpio"), by.y = c("year", "codigo")) %>%
   mutate(., turnout_total = votos_totales / total_adult_pop,
-         turnout_cand = votos_cand_total / total_adult_pop,
-         turnout_dif = votos_no_cand_total / votos_totales)
+         turnout_cand = votos_totales_cand / total_adult_pop,
+         turnout_diff =  votos_totales_no_cand / votos_totales,
+         turnout_diff_cand = votos_totales_cand / votos_totales)
 
 
 ############################
@@ -1003,7 +1017,7 @@ l <- alcaldes_rd
 l2 <- l %>% filter(prop_votes_c2 <= 0.6 & prop_votes_c2 >= 0.4)
 
 # outcomes
-out <- c("turnout_total", "turnout_cand", "turnout_dif")
+out <- c("votos_totales", "turnout_total", "turnout_cand", "turnout_diff")
 
 r <- lapply(out, l_f)
 saveRDS(r, str_c(results, "/turnout_incumbency_final_coalition.rds"))
