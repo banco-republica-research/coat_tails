@@ -343,7 +343,7 @@ setwd(results)
 
 out_growth <- c("log_light_pix","log_light_dm","log_ba_tot_vr", "log_ba_peq_vr")
 out_institutions <- c("desemp_fisc","desemp_int","hom_tasa","log_H_coca", "alcalde", "alcalde_guilty", "top", "top_guilty")
-out_publicgoods <- c("tasa_m","cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p")
+out_publicgoods <- c("tasa_m","cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_10_19_p")
 
 list_files <- list.files() %>%
   .[str_detect(., "growth")]
