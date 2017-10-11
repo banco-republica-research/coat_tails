@@ -164,7 +164,7 @@ r <- lapply(out, l_f,  type = "institutions")
 saveRDS(r, str_c(results, "aftermath_institutions.rds"))
 r
 
-out <- c("tasa_m","cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_19_10_p")
+out <- c("tasa_m","cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_10_19_p")
 r <- lapply(out, l_f,  type = "public") 
 saveRDS(r, str_c(results, "aftermath_publicgoods.rds"))
 r
