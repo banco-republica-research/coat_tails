@@ -2,8 +2,6 @@
 ############################################# COAT-TAILS RD ###############################################
 ###########################################################################################################
 
-
-
 rm(list=ls())
 packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust","rddensity")
 lapply(packageList,require,character.only=TRUE)

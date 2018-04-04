@@ -1,3 +1,4 @@
+
 rm(list=ls())
 packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "tidyr", "forcats", "stringr", "openxlsx")
 lapply(packageList,library,character.only=TRUE)
