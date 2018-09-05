@@ -3,18 +3,19 @@
 ###########################################################################################################
 
 rm(list=ls())
-packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","raster","kml","broom","gtools","TraMineR","cluster", "rdrobust","rddensity")
+packageList<-c("foreign","plyr","dplyr","haven","fuzzyjoin", "forcats", "stringr","plotly","ggplot2","tidyr","rgeos","rgdal","broom","gtools","TraMineR","cluster", "rdrobust","rddensity")
 lapply(packageList,require,character.only=TRUE)
 
 # Directory 
 # setwd("~/Dropbox/BANREP/Elecciones/")
- setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
-# setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("E:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+ setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
 dnp <- "Data/DNP/Desempeno/"
 pgn <- "Data/PGN/"
+fiscalia <- "Data/Fiscalia/"
 violencia <- "Data/Violencia/"
 agro <- "Data/Agro/"
 edu <- "Data/Educacion/"
@@ -53,6 +54,7 @@ president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
 # Load outcomes
 desempeno <- read_dta(paste0(dnp,"desempeno_last.dta"))
 pgn <- read_dta(paste0(pgn,"PGN_all.dta"))
+fisca <- read_dta(paste0(Fiscalia,"fiscalia_all.dta"))
 hom <- read_dta(paste0(violencia,"homicidios_all.dta"))
 agro <- read_dta(paste0(agro,"agro_all.dta"))
 cobertura <- read_dta(paste0(edu,"cobertura_all.dta"))
@@ -132,6 +134,7 @@ alcaldes_rd <- alcaldes_merge_r2 %>%
   # filter(is.na(prop_votes_total_t1)==0 & is.na(prop_votes_c2)==0) %>% 
   merge(., desempeno,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., pgn,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
+  merge(., fisca,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., hom,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., agro,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
   merge(., cobertura,  by.x = c("ano", "codmpio"), by.y = c("per", "codmpio"), all.x = T) %>%
@@ -157,7 +160,7 @@ r <- lapply(out, l_f,  type = "growth")
 saveRDS(r, str_c(results, "aftermath_growth.rds"))
 r
 
-out <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty","hom_tasa", "log_H_coca")
+out <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty","fiscalia", "hom_tasa", "log_H_coca")
 r <- lapply(out, l_f,  type = "institutions") 
 saveRDS(r, str_c(results, "aftermath_institutions.rds"))
 r
