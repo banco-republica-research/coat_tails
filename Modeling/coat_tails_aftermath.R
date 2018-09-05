@@ -36,7 +36,7 @@ alcaldes_merge <- readRDS(paste0(res,"alcaldes_merge.rds"))
 # Load party codes and municipal covariates
 party_code <- read_dta(paste0(data,"codigos_partidos.dta"))
 
-cede <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"))
+cede <- read_dta(paste0(res, "PanelCEDE/PANEL_CARACTERISTICAS_GENERALES.dta"), encoding = 'latin1')
 controls <- cede %>%
   dplyr::select(coddepto, codmpio, municipio, ano, nbi) %>%
   filter(ano == 1993) %>%
@@ -54,7 +54,7 @@ president <- readRDS(paste0(res, "presidentes_segunda_merge.rds")) %>%
 # Load outcomes
 desempeno <- read_dta(paste0(dnp,"desempeno_last.dta"))
 pgn <- read_dta(paste0(pgn,"PGN_all.dta"))
-fisca <- read_dta(paste0(Fiscalia,"fiscalia_all.dta"))
+fisca <- read_dta(paste0(fiscalia,"fiscalia_all.dta"))
 hom <- read_dta(paste0(violencia,"homicidios_all.dta"))
 agro <- read_dta(paste0(agro,"agro_all.dta"))
 cobertura <- read_dta(paste0(edu,"cobertura_all.dta"))
@@ -160,7 +160,7 @@ r <- lapply(out, l_f,  type = "growth")
 saveRDS(r, str_c(results, "aftermath_growth.rds"))
 r
 
-out <- c("desemp_fisc","desemp_int", "alcalde", "alcalde_guilty", "top", "top_guilty","fiscalia", "hom_tasa", "log_H_coca")
+out <- c("desemp_fisc","desemp_int", "hom_tasa", "log_H_coca", "alcalde", "alcalde_guilty", "top", "top_guilty","fiscalia")
 r <- lapply(out, l_f,  type = "institutions") 
 saveRDS(r, str_c(results, "aftermath_institutions.rds"))
 r

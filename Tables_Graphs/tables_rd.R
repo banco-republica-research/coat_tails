@@ -11,8 +11,8 @@ lapply(packageList,require,character.only=TRUE)
 
 # Directory 
 # setwd("~/Dropbox/BANREP/Elecciones/")
-setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
-# setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
+# setwd("D:/Users/lbonilme/Dropbox/CEER v2/Papers/Elecciones/")
+ setwd("/Users/leonardobonilla/Dropbox/CEER v2/Papers/Elecciones/")
 
 data <-"Data/CEDE/Microdatos/"
 res <-"Data/CEDE/Bases/"
@@ -342,7 +342,7 @@ setwd(results)
 # Read results
 
 out_growth <- c("log_light_pix","log_light_dm","log_ba_tot_vr", "log_ba_peq_vr")
-out_institutions <- c("desemp_fisc","desemp_int","hom_tasa","log_H_coca", "alcalde", "alcalde_guilty", "top", "top_guilty")
+out_institutions <- c("desemp_fisc","desemp_int", "hom_tasa", "log_H_coca", "alcalde", "alcalde_guilty", "top", "top_guilty","fiscalia")
 out_publicgoods <- c("tasa_m","cob_pri", "cob_sec", "matematicas_s","lenguaje_s","fert_10_19_p")
 
 list_files <- list.files() %>%
