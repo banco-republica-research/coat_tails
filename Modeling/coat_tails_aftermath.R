@@ -102,6 +102,7 @@ coalitions_long <- readRDS(paste0(res,"coalitions_current.rds")) %>%
   mutate(coalition_new = as.numeric(coalition_new)) %>%
   summarize(coalition_new = max(coalition_new))
 
+# write.dta(coalitions_long, paste0(res,"coalitions_current.dta"))
 table(coalitions_long$ano,coalitions_long$year)
 
 # For a specific party (or group of parties), merge RD in t to outcomes in t+1
